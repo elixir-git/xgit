@@ -24,7 +24,8 @@ defmodule Xgit.MixProject do
     [
       {:credo, "~> 1.1", only: [:dev, :test]},
       {:excoveralls, "~> 0.10", only: :test},
-      {:ex_doc, "~> 0.20", only: :dev}
+      {:ex_doc, "~> 0.20", only: :dev},
+      {:temp, "~> 0.4", only: :test}
     ]
   end
 
