@@ -1,6 +1,6 @@
 # Xgit
 
-Pure Elixir native implementation of git [![Build Status](https://travis-ci.org/elixir-git/xgit.svg?branch=master)](https://travis-ci.org/elixir-git/xgit) [![Coverage Status](https://coveralls.io/repos/github/elixir-git/xgit/badge.svg?branch=master)](https://coveralls.io/github/elixir-git/xgit?branch=master)
+Pure Elixir native implementation of git [![Build Status](https://travis-ci.org/scouten/redo.svg?branch=master)](https://travis-ci.org/scouten/redo) [![Coverage Status](https://coveralls.io/repos/github/scouten/redo/badge.svg?branch=master)](https://coveralls.io/github/scouten/redo?branch=master)
 
 
 ## WORK IN PROGRESS
@@ -14,13 +14,13 @@ Pure Elixir native implementation of git [![Build Status](https://travis-ci.org/
 **The current major infrastructure being targeted is porting the jgit `RevWalk` class.** This provides core infrastructure for walking commit history and object graphs. Progress on this project is tracked as follows:
 
 * [Porting Roadmap](./notes/porting_roadmap.txt)
-* [GitHub project for porting `RevWalk`](https://github.com/elixir-git/xgit/projects/3)
+* [GitHub project for porting `RevWalk`](https://github.com/scouten/redo/projects/3)
 
 **There is also important work to be done in backfilling existing porting work.** Please see:
 
-* [Issues tagged "good first issue"](https://github.com/elixir-git/xgit/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-* [Issues tagged "help wanted"](https://github.com/elixir-git/xgit/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) _more issues, but potentially more challenging_
-* [Project "Backfill incomplete implementations"](https://github.com/elixir-git/xgit/projects/2)
+* [Issues tagged "good first issue"](https://github.com/scouten/redo/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+* [Issues tagged "help wanted"](https://github.com/scouten/redo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) _more issues, but potentially more challenging_
+* [Project "Backfill incomplete implementations"](https://github.com/scouten/redo/projects/2)
 
 
 ## Why an All-Elixir Implementation?

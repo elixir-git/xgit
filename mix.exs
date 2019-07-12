@@ -34,7 +34,7 @@ defmodule Xgit.MixProject do
     [
       maintainers: ["Eric Scouten"],
       licenses: ["Apache2"],
-      links: %{"Github" => "https://github.com/scouten/xgit"}
+      links: %{"Github" => "https://github.com/scouten/redo"}
     ]
   end
 
