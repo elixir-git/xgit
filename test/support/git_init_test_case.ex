@@ -18,11 +18,16 @@ defmodule Xgit.GitInitTestCase do
   end
 
   defp git_init_and_standardize(git_dir) do
-    File.mkdir_p!(git_dir)
-    {_, 0} = System.cmd("git", ["init", "."], cd: git_dir)
+    git_dir
+    |> git_init()
+    |> remove_sample_hooks()
+    |> rewrite_config()
+    |> rewrite_info_exclude()
+  end
 
-    remove_sample_hooks(git_dir)
-    rewrite_config(git_dir)
+  defp git_init(git_dir) do
+    {_, 0} = System.cmd("git", ["init", git_dir])
+    git_dir
   end
 
   defp remove_sample_hooks(git_dir) do
@@ -32,6 +37,8 @@ defmodule Xgit.GitInitTestCase do
     |> File.ls!()
     |> Enum.filter(&String.ends_with?(&1, ".sample"))
     |> Enum.each(&File.rm!(Path.join(hooks_dir, &1)))
+
+    git_dir
   end
 
   defp rewrite_config(git_dir) do
@@ -44,5 +51,23 @@ defmodule Xgit.GitInitTestCase do
     \tbare = false
     \tlogallrefupdates = true
     """)
+
+    git_dir
+  end
+
+  defp rewrite_info_exclude(git_dir) do
+    git_dir
+    |> Path.join(".git/info/exclude")
+    |> File.write!(~s"""
+    # git ls-files --others --exclude-from=.git/info/exclude
+    # Lines that start with '#' are comments.
+    # For a project mostly in C, the following would be a good set of
+    # exclude patterns (uncomment them if you want to use them):
+    # *.[oa]
+    # *~
+    .DS_Store
+    """)
+
+    git_dir
   end
 end
