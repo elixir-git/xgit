@@ -1,0 +1,6 @@
+{
+  "skip_files": [
+    "lib/xgit.ex",
+    "test/support"
+  ]
+}

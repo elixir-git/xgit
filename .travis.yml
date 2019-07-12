@@ -1,0 +1,20 @@
+language: elixir
+
+elixir:
+  - 1.8.1
+
+otp_release:
+  - 20.3
+
+env:
+  - MIX_ENV=test
+
+script:
+  - mix deps.get
+  - mix format --check-formatted
+  - mix coveralls.travis
+  - mix credo
+
+branches:
+  only:
+    - master
