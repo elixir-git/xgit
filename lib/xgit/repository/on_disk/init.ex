@@ -53,15 +53,13 @@ defmodule Xgit.Repository.OnDisk.Init do
   defp create_config!(git_dir) do
     git_dir
     |> Path.join("config")
-    |> File.write!(
-      "[core]\n" <>
-        "\trepositoryformatversion = 0\n" <>
-        "\tfilemode = true\n" <>
-        "\tbare = false\n" <>
-        "\tlogallrefupdates = true\n" <>
-        "\tignorecase = true\n" <>
-        "\tprecomposeunicode = true\n"
-    )
+    |> File.write!(~s"""
+    [core]
+    \trepositoryformatversion = 0
+    \tfilemode = true
+    \tbare = false
+    \tlogallrefupdates = true
+    """)
   end
 
   defp create_description!(git_dir) do

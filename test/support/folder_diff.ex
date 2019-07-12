@@ -5,12 +5,10 @@ defmodule FolderDiff do
   import ExUnit.Assertions
 
   def assert_folders_are_equal(folder1, folder2) do
-    unless String.ends_with?(folder1, ".git/hooks") and String.ends_with?(folder2, ".git/hooks") do
-      files1 = folder1 |> File.ls!() |> Enum.sort()
-      files2 = folder2 |> File.ls!() |> Enum.sort()
+    files1 = folder1 |> File.ls!() |> Enum.sort()
+    files2 = folder2 |> File.ls!() |> Enum.sort()
 
-      assert_folders_are_equal(folder1, folder2, files1, files2)
-    end
+    assert_folders_are_equal(folder1, folder2, files1, files2)
   end
 
   defp assert_folders_are_equal(folder1, folder2, [file1 | files1], [file2 | files2]) do

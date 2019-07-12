@@ -1,26 +1,13 @@
 defmodule Xgit.Repository.OnDisk.InitTest do
-  use ExUnit.Case
+  use Xgit.GitInitTestCase, async: true
 
   alias Xgit.Repository.OnDisk
 
   import FolderDiff
 
-  setup do
-    Temp.track!()
-    tmp = Temp.mkdir!()
-    ref = Path.join(tmp, "ref")
-    xgit = Path.join(tmp, "xgit")
-
-    {:ok, ref: ref, xgit: xgit}
-  end
-
   describe "init/1" do
     test "happy path matches command-line git", %{ref: ref, xgit: xgit} do
-      File.mkdir_p!(ref)
-      {_, 0} = System.cmd("git", ["init", "."], cd: ref)
-
       assert :ok = OnDisk.init(work_dir: xgit)
-
       assert_folders_are_equal(ref, xgit)
     end
 
