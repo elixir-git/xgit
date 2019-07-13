@@ -11,7 +11,7 @@ defmodule Xgit.Repository do
 
   In Elixir/OTP terms, a repository is both a `GenServer` and a behaviour module.
 
-  In git terms, a repository (and thus any module that implements the behaiviours
+  In git terms, a repository (and thus any module that implements the behaviours
   defined here) is primary a **plumbing** module.
 
   The git **porcelain** implementations are largely implemented in a way that is
