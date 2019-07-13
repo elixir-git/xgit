@@ -17,7 +17,8 @@ defmodule Xgit.Repository.OnDisk do
 
   ## Options
 
-  * **TBD**
+  * `:work_dir` (required): Top-level working directory. A `.git` directory should
+    exist at this path.
 
   Any other options are passed through to `GenServer.start_link/3`.
 
