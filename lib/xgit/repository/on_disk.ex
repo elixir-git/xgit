@@ -7,13 +7,15 @@ defmodule Xgit.Repository.OnDisk do
   the traditional `git` command-line interface will handle.
 
   That said, it does intentionally use the same `.git` folder format as command-line
-  git so that results may be compared for similar operations.
+  `git` so that results may be compared for similar operations.
   """
 
   use Xgit.Repository
 
   @doc ~S"""
   Start an on-disk git repository.
+
+  Use the functions in `Xgit.Repository` to interact with this repository process.
 
   ## Options
 
@@ -26,8 +28,6 @@ defmodule Xgit.Repository.OnDisk do
   ## Return Value
 
   See `GenServer.start_link/3`.
-
-  Use the functions in `Xgit.Repository` to interact with this repository process.
   """
   @spec start_link(opts :: Keyword.t()) :: GenServer.on_start()
   def start_link(opts \\ []), do: Repository.start_link(__MODULE__, opts, opts)
