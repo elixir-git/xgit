@@ -14,7 +14,7 @@ defmodule Xgit.Repository do
   In git terms, a repository (and thus any module that implements the behaviours
   defined here) is primarily a _plumbing_ module.
 
-  The git **porcelain** implementations are largely implemented in a way that is
+  The git _porcelain_ implementations are largely implemented in a way that is
   intended to be agnostic with regard to storage. They are largely implemented
   in separate "command" modules. (See `Xgit.Command.*`, though no such module
   exists as of yet.)
