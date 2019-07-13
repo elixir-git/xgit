@@ -30,6 +30,12 @@ defmodule Xgit.Repository.OnDisk do
   @spec start_link(opts :: Keyword.t()) :: GenServer.on_start()
   def start_link(opts \\ []), do: Repository.start_link(__MODULE__, opts, opts)
 
+  @impl GenServer
+  def init(opts) when is_list(opts) do
+    work_dir = Keyword.get(opts, :work_dir)
+    {:ok, %{work_dir: work_dir}}
+  end
+
   @doc ~S"""
   Creates a new, empty git repository on the local file system.
 
