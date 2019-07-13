@@ -24,5 +24,10 @@ defmodule Xgit.Repository.OnDiskTest do
                assert {:error, :unknown_message} = GenServer.call(repo, :random_unknown_message)
              end) =~ "Repository received unrecognized call :random_unknown_message"
     end
+
+    test "error: missing work_dir" do
+      Process.flag(:trap_exit, true)
+      assert {:error, :missing_arguments} = OnDisk.start_link([])
+    end
   end
 end
