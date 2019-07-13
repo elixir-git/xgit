@@ -7,13 +7,13 @@ defmodule Xgit.Repository.OnDisk.CreateTest do
 
   describe "create/1" do
     test "happy path matches command-line git", %{ref: ref, xgit: xgit} do
-      assert :ok = OnDisk.create(work_dir: xgit)
+      assert :ok = OnDisk.create!(work_dir: xgit)
       assert_folders_are_equal(ref, xgit)
     end
 
     test "error: no work_dir" do
       assert_raise ArgumentError, fn ->
-        OnDisk.create([])
+        OnDisk.create!([])
       end
     end
 
@@ -21,7 +21,7 @@ defmodule Xgit.Repository.OnDisk.CreateTest do
       File.mkdir_p!(xgit)
 
       assert_raise ArgumentError, fn ->
-        OnDisk.create(work_dir: xgit)
+        OnDisk.create!(work_dir: xgit)
       end
     end
   end

@@ -8,7 +8,7 @@ defmodule Xgit.Repository.OnDiskTest do
 
   describe "start_link/1" do
     test "happy path: starts and is valid", %{xgit: xgit} do
-      assert :ok = OnDisk.create(work_dir: xgit)
+      assert :ok = OnDisk.create!(work_dir: xgit)
 
       assert {:ok, repo} = OnDisk.start_link(work_dir: xgit)
       assert is_pid(repo)
@@ -17,7 +17,7 @@ defmodule Xgit.Repository.OnDiskTest do
     end
 
     test "handles unknown message", %{xgit: xgit} do
-      assert :ok = OnDisk.create(work_dir: xgit)
+      assert :ok = OnDisk.create!(work_dir: xgit)
       assert {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       assert capture_log(fn ->
