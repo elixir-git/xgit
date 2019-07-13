@@ -2,7 +2,7 @@ defmodule Xgit.Repository.OnDisk.Create do
   @moduledoc false
   # Implements Xgit.Repository.OnDisk.create/1.
 
-  def create(opts) when is_list(opts) do
+  def create!(opts) when is_list(opts) do
     work_dir = Keyword.get(opts, :work_dir)
 
     unless is_binary(work_dir) do
