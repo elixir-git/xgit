@@ -24,20 +24,23 @@ defmodule Xgit.Repository do
   To define a new mechanism for storing a git repo, start by creating a new module
   that `use`s this module and implements the required callbacks. Consider the
   information stored in a typical `.git` directory in a local repository. You will
-  be designing an alternative to that storage mechanism.
+  be building an alternative to that storage mechanism.
   """
 
   use GenServer
 
   require Logger
 
+  @typedoc ~S"""
+  The process ID for a `Repository` process.
+  """
   @type t :: pid
 
   @doc """
   Starts a `Repository` process linked to the current process.
 
-  You should not invoke this function directly unless you are implementing a
-  new storage implementation module that implements this behaviour.
+  _IMPORTANT:_ You should not invoke this function directly unless you are
+  implementing a new storage implementation module that implements this behaviour.
 
   ## Parameters
 
