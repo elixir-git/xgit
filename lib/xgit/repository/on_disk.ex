@@ -34,11 +34,11 @@ defmodule Xgit.Repository.OnDisk do
 
   @impl GenServer
   def init(opts) when is_list(opts) do
-    with work_dir when is_binary(work_dir) <- Keyword.get(opts, :work_dir) do
-      {:ok, %{work_dir: work_dir}}
-    else
-      _ -> {:stop, :missing_arguments}
-    end
+    work_dir = Keyword.get(opts, :work_dir)
+
+    if is_binary(work_dir),
+      do: {:ok, %{work_dir: work_dir}},
+      else: {:stop, :missing_arguments}
   end
 
   @doc ~S"""
