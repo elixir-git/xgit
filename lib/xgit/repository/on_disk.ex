@@ -15,6 +15,9 @@ defmodule Xgit.Repository.OnDisk do
 
   Analogous to [`git init`](https://git-scm.com/docs/git-init).
 
+  **NOTE:** We use the name `create` here so as to avoid a naming conflict with
+  the `GenServer` callback named `init/1`.
+
   ## Options
 
   * `:work_dir` (required): Top-level working directory. A `.git` directory is
@@ -30,6 +33,6 @@ defmodule Xgit.Repository.OnDisk do
 
   Will raise `File.Error` or similar if unable to create the directory.
   """
-  # @spec init([work_dir: String.t]) :: :ok
-  defdelegate init(opts), to: Xgit.Repository.OnDisk.Init
+  @spec create(work_dir: String.t()) :: :ok
+  defdelegate create(opts), to: Xgit.Repository.OnDisk.Create
 end

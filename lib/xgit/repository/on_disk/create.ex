@@ -1,12 +1,12 @@
-defmodule Xgit.Repository.OnDisk.Init do
+defmodule Xgit.Repository.OnDisk.Create do
   @moduledoc false
-  # Implements Xgit.Repository.OnDisk.init/1.
+  # Implements Xgit.Repository.OnDisk.create/1.
 
-  def init(opts) when is_list(opts) do
+  def create(opts) when is_list(opts) do
     work_dir = Keyword.get(opts, :work_dir)
 
     unless is_binary(work_dir) do
-      raise ArgumentError, "Xgit.Repository.OnDisk.init/1: :work_dir must be a file path"
+      raise ArgumentError, "Xgit.Repository.OnDisk.create/1: :work_dir must be a file path"
     end
 
     work_dir
@@ -19,7 +19,7 @@ defmodule Xgit.Repository.OnDisk.Init do
   defp assert_not_exists!(path) do
     if File.exists?(path) do
       raise ArgumentError,
-            "Xgit.Repository.OnDisk.init/1: :work_dir must be a directory that doesn't already exist"
+            "Xgit.Repository.OnDisk.create/1: :work_dir must be a directory that doesn't already exist"
     else
       path
     end
