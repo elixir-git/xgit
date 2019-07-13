@@ -89,7 +89,7 @@ defmodule Xgit.Repository do
 
       alias Xgit.Repository
 
-      @behaviour Repository
+      # @behaviour Repository (not yet, but it will be)
     end
   end
 end

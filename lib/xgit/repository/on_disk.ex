@@ -10,6 +10,26 @@ defmodule Xgit.Repository.OnDisk do
   git so that results may be compared for similar operations.
   """
 
+  use Xgit.Repository
+
+  @doc ~S"""
+  Start an on-disk git repository.
+
+  ## Options
+
+  * **TBD**
+
+  Any other options are passed through to `GenServer.start_link/3`.
+
+  ## Return Value
+
+  See `GenServer.start_link/3`.
+
+  Use the functions in `Xgit.Repository` to interact with this repository process.
+  """
+  @spec start_link(opts :: Keyword.t()) :: GenServer.on_start()
+  def start_link(opts \\ []), do: Repository.start_link(__MODULE__, opts, opts)
+
   @doc ~S"""
   Creates a new, empty git repository on the local file system.
 
