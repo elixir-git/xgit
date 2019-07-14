@@ -5,11 +5,21 @@ defmodule Xgit.Core.ObjectTest do
 
   describe "new/1" do
     test "happy path: content provided, type defaulted" do
-      assert Object.new(content: "foo") == %Object{type: :blob, content: "foo"}
+      assert Object.new(content: "foo") == %Object{
+               type: :blob,
+               content: "foo",
+               size: :unknown,
+               id: :unknown
+             }
     end
 
     test "happy path: content and type both provided" do
-      assert Object.new(content: "foo", type: :tag) == %Object{type: :tag, content: "foo"}
+      assert Object.new(content: "foo", type: :tag) == %Object{
+               type: :tag,
+               content: "foo",
+               size: :unknown,
+               id: :unknown
+             }
     end
 
     test "error: type invalid" do
