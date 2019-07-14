@@ -1,6 +1,6 @@
-defmodule Xgit.Plumbing.ObjectTypeTest do
+defmodule Xgit.Core.ObjectTypeTest do
   use ExUnit.Case, async: true
-  use Xgit.Plumbing.ObjectType
+  use Xgit.Core.ObjectType
 
   @object_types [:blob, :tree, :commit, :tag]
 
