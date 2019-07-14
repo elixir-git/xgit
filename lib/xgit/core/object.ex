@@ -8,6 +8,7 @@ defmodule Xgit.Core.Object do
   use Xgit.Core.ObjectType
 
   alias Xgit.Core.ContentSource
+  alias Xgit.Core.ObjectId
 
   @typedoc ~S"""
   This struct describes a single object stored or about to be stored in a git
@@ -17,13 +18,18 @@ defmodule Xgit.Core.Object do
 
   * `:type`: the object's type (`:blob`, `:tree`, `:commit`, or `:tag`)
   * `:content`: how to obtain the content (see `Xgit.Core.ContentSource`)
+  * `:size`: size (in bytes) of the object or `:unknown`
+  * `:id`: object ID (40 chars hex) of the object or `:unknown`
   """
   @type t :: %__MODULE__{
           type: ObjectType.t(),
-          content: ContentSource.t()
+          content: ContentSource.t(),
+          size: non_neg_integer() | :unknown,
+          id: ObjectId.t() | :unknown
         }
 
-  defstruct [:type, :content]
+  @enforce_keys [:type, :content, :size, :id]
+  defstruct [:type, :content, :size, :id]
 
   @doc ~S"""
   Constructs a new `Object`.
@@ -47,6 +53,6 @@ defmodule Xgit.Core.Object do
       raise ArgumentError, "Xgit.Core.Object.new/1: :content is missing"
     end
 
-    %__MODULE__{type: type, content: content}
+    %__MODULE__{type: type, content: content, size: :unknown, id: :unknown}
   end
 end
