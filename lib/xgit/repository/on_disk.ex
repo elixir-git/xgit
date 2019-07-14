@@ -9,7 +9,6 @@ defmodule Xgit.Repository.OnDisk do
   That said, it does intentionally use the same `.git` folder format as command-line
   `git` so that results may be compared for similar operations.
   """
-
   use Xgit.Repository
 
   @doc ~S"""
@@ -32,7 +31,7 @@ defmodule Xgit.Repository.OnDisk do
   @spec start_link(opts :: Keyword.t()) :: GenServer.on_start()
   def start_link(opts \\ []), do: Repository.start_link(__MODULE__, opts, opts)
 
-  @impl GenServer
+  @impl true
   def init(opts) when is_list(opts) do
     work_dir = Keyword.get(opts, :work_dir)
 
