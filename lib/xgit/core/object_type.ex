@@ -1,4 +1,4 @@
-defmodule Xgit.Plumbing.ObjectType do
+defmodule Xgit.Core.ObjectType do
   @moduledoc ~S"""
   Describes the known git object types.
 
@@ -30,8 +30,8 @@ defmodule Xgit.Plumbing.ObjectType do
 
   defmacro __using__(opts) do
     quote location: :keep, bind_quoted: [opts: opts] do
-      alias Xgit.Plumbing.ObjectType
-      import Xgit.Plumbing.ObjectType, only: [is_object_type: 1]
+      alias Xgit.Core.ObjectType
+      import Xgit.Core.ObjectType, only: [is_object_type: 1]
     end
   end
 end
