@@ -2,6 +2,7 @@ defmodule Xgit.Repository.OnDisk.Create do
   @moduledoc false
   # Implements Xgit.Repository.OnDisk.create/1.
 
+  @spec create!(work_dir: String.t()) :: :ok
   def create!(opts) when is_list(opts) do
     work_dir = Keyword.get(opts, :work_dir)
 
