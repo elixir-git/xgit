@@ -33,7 +33,7 @@ defmodule Xgit.Core.Object do
   * `:type`: the object's type (default: `:blob`)
   * `:content`: how to obtain the content (see `Xgit.Core.ContentSource`)
   """
-  @spec new(type: ObjectType.t | nil, content: ContentSource.t) :: t
+  @spec new(type: ObjectType.t() | nil, content: ContentSource.t()) :: t
   def new(opts) when is_list(opts) do
     type = Keyword.get(opts, :type, :blob)
 

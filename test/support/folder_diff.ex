@@ -4,7 +4,7 @@ defmodule FolderDiff do
 
   import ExUnit.Assertions
 
-  @spec assert_folders_are_equal(folder1 :: Path.t, folder2 :: Path.t) :: :ok
+  @spec assert_folders_are_equal(folder1 :: Path.t(), folder2 :: Path.t()) :: :ok
   def assert_folders_are_equal(folder1, folder2) do
     files1 = folder1 |> File.ls!() |> Enum.sort()
     files2 = folder2 |> File.ls!() |> Enum.sort()
