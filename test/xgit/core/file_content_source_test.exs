@@ -1,4 +1,4 @@
-defmodule Xgit.Core.ContentSource.FileTest do
+defmodule Xgit.Core.FileContentSourceTest do
   use ExUnit.Case, async: true
 
   alias Xgit.Core.ContentSource
