@@ -1,7 +1,7 @@
 defmodule Xgit.Core.FileModeTest do
   use ExUnit.Case, async: true
 
-  alias Xgit.Core.FileMode
+  use Xgit.Core.FileMode
 
   test "tree/0" do
     assert FileMode.tree() == 0o040000
@@ -63,5 +63,31 @@ defmodule Xgit.Core.FileModeTest do
 
     assert FileMode.valid?(FileMode.gitlink())
     refute FileMode.valid?(FileMode.gitlink() + 1)
+  end
+
+  @valid_file_modes [0o040000, 0o120000, 0o100644, 0o100755, 0o160000]
+
+  defp accepted_file_mode?(t) when is_file_mode(t), do: true
+  defp accepted_file_mode?(_), do: false
+
+  describe "is_file_mode/1" do
+    test "accepts known file modes" do
+      for t <- @valid_file_modes do
+        assert accepted_file_mode?(t)
+      end
+    end
+
+    test "rejects invalid values" do
+      refute accepted_file_mode?(:mumble)
+      refute accepted_file_mode?(0)
+      refute accepted_file_mode?(1)
+      refute accepted_file_mode?(0o100645)
+      refute accepted_file_mode?("blob")
+      refute accepted_file_mode?('blob')
+      refute accepted_file_mode?(%{blob: true})
+      refute accepted_file_mode?({:blob})
+      refute accepted_file_mode?(fn -> :blob end)
+      refute accepted_file_mode?(self())
+    end
   end
 end

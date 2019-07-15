@@ -14,6 +14,10 @@ defmodule Xgit.Core.FileMode do
   * `0o120000` - symbolic link
   * `0o040000` - tree (subdirectory)
   * `0o160000` - submodule (aka gitlink)
+
+  This module is intended to be `use`d. Doing so will create an `alias` to the module
+  so as to make `FileMode.t` available for typespecs and will `import` the
+  `is_file_mode/1` guard.
   """
   @type t :: 0o100644 | 0o100755 | 0o120000 | 0o040000 | 0o160000
 
@@ -77,4 +81,18 @@ defmodule Xgit.Core.FileMode do
   def valid?(0o100755), do: true
   def valid?(0o160000), do: true
   def valid?(_), do: false
+
+  @valid_file_modes [0o100644, 0o100755, 0o120000, 0o040000, 0o160000]
+
+  @doc ~S"""
+  This guard requires the value to be one of the known git file mode values.
+  """
+  defguard is_file_mode(t) when t in @valid_file_modes
+
+  defmacro __using__(opts) do
+    quote location: :keep, bind_quoted: [opts: opts] do
+      alias Xgit.Core.FileMode
+      import Xgit.Core.FileMode, only: [is_file_mode: 1]
+    end
+  end
 end
