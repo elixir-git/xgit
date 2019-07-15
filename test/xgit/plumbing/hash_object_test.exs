@@ -11,5 +11,17 @@ defmodule Xgit.Plumbing.HashObjectTest do
       assert HashObject.run(content: "test content\n") ==
                "d670460b4b4aece5915caf5c68d12f560a9fe3e4"
     end
+
+    test "error: :content missing" do
+      assert_raise ArgumentError, "Xgit.Core.Object.new/1: :content is missing", fn ->
+        HashObject.run([])
+      end
+    end
+
+    test "error: :type invalid" do
+      assert_raise ArgumentError, "Xgit.Core.Object.new/1: type :bogus is invalid", fn ->
+        HashObject.run(content: "test content\n", type: :bogus)
+      end
+    end
   end
 end

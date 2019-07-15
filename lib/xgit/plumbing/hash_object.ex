@@ -13,20 +13,27 @@ defmodule Xgit.Plumbing.HashObject do
 
   ## Options
 
-  * `:type`: the object's type (default: `:blob`)
-  * `:content`: how to obtain the content (see `Xgit.Core.ContentSource`)
+  `:content`: how to obtain the content
+    * Type: `Xgit.Core.ContentSource`
+    * _REQUIRED_
+
+  `:type`: the object's type
+    * Type: `Xgit.Core.ObjectType`
+    * Default: `:blob`
+    * See [`-t` option on `git hash-object`](https://git-scm.com/docs/git-hash-object#Documentation/git-hash-object.txt--tlttypegt)
 
   ## Return Value
 
-  The object's ID.
+  The object's ID. (See `Xgit.Core.ObjectId`.)
   """
   @spec run(type: ObjectType.t() | nil, content: ContentSource.t()) :: ObjectID.t()
   def run(opts) when is_list(opts) do
-    repo = Keyword.get(opts, :repository)
+    # repo = Keyword.get(opts, :repository)
 
     opts
     |> Object.new()
-    |> apply_filters(repo)
+    # (repo)
+    |> apply_filters(nil)
     |> annotate_with_size()
     |> validate_content()
     |> assign_object_id()
