@@ -1,20 +1,21 @@
 # Xgit
 
-Pure Elixir native implementation of git [![Build Status](https://travis-ci.org/scouten/redo.svg?branch=master)](https://travis-ci.org/scouten/redo) [![Coverage Status](https://coveralls.io/repos/github/scouten/redo/badge.svg?branch=master)](https://coveralls.io/github/scouten/redo?branch=master)
+Pure Elixir native implementation of git [![Build Status](https://travis-ci.org/elixir-git/xgit.svg?branch=master)](https://travis-ci.org/elixir-git/xgit) [![Coverage Status](https://coveralls.io/repos/github/elixir-git/xgit/badge.svg?branch=master)](https://coveralls.io/github/elixir-git/xgit?branch=master)
 
 
 ## WORK IN PROGRESS
 
 **This is very much a work in progress and not ready to be used in production.** What is implemented is well-tested and believed to be correct and stable, but much of the core git infrastructure is not yet implemented. There has been little attention, as yet, to measuring performance.
 
+
 ## Where Can I Help?
 
-**TO DO:** Rewrite.
+This version of xgit replaces an earlier version which was a port from the [jgit](https://www.eclipse.org/jgit/). In coming days/weeks, I'll share more about the new direction and where help would be most welcome.
 
-**There is also important work to be done in backfilling existing porting work.** Please see:
+For now, please see:
 
-* [Issues tagged "good first issue"](https://github.com/scouten/redo/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-* [Issues tagged "help wanted"](https://github.com/scouten/redo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) _more issues, but potentially more challenging_
+* [Issues tagged "good first issue"](https://github.com/elixir-git/xgit/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+* [Issues tagged "help wanted"](https://github.com/elixir-git/xgit/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) _more issues, but potentially more challenging_
 
 
 ## Why an All-Elixir Implementation?
@@ -29,4 +30,4 @@ libgit2 is a big, complex library. And while it's been battle-tested, it's also 
 
 ## Credits
 
-xgit is heavily influenced by [jgit](https://www.eclipse.org/jgit/), an all-Java implementation of git. Many thanks to the jgit team for their hard work. Small portions of xgit are based on an earlier port from Java to Elixir; those files retain the original credits and license from the jgit project.
+xgit is heavily influenced by [jgit](https://www.eclipse.org/jgit/), an all-Java implementation of git. Many thanks to the jgit team for their hard work. Small portions of xgit are based on [an earlier port from Java to Elixir](https://github.com/elixir-git/archived-jgit-port/); those files retain the original credits and license from the jgit project.

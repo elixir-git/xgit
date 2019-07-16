@@ -47,7 +47,7 @@ defmodule Xgit.Plumbing.HashObject do
     # ContentSource implementation with another implementation that would
     # perform the content remapping. For now, always a no-op.
 
-    # https://github.com/scouten/redo/issues/18
+    # https://github.com/elixir-git/xgit/issues/18
 
     object
   end
