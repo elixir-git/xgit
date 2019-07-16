@@ -342,7 +342,7 @@ defmodule Xgit.Util.RawParseUtils do
 
   Returns `:utf8` or `:latin1`.
 
-  Raises `Xgit.Errors.UnsupportedCharsetError` if the character set is unknown.
+  Raises `ArgumentError` if the character set is unknown.
 
   _WARNING:_ Compared to jgit, the character set support in xgit is limited.
   """
