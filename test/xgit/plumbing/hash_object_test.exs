@@ -4,12 +4,12 @@ defmodule Xgit.Plumbing.HashObjectTest do
   alias Xgit.Core.FileContentSource
   alias Xgit.Plumbing.HashObject
 
-  describe "run/1" do
+  describe "run/2" do
     test "happy path: deriving SHA hash with no repo" do
       # $ echo 'test content' | git hash-object --stdin
       # d670460b4b4aece5915caf5c68d12f560a9fe3e4
 
-      assert HashObject.run(content: "test content\n") ==
+      assert HashObject.run("test content\n") ==
                "d670460b4b4aece5915caf5c68d12f560a9fe3e4"
     end
 
@@ -28,18 +28,18 @@ defmodule Xgit.Plumbing.HashObjectTest do
       expected_object_id = String.trim(output)
 
       fcs = FileContentSource.new(path)
-      assert HashObject.run(content: fcs) == expected_object_id
+      assert HashObject.run(fcs) == expected_object_id
     end
 
-    test "error: :content missing" do
-      assert_raise ArgumentError, "Xgit.Core.Object.new/1: :content is missing", fn ->
-        HashObject.run([])
+    test "error: content nil" do
+      assert_raise FunctionClauseError, fn ->
+        HashObject.run(nil)
       end
     end
 
     test "error: :type invalid" do
-      assert_raise ArgumentError, "Xgit.Core.Object.new/1: type :bogus is invalid", fn ->
-        HashObject.run(content: "test content\n", type: :bogus)
+      assert_raise ArgumentError, "Xgit.Plumbing.HashObject.run/2: type :bogus is invalid", fn ->
+        HashObject.run("test content\n", type: :bogus)
       end
     end
   end
