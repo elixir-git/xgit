@@ -10,7 +10,7 @@ Pure Elixir native implementation of git [![Build Status](https://travis-ci.org/
 
 ## Where Can I Help?
 
-This version of xgit replaces an earlier version which was a port from the [jgit](https://www.eclipse.org/jgit/). In coming days/weeks, I'll share more about the new direction and where help would be most welcome.
+This version of xgit replaces an earlier version which was a port from the [Java implementation of git, jgit](https://www.eclipse.org/jgit/). In coming days/weeks, I'll share more about the new direction and where help would be most welcome.
 
 For now, please see:
 
