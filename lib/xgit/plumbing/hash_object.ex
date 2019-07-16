@@ -7,15 +7,17 @@ defmodule Xgit.Plumbing.HashObject do
 
   alias Xgit.Core.ContentSource
   alias Xgit.Core.Object
+  alias Xgit.Core.ObjectType
 
   @doc ~S"""
   Computes an object ID and optionally writes that into the repository's object store.
 
-  ## Options
+  ## Parameters
 
-  `:content`: how to obtain the content
-    * Type: `Xgit.Core.ContentSource`
-    * _REQUIRED_
+  `content` describes how this function should obtain the content.
+  (See `Xgit.Core.ContentSource`.)
+
+  ## Options
 
   `:type`: the object's type
     * Type: `Xgit.Core.ObjectType`
@@ -26,14 +28,19 @@ defmodule Xgit.Plumbing.HashObject do
 
   The object's ID. (See `Xgit.Core.ObjectId`.)
   """
-  @spec run(type: ObjectType.t() | nil, content: ContentSource.t()) :: ObjectID.t()
-  def run(opts) when is_list(opts) do
-    # repo = Keyword.get(opts, :repository)
+  @spec run(content :: ContentSource.t(), type: ObjectType.t() | nil) :: ObjectID.t()
+  def run(content, opts \\ []) when not is_nil(content) and is_list(opts) do
+    type = Keyword.get(opts, :type, :blob)
 
-    opts
-    |> Object.new()
-    # (repo)
-    |> apply_filters(nil)
+    unless ObjectType.valid?(type) do
+      raise ArgumentError, "Xgit.Plumbing.HashObject.run/2: type #{inspect(type)} is invalid"
+    end
+
+    repo = nil
+    # Keyword.get(opts, :repository)
+
+    %Object{content: content, type: Keyword.get(opts, :type, :blob)}
+    |> apply_filters(repo)
     |> annotate_with_size()
     |> validate_content()
     |> assign_object_id()

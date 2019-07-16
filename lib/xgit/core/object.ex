@@ -28,31 +28,6 @@ defmodule Xgit.Core.Object do
           id: ObjectId.t() | :unknown
         }
 
-  @enforce_keys [:type, :content, :size, :id]
-  defstruct [:type, :content, :size, :id]
-
-  @doc ~S"""
-  Constructs a new `Object`.
-
-  ## Options
-
-  * `:type`: the object's type (default: `:blob`)
-  * `:content`: how to obtain the content (see `Xgit.Core.ContentSource`)
-  """
-  @spec new(type: ObjectType.t() | nil, content: ContentSource.t()) :: t
-  def new(opts) when is_list(opts) do
-    type = Keyword.get(opts, :type, :blob)
-
-    unless is_object_type(type) do
-      raise ArgumentError, "Xgit.Core.Object.new/1: type #{inspect(type)} is invalid"
-    end
-
-    content = Keyword.get(opts, :content)
-
-    if is_nil(content) do
-      raise ArgumentError, "Xgit.Core.Object.new/1: :content is missing"
-    end
-
-    %__MODULE__{type: type, content: content, size: :unknown, id: :unknown}
-  end
+  @enforce_keys [:type, :content]
+  defstruct [:type, :content, size: :unknown, id: :unknown]
 end
