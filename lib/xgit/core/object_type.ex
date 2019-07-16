@@ -24,6 +24,12 @@ defmodule Xgit.Core.ObjectType do
   @type t :: :blob | :tree | :commit | :tag
 
   @doc ~S"""
+  Return `true` if the value is one of the four known git object types.
+  """
+  @spec valid?(t :: term) :: boolean
+  def valid?(t), do: t in @object_types
+
+  @doc ~S"""
   This guard requires the value to be one of the four known git object types.
   """
   defguard is_object_type(t) when t in @object_types
