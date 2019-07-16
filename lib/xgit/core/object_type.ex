@@ -26,6 +26,7 @@ defmodule Xgit.Core.ObjectType do
   @doc ~S"""
   Return `true` if the value is one of the four known git object types.
   """
+  @spec valid?(t :: term) :: boolean
   def valid?(t), do: t in @object_types
 
   @doc ~S"""
