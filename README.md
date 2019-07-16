@@ -9,18 +9,12 @@ Pure Elixir native implementation of git [![Build Status](https://travis-ci.org/
 
 ## Where Can I Help?
 
-**The current plan is to implement core git infrastructure (often referred to as "plumbing").** Once most of the plumbing is in place, then we can build on specific porcelain-level APIs and/or server infrastructure (push, pull, clone, etc.).
-
-**The current major infrastructure being targeted is porting the jgit `RevWalk` class.** This provides core infrastructure for walking commit history and object graphs. Progress on this project is tracked as follows:
-
-* [Porting Roadmap](./notes/porting_roadmap.txt)
-* [GitHub project for porting `RevWalk`](https://github.com/scouten/redo/projects/3)
+**TO DO:** Rewrite.
 
 **There is also important work to be done in backfilling existing porting work.** Please see:
 
 * [Issues tagged "good first issue"](https://github.com/scouten/redo/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 * [Issues tagged "help wanted"](https://github.com/scouten/redo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) _more issues, but potentially more challenging_
-* [Project "Backfill incomplete implementations"](https://github.com/scouten/redo/projects/2)
 
 
 ## Why an All-Elixir Implementation?
@@ -35,4 +29,4 @@ libgit2 is a big, complex library. And while it's been battle-tested, it's also 
 
 ## Credits
 
-xgit is heavily influenced by [jgit](https://www.eclipse.org/jgit/), an all-Java implementation of git. Many thanks to the jgit team for their hard work.
+xgit is heavily influenced by [jgit](https://www.eclipse.org/jgit/), an all-Java implementation of git. Many thanks to the jgit team for their hard work. Small portions of xgit are based on an earlier port from Java to Elixir; those files retain the original credits and license from the jgit project.
