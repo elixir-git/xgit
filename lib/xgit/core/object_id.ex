@@ -8,6 +8,7 @@ defmodule Xgit.Core.ObjectId do
   use Xgit.Core.ObjectType
 
   alias Xgit.Core.ContentSource
+  alias Xgit.Core.ObjectId
 
   @typedoc "A string containing 40 bytes of lowercase hex digits."
   @type t :: String.t()
@@ -32,10 +33,16 @@ defmodule Xgit.Core.ObjectId do
   @doc ~S"""
   Assign an object ID for a given data blob.
 
+  No validation is performed on the content.
+
   ## Parameters
 
   * `data` describes how to read the data. (See `Xgit.Core.ContentSource`.)
-  * `type` is the intended git object type for this data. (See `Xgit.Core.ObjectType.`)
+  * `type` is the intended git object type for this data. (See `Xgit.Core.ObjectType`.)
+
+  ## Return Value
+
+  The object ID. (See `Xgit.Core.ObjectId`.)
   """
   @spec calculate_id(data :: ContentSource.t(), type :: ObjectType.t()) :: ObjectId.t()
   def calculate_id(data, type) when not is_nil(data) and is_object_type(type) do
