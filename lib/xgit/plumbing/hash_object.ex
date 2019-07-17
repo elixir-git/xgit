@@ -7,6 +7,7 @@ defmodule Xgit.Plumbing.HashObject do
 
   alias Xgit.Core.ContentSource
   alias Xgit.Core.Object
+  alias Xgit.Core.ObjectId
   alias Xgit.Core.ObjectType
 
   @doc ~S"""
@@ -68,30 +69,8 @@ defmodule Xgit.Plumbing.HashObject do
     object
   end
 
-  defp assign_object_id(%Object{content: content, size: size, type: type} = object),
-    do: %{object | id: id_for(content, size, type)}
-
-  defp id_for(data, size, type) do
-    :sha
-    |> :crypto.hash_init()
-    |> :crypto.hash_update('#{type}')
-    |> :crypto.hash_update(' ')
-    |> :crypto.hash_update('#{size}')
-    |> :crypto.hash_update([0])
-    |> hash_update(ContentSource.stream(data))
-    |> :crypto.hash_final()
-    |> Base.encode16()
-    |> String.downcase()
-  end
-
-  defp hash_update(crypto_state, data) when is_list(data),
-    do: :crypto.hash_update(crypto_state, ContentSource.stream(data))
-
-  defp hash_update(crypto_state, data) do
-    Enum.reduce(data, crypto_state, fn item, crypto_state ->
-      :crypto.hash_update(crypto_state, item)
-    end)
-  end
+  defp assign_object_id(%Object{content: content, type: type} = object),
+    do: %{object | id: ObjectId.calculate_id(content, type)}
 
   defp maybe_write_to_repo(object, _opts) do
     # TO DO: Pass the object through to repo to write it to disk.
