@@ -22,6 +22,20 @@ defmodule Xgit.Core.ObjectIdTest do
     refute ObjectId.valid?(nil)
   end
 
+  test "from_hex_charlist/1" do
+    assert ObjectId.from_hex_charlist('1234567890abcdef12341234567890abcdef1234') ==
+             {"1234567890abcdef12341234567890abcdef1234", []}
+
+    assert ObjectId.from_hex_charlist('1234567890abcdef1231234567890abcdef1234') == false
+
+    assert ObjectId.from_hex_charlist('1234567890abcdef123451234567890abcdef1234') ==
+             {"1234567890abcdef123451234567890abcdef123", '4'}
+
+    assert ObjectId.from_hex_charlist('1234567890abCdef12341234567890abcdef1234') == false
+
+    assert ObjectId.from_hex_charlist('1234567890abXdef12341234567890abcdef1234') == false
+  end
+
   describe "calculate_id/3" do
     test "happy path: SHA hash with string content" do
       assert ObjectId.calculate_id("test content\n", :blob) ==
