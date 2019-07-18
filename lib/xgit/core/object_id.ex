@@ -31,6 +31,28 @@ defmodule Xgit.Core.ObjectId do
   def valid?(_), do: false
 
   @doc ~S"""
+  Read an object ID from a hex string (charlist).
+
+  ## Return Value
+
+  If a valid ID is found, returns `{id, next}` where `id` is the matched ID
+  as a string and `next` is the remainder of the charlist after the matched ID.
+
+  If no such ID is found, returns `false`.
+  """
+  @spec from_hex_charlist(b :: charlist) :: {t, charlist} | false
+  def from_hex_charlist(b) when is_list(b) do
+    {maybe_id, remainder} = Enum.split(b, 40)
+
+    with maybe_id_string <- to_string(maybe_id),
+         true <- valid?(maybe_id_string) do
+      {maybe_id_string, remainder}
+    else
+      _ -> false
+    end
+  end
+
+  @doc ~S"""
   Assign an object ID for a given data blob.
 
   No validation is performed on the content.
