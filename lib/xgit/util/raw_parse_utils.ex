@@ -51,19 +51,21 @@ defmodule Xgit.Util.RawParseUtils do
   """
 
   @doc ~S"""
-  Does the charlist `b` start with the same characters as `str`?
+  Return the portion of the charlist `b` that starts with the prefix `prefix`.
 
-  If so, returns `{true, next}` where `next` is the remaining portion of `b`
-  after the matched `str`.
+  ## Return Values
 
-  If not, returns `false`.
+  If `b` does in fact start with `prefix`, return the portion of the charlist
+  that follows `prefix`.
+
+  If not, return `nil`.
   """
-  @spec match_prefix?(b :: charlist, str :: charlist) :: {true, charlist} | false
-  def match_prefix?(b, str)
+  @spec after_prefix(b :: charlist, prefix :: charlist) :: charlist | false
+  def after_prefix(b, prefix)
 
-  def match_prefix?(b, []), do: {true, b}
-  def match_prefix?([c | b], [c | str]), do: match_prefix?(b, str)
-  def match_prefix?(_, _), do: false
+  def after_prefix(b, []), do: b
+  def after_prefix([c | b], [c | prefix]), do: after_prefix(b, prefix)
+  def after_prefix(_, _), do: nil
 
   @doc ~S"""
   Parse a base-10 numeric value from a charlist of ASCII digits into a number.

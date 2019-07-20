@@ -53,21 +53,21 @@ defmodule Xgit.Util.RawParseUtilsTest do
 
   alias Xgit.Util.RawParseUtils, as: RPU
 
-  describe "match_prefix?/2" do
+  describe "after_prefix/2" do
     test "equal" do
-      assert RPU.match_prefix?(' differ\n', ' differ\n') == {true, []}
+      assert RPU.after_prefix(' differ\n', ' differ\n') == []
     end
 
     test "not equal" do
-      assert RPU.match_prefix?(' differ\n', 'a differ\n') == false
+      assert RPU.after_prefix(' differ\n', 'a differ\n') == nil
     end
 
     test "prefix" do
-      assert RPU.match_prefix?('author A. U. Thor', 'author') == {true, ' A. U. Thor'}
+      assert RPU.after_prefix('author A. U. Thor', 'author') == ' A. U. Thor'
     end
 
     test "incomplete match" do
-      assert RPU.match_prefix?('author ', 'author autho') == false
+      assert RPU.after_prefix('author ', 'author autho') == nil
     end
   end
 
