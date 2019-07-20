@@ -50,8 +50,6 @@ defmodule Xgit.Util.RawParseUtils do
   Handy utility functions to parse raw object contents.
   """
 
-  alias Xgit.Core.PersonIdent
-
   @doc ~S"""
   Does the charlist `b` start with the same characters as `str`?
 
@@ -183,7 +181,7 @@ defmodule Xgit.Util.RawParseUtils do
   that was found (or 0 if no number found there) and `new_buffer` is the charlist
   following the number that was parsed.
   """
-  @spec parse_timezone_offset(b :: charlist) :: {Xgit.Lib.Constants.tz_offset(), charlist}
+  @spec parse_timezone_offset(b :: charlist) :: {Xgit.Core.PersonIdent.tz_offset(), charlist}
   def parse_timezone_offset(b) when is_list(b) do
     {v, b} = parse_base_10(b)
 
@@ -358,78 +356,6 @@ defmodule Xgit.Util.RawParseUtils do
 
   defp trim_if_string(s) when is_binary(s), do: String.trim(s)
   defp trim_if_string(s), do: s
-
-  @doc ~S"""
-  Parse a name line (e.g. author, committer, tagger) into a `PersonIdent` struct.
-
-  When passing in a charlist for `b` callers should use the return value of
-  `author/1` or `committer/1`, as these functions provide the proper subset of
-  the buffer.
-
-  Returns `%PersonIdent{}` or `nil` in case the identity could not be parsed.
-  """
-  @spec parse_person_ident(b :: charlist) :: Xgit.Core.PersonIdent.t()
-  def parse_person_ident(b) when is_list(b) do
-    with [?< | email_start] <- next_lf(b, ?<),
-         true <- has_closing_angle_bracket?(email_start),
-         email <- until_next_lf(email_start, ?>),
-         name <- parse_name(b),
-         {time, tz} <- parse_tz(email_start) do
-      %PersonIdent{name: decode(name), email: decode(email), when: time, tz_offset: tz}
-    else
-      # Could not parse the line as a PersonIdent.
-      _ -> nil
-    end
-  end
-
-  defp has_closing_angle_bracket?(b), do: Enum.any?(b, &(&1 == ?>))
-
-  defp parse_name(b) do
-    b
-    |> until_next_lf(?<)
-    |> Enum.reverse()
-    |> drop_first_if_space()
-    |> Enum.reverse()
-  end
-
-  defp drop_first_if_space([?\s | b]), do: b
-  defp drop_first_if_space(b), do: b
-
-  defp parse_tz(first_email_start) do
-    # Start searching from end of line, as after first name-email pair,
-    # another name-email pair may occur. We will ignore all kinds of
-    # "junk" following the first email.
-
-    # We've to use (emailE - 1) for the case that raw[email] is LF,
-    # otherwise we would run too far. "-2" is necessary to position
-    # before the LF in case of LF termination resp. the penultimate
-    # character if there is no trailing LF.
-
-    [?> | first_email_end] = next_lf(first_email_start, ?>)
-    rev = Enum.reverse(first_email_end)
-
-    {tz, rev} = trim_word_and_rev(rev)
-    {time, _rev} = trim_word_and_rev(rev)
-
-    case {time, tz} do
-      {[_ | _], [_ | _]} ->
-        {time |> parse_base_10() |> elem(0), tz |> parse_timezone_offset() |> elem(0)}
-
-      _ ->
-        {0, 0}
-    end
-  end
-
-  defp trim_word_and_rev(rev) do
-    rev = Enum.drop_while(rev, &(&1 == ?\s))
-
-    word =
-      rev
-      |> Enum.take_while(&(&1 != ?\s))
-      |> Enum.reverse()
-
-    {word, Enum.drop(rev, Enum.count(word))}
-  end
 
   @doc ~S"""
   Convert a list of bytes to an Elixir (UTF-8) string when the encoding is not

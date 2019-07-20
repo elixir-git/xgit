@@ -51,6 +51,11 @@ defmodule Xgit.Core.PersonIdent do
   A combination of a person identity and time in git.
   """
 
+  alias Xgit.Util.RawParseUtils
+
+  @typedoc "Time zone offset in minutes +/- from GMT."
+  @type tz_offset :: -720..840
+
   @typedoc ~S"""
   The tuple of name, email, time, and time zone that specifies who wrote or
   committed something.
@@ -66,11 +71,95 @@ defmodule Xgit.Core.PersonIdent do
           name: String.t(),
           email: String.t(),
           when: integer,
-          tz_offset: Xgit.Lib.Constants.tz_offset()
+          tz_offset: tz_offset()
         }
 
   @enforce_keys [:name, :email, :when, :tz_offset]
   defstruct [:name, :email, :when, :tz_offset]
+
+  @doc ~S"""
+  Parse a name line (e.g. author, committer, tagger) into a `PersonIdent` struct.
+
+  ## Parameters
+
+  `b` should be a charlist of an "author" or "committer" line pointing to the
+  character after the header name and space.
+
+  The functions `Xgit.Util.RawParseUtils.author/1` and `Xgit.Util.RawParseUtils.committer/1`
+  will return suitable charlists.
+
+  ## Return Value
+
+  Returns a `PersonIdent` struct or `nil` if the charlist did not point to a
+  properly-formatted identity.
+  """
+  @spec from_byte_list(b :: [byte]) :: t() | nil
+  def from_byte_list(b) when is_list(b) do
+    with [?< | email_start] <- RawParseUtils.next_lf(b, ?<),
+         true <- has_closing_angle_bracket?(email_start),
+         email <- RawParseUtils.until_next_lf(email_start, ?>),
+         name <- parse_name(b),
+         {time, tz} <- parse_tz(email_start) do
+      %__MODULE__{
+        name: RawParseUtils.decode(name),
+        email: RawParseUtils.decode(email),
+        when: time,
+        tz_offset: tz
+      }
+    else
+      _ -> nil
+    end
+  end
+
+  defp has_closing_angle_bracket?(b), do: Enum.any?(b, &(&1 == ?>))
+
+  defp parse_name(b) do
+    b
+    |> RawParseUtils.until_next_lf(?<)
+    |> Enum.reverse()
+    |> drop_first_if_space()
+    |> Enum.reverse()
+  end
+
+  defp drop_first_if_space([?\s | b]), do: b
+  defp drop_first_if_space(b), do: b
+
+  defp parse_tz(first_email_start) do
+    # Start searching from end of line, as after first name-email pair,
+    # another name-email pair may occur. We will ignore all kinds of
+    # "junk" following the first email.
+
+    # We've to use (emailE - 1) for the case that raw[email] is LF,
+    # otherwise we would run too far. "-2" is necessary to position
+    # before the LF in case of LF termination resp. the penultimate
+    # character if there is no trailing LF.
+
+    [?> | first_email_end] = RawParseUtils.next_lf(first_email_start, ?>)
+    rev = Enum.reverse(first_email_end)
+
+    {tz, rev} = trim_word_and_rev(rev)
+    {time, _rev} = trim_word_and_rev(rev)
+
+    case {time, tz} do
+      {[_ | _], [_ | _]} ->
+        {time |> RawParseUtils.parse_base_10() |> elem(0),
+         tz |> RawParseUtils.parse_timezone_offset() |> elem(0)}
+
+      _ ->
+        {0, 0}
+    end
+  end
+
+  defp trim_word_and_rev(rev) do
+    rev = Enum.drop_while(rev, &(&1 == ?\s))
+
+    word =
+      rev
+      |> Enum.take_while(&(&1 != ?\s))
+      |> Enum.reverse()
+
+    {word, Enum.drop(rev, Enum.count(word))}
+  end
 
   @doc ~S"""
   Sanitize the given string for use in an identity and append to output.
@@ -88,7 +177,7 @@ defmodule Xgit.Core.PersonIdent do
   @doc ~S"""
   Formats a timezone offset.
   """
-  @spec format_timezone(offset :: Xgit.Lib.Constants.tz_offset()) :: String.t()
+  @spec format_timezone(offset :: tz_offset()) :: String.t()
   def format_timezone(offset) when is_integer(offset) do
     sign =
       if offset < 0,
