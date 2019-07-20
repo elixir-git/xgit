@@ -359,14 +359,4 @@ defmodule Xgit.Core.ValidatePathTest do
       refute gitmodules?('.GITMODULES')
     end
   end
-
-  # describe "check_path_segment!/2" do
-  #   test "bug 477090" do
-  #     checker = %ObjectChecker{macosx?: true}
-  #
-  #     # U+221E 0xe2889e INFINITY ∞ .html
-  #     bytes = [0xE2, 0x88, 0x9E, 0x2E, 0x68, 0x74, 0x6D, 0x6C]
-  #
-  #     assert :ok = ObjectChecker.check_path_segment!(checker, bytes)
-  #   end
 end
