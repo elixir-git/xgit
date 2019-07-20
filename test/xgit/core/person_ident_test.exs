@@ -49,6 +49,143 @@ defmodule Xgit.Core.PersonIdentTest do
 
   alias Xgit.Core.PersonIdent
 
+  describe "from_byte_list/1" do
+    defp assert_person_ident(line, expected) do
+      actual_pi = PersonIdent.from_byte_list(line)
+      assert expected == actual_pi
+    end
+
+    test "legal cases" do
+      whxn = 1_234_567_890
+      tz = -420
+
+      assert_person_ident(
+        'Me <me@example.com> 1234567890 -0700',
+        %PersonIdent{name: "Me", email: "me@example.com", when: whxn, tz_offset: tz}
+      )
+
+      assert_person_ident(
+        ' Me <me@example.com> 1234567890 -0700',
+        %PersonIdent{name: " Me", email: "me@example.com", when: whxn, tz_offset: tz}
+      )
+
+      assert_person_ident(
+        'A U Thor <author@example.com> 1234567890 -0700',
+        %PersonIdent{name: "A U Thor", email: "author@example.com", when: whxn, tz_offset: tz}
+      )
+
+      assert_person_ident(
+        'A U Thor<author@example.com> 1234567890 -0700',
+        %PersonIdent{name: "A U Thor", email: "author@example.com", when: whxn, tz_offset: tz}
+      )
+
+      assert_person_ident(
+        'A U Thor<author@example.com>1234567890 -0700',
+        %PersonIdent{name: "A U Thor", email: "author@example.com", when: whxn, tz_offset: tz}
+      )
+
+      assert_person_ident(
+        ' A U Thor   < author@example.com > 1234567890 -0700',
+        %PersonIdent{
+          name: " A U Thor  ",
+          email: " author@example.com ",
+          when: whxn,
+          tz_offset: tz
+        }
+      )
+
+      assert_person_ident(
+        'A U Thor<author@example.com>1234567890 -0700',
+        %PersonIdent{name: "A U Thor", email: "author@example.com", when: whxn, tz_offset: tz}
+      )
+    end
+
+    test "fuzzy cases" do
+      whxn = 1_234_567_890
+      tz = -420
+
+      assert_person_ident(
+        'A U Thor <author@example.com>,  C O. Miter <comiter@example.com> 1234567890 -0700',
+        %PersonIdent{name: "A U Thor", email: "author@example.com", when: whxn, tz_offset: tz}
+      )
+
+      assert_person_ident(
+        'A U Thor <author@example.com> and others 1234567890 -0700',
+        %PersonIdent{name: "A U Thor", email: "author@example.com", when: whxn, tz_offset: tz}
+      )
+    end
+
+    test "incomplete cases" do
+      whxn = 1_234_567_890
+      tz = -420
+
+      assert_person_ident('Me <> 1234567890 -0700', %PersonIdent{
+        name: "Me",
+        email: "",
+        when: whxn,
+        tz_offset: tz
+      })
+
+      assert_person_ident(
+        ' <me@example.com> 1234567890 -0700',
+        %PersonIdent{name: "", email: "me@example.com", when: whxn, tz_offset: tz}
+      )
+
+      assert_person_ident(' <> 1234567890 -0700', %PersonIdent{
+        name: "",
+        email: "",
+        when: whxn,
+        tz_offset: tz
+      })
+
+      assert_person_ident('<>', %PersonIdent{name: "", email: "", when: 0, tz_offset: 0})
+
+      assert_person_ident(' <>', %PersonIdent{name: "", email: "", when: 0, tz_offset: 0})
+
+      assert_person_ident('<me@example.com>', %PersonIdent{
+        name: "",
+        email: "me@example.com",
+        when: 0,
+        tz_offset: 0
+      })
+
+      assert_person_ident(' <me@example.com>', %PersonIdent{
+        name: "",
+        email: "me@example.com",
+        when: 0,
+        tz_offset: 0
+      })
+
+      assert_person_ident('Me <>', %PersonIdent{name: "Me", email: "", when: 0, tz_offset: 0})
+
+      assert_person_ident('Me <me@example.com>', %PersonIdent{
+        name: "Me",
+        email: "me@example.com",
+        when: 0,
+        tz_offset: 0
+      })
+
+      assert_person_ident('Me <me@example.com> 1234567890', %PersonIdent{
+        name: "Me",
+        email: "me@example.com",
+        when: 0,
+        tz_offset: 0
+      })
+
+      assert_person_ident('Me <me@example.com> 1234567890 ', %PersonIdent{
+        name: "Me",
+        email: "me@example.com",
+        when: 0,
+        tz_offset: 0
+      })
+    end
+
+    test "malformed cases" do
+      assert_person_ident('Me me@example.com> 1234567890 -0700', nil)
+      assert_person_ident('Me <me@example.com 1234567890 -0700', nil)
+    end
+  end
+
   describe "sanitized/1" do
     test "strips whitespace and non-parseable characters from raw string" do
       assert PersonIdent.sanitized(" Baz>\n\u1234<Quux ") == "Baz\u1234Quux"
