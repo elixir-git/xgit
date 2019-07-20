@@ -313,7 +313,7 @@ defmodule Xgit.Util.RawParseUtils do
 
   Returns a charlist beginning just after the space in `encoding ` which should be
   the first character of the encoding's name. If no encoding header can be located,
-  `nil` is returned (ad UTF-8 should be assumed).
+  `nil` is returned (and UTF-8 should be assumed).
   """
   @spec encoding(b :: charlist) :: charlist | nil
   def encoding(b) when is_list(b), do: header_start('encoding', b)
@@ -322,7 +322,7 @@ defmodule Xgit.Util.RawParseUtils do
   Parse the `encoding ` header as a string.
 
   Returns the encoding header as specified in the commit or `nil` if the header
-  was not present and should be assumed.
+  was not present and UTF-8 should be assumed.
   """
   @spec parse_encoding_name(b :: charlist) :: charlist | nil
   def parse_encoding_name(b) when is_list(b) do
