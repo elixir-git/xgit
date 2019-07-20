@@ -454,15 +454,6 @@ defmodule Xgit.Core.ValidatePath do
   defp to_lower(b) when b >= ?A and b <= ?Z, do: b + 32
   defp to_lower(b), do: b
 
-  # defp normalize(%__MODULE__{macosx?: true}, name) when is_list(name) do
-  #   name
-  #   |> RawParseUtils.decode()
-  #   |> String.downcase()
-  #   |> :unicode.characters_to_nfc_binary()
-  # end
-  #
-  # defp normalize(name) when is_list(name), do: Enum.map(name, &to_lower/1)
-
   defp to_hex_string(data), do: "0x#{Enum.map_join(data, &byte_to_hex/1)}"
 
   defp byte_to_hex(b) when b < 16, do: "0" <> integer_to_lc_hex_string(b)
