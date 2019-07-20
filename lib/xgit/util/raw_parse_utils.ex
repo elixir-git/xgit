@@ -359,7 +359,7 @@ defmodule Xgit.Util.RawParseUtils do
 
   @doc ~S"""
   Convert a list of bytes to an Elixir (UTF-8) string when the encoding is not
-  definitively know. Try parsing as a UTF-8 byte array first, then try ISO-8859-1.
+  definitively known. Try parsing as a UTF-8 byte array first, then try ISO-8859-1.
 
   _PORTING NOTE:_ A lot of the simplification of this compared to jgit's implementation
   of RawParseUtils.decode comes from the observation that the only character set
