@@ -2,22 +2,22 @@ defmodule Xgit.Repository do
   @moduledoc ~S"""
   Represents an abstract git repository.
 
+  ## Looking for Typical Git Commands?
+
+  The operations to inspect or mutate a git repository are not located in this
+  module. (See _Design Goals,_ below, and
+  [the `README.md` file in the `lib/xgit` folder](https://github.com/elixir-git/xgit/tree/master/lib/xgit/)
+  for an explanation.)
+
+  You'll find these operations in the modules named `Xgit.Api.*` _(none yet as
+  of this writing)_ and `Xgit.Plumbing.*`
+
   ## Design Goals
 
   Xgit intends to allow repositories to be stored in multiple different mechanisms.
   While it includes built-in support for local on-disk repositories
   (see `Xgit.Repository.OnDisk`), you could envision repositories stored entirely
   in memory, or on a remote file system or database.
-
-  In Elixir/OTP terms, a repository is both a `GenServer` and a behaviour module.
-
-  In git terms, a repository (and thus any module that implements the behaviours
-  defined here) is primarily a _plumbing_ module.
-
-  The git _porcelain_ implementations are largely implemented in a way that is
-  intended to be agnostic with regard to storage. They are largely implemented
-  in separate "command" modules. (See `Xgit.Command.*`, though no such module
-  exists as of yet.)
 
   ## Implementing a Storage Architecture
 
