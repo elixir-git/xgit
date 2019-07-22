@@ -48,21 +48,17 @@ defmodule Xgit.Repository.OnDisk do
   _NOTE:_ We use the name `create` here so as to avoid a naming conflict with
   `c:GenServer.init/1`.
 
-  ## Options
+  ## Parameters
 
-  * `:work_dir` (required): Top-level working directory. A `.git` directory is
-    created inside this directory.
+  `work_dir` (String) is the top-level working directory. A `.git` directory is
+  created inside this directory.
 
   ## Return Value
 
-  `:ok`
+  `:ok` if created successfully.
 
-  ## Errors
-
-  Will raise `ArgumentError` if options are incomplete or incorrect.
-
-  Will raise `File.Error` or similar if unable to create the directory.
+  `{:error, "reason"}` if not.
   """
-  @spec create!(work_dir: String.t()) :: :ok
-  defdelegate create!(opts), to: Xgit.Repository.OnDisk.Create
+  @spec create(work_dir :: String.t()) :: :ok | {:error, reason :: String.t()}
+  defdelegate create(work_dir), to: Xgit.Repository.OnDisk.Create
 end
