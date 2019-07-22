@@ -2,59 +2,55 @@ defmodule Xgit.Repository.OnDisk.Create do
   @moduledoc false
   # Implements Xgit.Repository.OnDisk.create/1.
 
-  @spec create!(work_dir: String.t()) :: :ok
-  def create!(opts) when is_list(opts) do
-    work_dir = Keyword.get(opts, :work_dir)
-
-    unless is_binary(work_dir) do
-      raise ArgumentError, "Xgit.Repository.OnDisk.create/1: :work_dir must be a file path"
-    end
-
+  @spec create(work_dir :: String.t()) :: :ok | {:error, reason :: String.t()}
+  def create(work_dir) when is_binary(work_dir) do
     work_dir
-    |> assert_not_exists!()
-    |> create_empty_repo!()
-
-    :ok
+    |> assert_not_exists()
+    |> create_empty_repo()
   end
 
-  defp assert_not_exists!(path) do
-    if File.exists?(path) do
-      raise ArgumentError,
-            "Xgit.Repository.OnDisk.create/1: :work_dir must be a directory that doesn't already exist"
+  defp assert_not_exists(path) do
+    if File.exists?(path),
+      do: {:error, "work_dir must be a directory that doesn't already exist"},
+      else: {:ok, path}
+  end
+
+  defp create_empty_repo({:error, reason}), do: {:error, reason}
+
+  defp create_empty_repo({:ok, path}) do
+    with :ok <- File.mkdir_p(path),
+         :ok <- create_git_dir(Path.join(path, ".git")) do
+      :ok
     else
-      path
+      {:error, reason} -> {:error, reason}
     end
   end
 
-  defp create_empty_repo!(path) do
-    File.mkdir_p!(path)
-
-    path
-    |> Path.join(".git")
-    |> create_git_dir!()
+  defp create_git_dir(git_dir) do
+    with :ok <- create_branches_dir(git_dir),
+         :ok <- create_config(git_dir),
+         :ok <- create_description(git_dir),
+         :ok <- create_head(git_dir),
+         :ok <- create_hooks_dir(git_dir),
+         :ok <- create_info_dir(git_dir),
+         :ok <- create_objects_dir(git_dir),
+         :ok <- create_refs_dir(git_dir) do
+      :ok
+    else
+      {:error, reason} -> {:error, reason}
+    end
   end
 
-  defp create_git_dir!(git_dir) do
-    create_branches_dir!(git_dir)
-    create_config!(git_dir)
-    create_description!(git_dir)
-    create_head!(git_dir)
-    create_hooks_dir!(git_dir)
-    create_info_dir!(git_dir)
-    create_objects_dir!(git_dir)
-    create_refs_dir!(git_dir)
-  end
-
-  defp create_branches_dir!(git_dir) do
+  defp create_branches_dir(git_dir) do
     git_dir
     |> Path.join("branches")
-    |> File.mkdir_p!()
+    |> File.mkdir_p()
   end
 
-  defp create_config!(git_dir) do
+  defp create_config(git_dir) do
     git_dir
     |> Path.join("config")
-    |> File.write!(~s"""
+    |> File.write(~s"""
     [core]
     \trepositoryformatversion = 0
     \tfilemode = true
@@ -63,63 +59,63 @@ defmodule Xgit.Repository.OnDisk.Create do
     """)
   end
 
-  defp create_description!(git_dir) do
+  defp create_description(git_dir) do
     git_dir
     |> Path.join("description")
-    |> File.write!("Unnamed repository; edit this file 'description' to name the repository.\n")
+    |> File.write("Unnamed repository; edit this file 'description' to name the repository.\n")
   end
 
-  defp create_head!(git_dir) do
+  defp create_head(git_dir) do
     git_dir
     |> Path.join("HEAD")
-    |> File.write!("ref: refs/heads/master\n")
+    |> File.write("ref: refs/heads/master\n")
   end
 
-  defp create_hooks_dir!(git_dir) do
+  defp create_hooks_dir(git_dir) do
     git_dir
     |> Path.join("hooks")
-    |> File.mkdir_p!()
+    |> File.mkdir_p()
 
     # NOTE: Intentionally not including the sample files.
   end
 
-  defp create_info_dir!(git_dir) do
-    info_dir = Path.join(git_dir, "info")
-    File.mkdir_p!(info_dir)
-
-    info_dir
-    |> Path.join("exclude")
-    |> File.write!(~S"""
-    # git ls-files --others --exclude-from=.git/info/exclude
-    # Lines that start with '#' are comments.
-    # For a project mostly in C, the following would be a good set of
-    # exclude patterns (uncomment them if you want to use them):
-    # *.[oa]
-    # *~
-    .DS_Store
-    """)
+  defp create_info_dir(git_dir) do
+    with info_dir <- Path.join(git_dir, "info"),
+         :ok <- File.mkdir_p(info_dir) do
+      info_dir
+      |> Path.join("exclude")
+      |> File.write!(~S"""
+      # git ls-files --others --exclude-from=.git/info/exclude
+      # Lines that start with '#' are comments.
+      # For a project mostly in C, the following would be a good set of
+      # exclude patterns (uncomment them if you want to use them):
+      # *.[oa]
+      # *~
+      .DS_Store
+      """)
+    else
+      {:error, reason} -> {:error, reason}
+    end
   end
 
-  defp create_objects_dir!(git_dir) do
-    git_dir
-    |> Path.join("objects/info")
-    |> File.mkdir_p!()
-
-    git_dir
-    |> Path.join("objects/pack")
-    |> File.mkdir_p!()
+  defp create_objects_dir(git_dir) do
+    with :ok <- File.mkdir_p(Path.join(git_dir, "objects/info")),
+         :ok <- File.mkdir_p(Path.join(git_dir, "objects/pack")) do
+      :ok
+    else
+      {:error, reason} -> {:error, reason}
+    end
   end
 
-  defp create_refs_dir!(git_dir) do
+  defp create_refs_dir(git_dir) do
     refs_dir = Path.join(git_dir, "refs")
-    File.mkdir_p!(refs_dir)
 
-    refs_dir
-    |> Path.join("heads")
-    |> File.mkdir_p!()
-
-    refs_dir
-    |> Path.join("tags")
-    |> File.mkdir_p!()
+    with :ok <- File.mkdir_p(refs_dir),
+         :ok <- File.mkdir_p(Path.join(refs_dir, "heads")),
+         :ok <- File.mkdir_p(Path.join(refs_dir, "tags")) do
+      :ok
+    else
+      {:error, reason} -> {:error, reason}
+    end
   end
 end
