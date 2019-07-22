@@ -159,7 +159,7 @@ defmodule Xgit.Core.ValidatePath do
   defp check_windows_git_name(path_segment) do
     with 5 <- Enum.count(path_segment),
          'git~1' <- Enum.map(path_segment, &to_lower/1) do
-      {:error, "invalid name '#{path_segment}"}
+      {:error, "invalid name '#{path_segment}'"}
     else
       _ -> :ok
     end
@@ -241,7 +241,7 @@ defmodule Xgit.Core.ValidatePath do
   defp check_git_path_with_mac_ignorables(path_segment, true = _macosx?) do
     if match_mac_hfs_path?(path_segment, '.git') do
       utf8_name = RawParseUtils.decode(path_segment)
-      {:error, "invalid name '#{utf8_name} contains ignorable Unicode characters"}
+      {:error, "invalid name '#{utf8_name}' contains ignorable Unicode characters"}
     else
       :ok
     end
@@ -253,8 +253,10 @@ defmodule Xgit.Core.ValidatePath do
     tail3 = Enum.slice(path_segment, -2, 2)
 
     if Enum.any?(tail3, &(&1 == 0xE2 or &1 == 0xEF)) do
+      invalid_tail = Enum.drop_while(tail3, &(&1 != 0xE2 and &1 != 0xEF))
+
       {:error,
-       "invalid name contains byte sequence '#{to_hex_string(tail3)}' which is not a valid UTF-8 character"}
+       "invalid name contains byte sequence '#{to_hex_string(invalid_tail)}' which is not a valid UTF-8 character"}
     else
       :ok
     end
