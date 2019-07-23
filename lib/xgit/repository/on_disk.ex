@@ -33,11 +33,17 @@ defmodule Xgit.Repository.OnDisk do
 
   @impl true
   def init(opts) when is_list(opts) do
-    work_dir = Keyword.get(opts, :work_dir)
-
-    if is_binary(work_dir),
-      do: {:ok, %{work_dir: work_dir}},
-      else: {:stop, :missing_arguments}
+    with {:work_dir_arg, work_dir} when is_binary(work_dir) <-
+           {:work_dir_arg, Keyword.get(opts, :work_dir)},
+         {:work_dir, true} <- {:work_dir, File.dir?(work_dir)},
+         git_dir <- Path.join(work_dir, ".git"),
+         {:git_dir, true} <- {:git_dir, File.dir?(git_dir)} do
+      {:ok, %{work_dir: work_dir, git_dir: git_dir}}
+    else
+      {:work_dir_arg, _} -> {:stop, :missing_arguments}
+      {:work_dir, _} -> {:stop, :work_dir_doesnt_exist}
+      {:git_dir, _} -> {:stop, :git_dir_doesnt_exist}
+    end
   end
 
   @doc ~S"""
