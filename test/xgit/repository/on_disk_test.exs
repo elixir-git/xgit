@@ -29,5 +29,21 @@ defmodule Xgit.Repository.OnDiskTest do
       Process.flag(:trap_exit, true)
       assert {:error, :missing_arguments} = OnDisk.start_link([])
     end
+
+    test "error: work_dir doesn't exist", %{xgit: xgit} do
+      Process.flag(:trap_exit, true)
+
+      assert {:error, :work_dir_doesnt_exist} =
+               OnDisk.start_link(work_dir: Path.join(xgit, "random"))
+    end
+
+    test "error: git_dir doesn't exist", %{xgit: xgit} do
+      Process.flag(:trap_exit, true)
+
+      temp_dir = Path.join(xgit, "blah")
+      File.mkdir_p!(temp_dir)
+
+      assert {:error, :git_dir_doesnt_exist} = OnDisk.start_link(work_dir: temp_dir)
+    end
   end
 end
