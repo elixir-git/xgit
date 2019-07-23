@@ -33,6 +33,9 @@ defmodule Xgit.Repository.OnDisk do
 
   @impl true
   def init(opts) when is_list(opts) do
+    # TO DO: Be smarter about bare repos and non-standard git_dir locations.
+    # https://github.com/elixir-git/xgit/issues/44
+    
     with {:work_dir_arg, work_dir} when is_binary(work_dir) <-
            {:work_dir_arg, Keyword.get(opts, :work_dir)},
          {:work_dir, true} <- {:work_dir, File.dir?(work_dir)},
