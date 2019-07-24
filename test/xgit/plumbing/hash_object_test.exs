@@ -54,6 +54,35 @@ defmodule Xgit.Plumbing.HashObjectTest do
       assert {:ok, "d670460b4b4aece5915caf5c68d12f560a9fe3e4"} =
                HashObject.run("test content\n", repo: repo, write?: true)
 
+      assert File.exists?(
+               Path.join([xgit, ".git", "objects", "d6", "70460b4b4aece5915caf5c68d12f560a9fe3e4"])
+             )
+
+      assert_folders_are_equal(ref, xgit)
+    end
+
+    test "happy path: repo, but don't write, matches command-line git (small file)" do
+      {:ok, ref: ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
+      # Only invoking GitInitTestCase manually here because other tests in this
+      # module don't need it. Setting up a repo that we don't use in the other
+      # tests would be wasteful.
+
+      Temp.track!()
+      path = Temp.path!()
+      File.write!(path, "test content\n")
+
+      {_output, 0} = System.cmd("git", ["hash-object", path], cd: ref)
+
+      assert :ok = OnDisk.create(xgit)
+      assert {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+
+      assert {:ok, "d670460b4b4aece5915caf5c68d12f560a9fe3e4"} =
+               HashObject.run("test content\n", repo: repo, write?: false)
+
+      refute File.exists?(
+               Path.join([xgit, ".git", "objects", "d6", "70460b4b4aece5915caf5c68d12f560a9fe3e4"])
+             )
+
       assert_folders_are_equal(ref, xgit)
     end
 
