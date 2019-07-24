@@ -144,6 +144,64 @@ defmodule FolderDiffTest do
     end
   end
 
+  test "failure: binary files mismatch" do
+    f1 = Temp.mkdir!()
+
+    f1
+    |> Path.join("HEAD")
+    |> File.write!([65, 66, 67, 128, 0, 99])
+
+    f1
+    |> Path.join("hooks")
+    |> File.mkdir_p!()
+
+    f2 = Temp.mkdir!()
+
+    f2
+    |> Path.join("HEAD")
+    |> File.write!([65, 66, 67, 129, 0, 99])
+
+    f2
+    |> Path.join("hooks")
+    |> File.mkdir_p!()
+
+    try do
+      assert_folders_are_equal(f1, f2)
+    rescue
+      error in [ExUnit.AssertionError] ->
+        assert error.message == ~s"""
+               Files mismatch:
+
+               #{f1}/HEAD:
+               ref: refs/heads/master
+
+
+               #{f2}/HEAD:
+               ref: refs/heads/mumble
+
+
+               """
+    end
+
+    try do
+      assert_folders_are_equal(f2, f1)
+    rescue
+      error in [ExUnit.AssertionError] ->
+        assert error.message == ~s"""
+               Files mismatch:
+
+               #{f2}/HEAD:
+               ref: refs/heads/mumble
+
+
+               #{f1}/HEAD:
+               ref: refs/heads/master
+
+
+               """
+    end
+  end
+
   test "failure: truncated long string" do
     f1 = Temp.mkdir!()
 

@@ -68,10 +68,10 @@ defmodule FolderDiff do
       Files mismatch:
 
       #{f1}:
-      #{inspect(c1)}
+      #{c1}
 
       #{f2}:
-      #{inspect(c2)}
+      #{c2}
 
       """)
     end
