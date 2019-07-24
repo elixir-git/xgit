@@ -70,4 +70,8 @@ defmodule Xgit.Repository.OnDisk do
   """
   @spec create(work_dir :: String.t()) :: :ok | {:error, reason :: String.t()}
   defdelegate create(work_dir), to: Xgit.Repository.OnDisk.Create
+
+  @impl true
+  defdelegate handle_put_loose_object(state, object),
+    to: Xgit.Repository.OnDisk.PutLooseObject
 end
