@@ -7,6 +7,10 @@ defmodule Xgit.GitInitTestCase do
   use ExUnit.CaseTemplate
 
   setup do
+    setup_git_repo()
+  end
+
+  def setup_git_repo do
     Temp.track!()
     tmp = Temp.mkdir!()
     ref = Path.join(tmp, "ref")
