@@ -80,13 +80,24 @@ defmodule FolderDiff do
   defp truncate(c) do
     length = String.length(c)
 
-    if length > 500 do
-      ~s"""
-      #{length} bytes starting with:
-      #{String.slice(c, 0, 500)}
-      """
+    if String.valid?(c) do
+      if length > 500 do
+        ~s"""
+        #{length} bytes starting with:
+        #{String.slice(c, 0, 500)}
+        """
+      else
+        c
+      end
     else
-      c
+      if length > 100 do
+        ~s"""
+        #{length} bytes starting with:
+        #{inspect(:binary.bin_to_list(c, 0, 100))}
+        """
+      else
+        inspect(:binary.bin_to_list(c))
+      end
     end
   end
 end
