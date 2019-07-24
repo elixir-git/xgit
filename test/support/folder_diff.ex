@@ -68,10 +68,10 @@ defmodule FolderDiff do
       Files mismatch:
 
       #{f1}:
-      #{c1}
+      #{inspect(c1)}
 
       #{f2}:
-      #{c2}
+      #{inspect(c2)}
 
       """)
     end
@@ -83,10 +83,10 @@ defmodule FolderDiff do
     if length > 500 do
       ~s"""
       #{length} bytes starting with:
-      #{String.slice(c, 0, 500)}
+      #{:binary.bin_to_list(c, 0, 500)}
       """
     else
-      c
+      :binary.bin_to_list(c)
     end
   end
 end
