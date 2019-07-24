@@ -42,6 +42,9 @@ defmodule Xgit.Plumbing.HashObject do
     * This option is meaningless if `:repo` is not specified.
     * See [`-w` option on `git hash-object`](https://git-scm.com/docs/git-hash-object#Documentation/git-hash-object.txt--w).
 
+  **TO DO:** There is no support, at present, for filters as defined in a
+  `.gitattributes` file. See [issue #18](https://github.com/elixir-git/xgit/issues/18).
+
   ## Return Value
 
   `{:ok, object_id}` if the object could be validated and assigned an ID.
