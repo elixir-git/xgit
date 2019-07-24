@@ -23,9 +23,8 @@ defmodule Xgit.Repository.OnDisk.PutLooseObject do
       {:mkdir, _} ->
         {:error, :cant_create_dir, state}
 
-      x ->
-        IO.inspect(x, label: "unknown error")
-        {:error, :unknown}
+      {:file, {:error, :eexist}} ->
+        {:error, :object_exists, state}
     end
   end
 
@@ -49,10 +48,10 @@ defmodule Xgit.Repository.OnDisk.PutLooseObject do
   defp deflate_content(file, z, content) do
     content
     |> ContentSource.stream()
-    |> Stream.chunk_every(2048)
     |> Stream.each(fn chunk ->
-      deflate_and_write_bytes(file, z, chunk)
+      deflate_and_write_bytes(file, z, [chunk])
     end)
+    |> Stream.run()
   end
 
   defp deflate_and_write_bytes(file, z, bytes, flush \\ :none) do
