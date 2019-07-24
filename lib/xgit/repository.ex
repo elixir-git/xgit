@@ -26,8 +26,10 @@ defmodule Xgit.Repository do
   information stored in a typical `.git` directory in a local repository. You will
   be building an alternative to that storage mechanism.
   """
-
   use GenServer
+
+  alias Xgit.Core.Object
+  alias Xgit.Util.GenServerUtils
 
   require Logger
 
@@ -78,8 +80,45 @@ defmodule Xgit.Repository do
 
   def valid?(_), do: false
 
+  @doc ~S"""
+  Writes a loose object to the repository.
+
+  ## Return Value
+
+  `:ok` if written successfully.
+
+  `{:error, "reason"}` if unable to write the object.
+  """
+  @spec put_loose_object(repository :: t, object :: Object.t()) ::
+          :ok | {:error, reason :: String.t()}
+  def put_loose_object(repository, %Object{} = object) when is_pid(repository),
+    do: GenServer.call(repository, {:put_loose_object, object})
+
+  @doc ~S"""
+  Writes a loose object to the repository.
+
+  Called when `put_loose_object/2` is called.
+
+  ## Return Value
+
+  Should return `:ok` if written successfully.
+
+  Should return `{:error, "reason"}` if unable to write the object.
+  """
+  @callback handle_put_loose_object(state :: any, object :: Object.t()) ::
+              {:ok, state :: any} | {:error, reason :: String.t(), state :: any}
+
   @impl true
   def handle_call(:valid_repository?, _from, state), do: {:reply, :valid_repository, state}
+
+  def handle_call({:put_loose_object, %Object{} = object}, _from, {mod, mod_state}) do
+    GenServerUtils.delegate_call_to(
+      mod,
+      :handle_put_loose_object,
+      [mod_state, object],
+      mod_state
+    )
+  end
 
   def handle_call(message, _from, state) do
     Logger.warn("Repository received unrecognized call #{inspect(message)}")
@@ -92,7 +131,7 @@ defmodule Xgit.Repository do
 
       alias Xgit.Repository
 
-      # @behaviour Repository (not yet, but it will be)
+      @behaviour Repository
     end
   end
 end
