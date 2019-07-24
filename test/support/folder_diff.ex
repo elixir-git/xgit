@@ -83,10 +83,10 @@ defmodule FolderDiff do
     if length > 500 do
       ~s"""
       #{length} bytes starting with:
-      #{:binary.bin_to_list(c, 0, 500)}
+      #{String.slice(c, 0, 500)}
       """
     else
-      :binary.bin_to_list(c)
+      c
     end
   end
 end

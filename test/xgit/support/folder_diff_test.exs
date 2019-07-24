@@ -149,21 +149,73 @@ defmodule FolderDiffTest do
 
     f1
     |> Path.join("HEAD")
-    |> File.write!([65, 66, 67, 128, 0, 99])
-
-    f1
-    |> Path.join("hooks")
-    |> File.mkdir_p!()
+    |> File.write!([
+      120,
+      1,
+      75,
+      202,
+      201,
+      79,
+      82,
+      48,
+      52,
+      102,
+      40,
+      73,
+      45,
+      46,
+      81,
+      72,
+      206,
+      207,
+      43,
+      73,
+      205,
+      43,
+      225,
+      2,
+      0,
+      75,
+      223,
+      7,
+      9
+    ])
 
     f2 = Temp.mkdir!()
 
     f2
     |> Path.join("HEAD")
-    |> File.write!([65, 66, 67, 129, 0, 99])
-
-    f2
-    |> Path.join("hooks")
-    |> File.mkdir_p!()
+    |> File.write!([
+      120,
+      156,
+      75,
+      202,
+      201,
+      79,
+      82,
+      48,
+      52,
+      102,
+      40,
+      73,
+      45,
+      46,
+      81,
+      72,
+      206,
+      207,
+      43,
+      73,
+      205,
+      43,
+      225,
+      2,
+      0,
+      75,
+      223,
+      7,
+      9
+    ])
 
     try do
       assert_folders_are_equal(f1, f2)
