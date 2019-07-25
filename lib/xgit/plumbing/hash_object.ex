@@ -10,6 +10,7 @@ defmodule Xgit.Plumbing.HashObject do
   alias Xgit.Core.ObjectId
   alias Xgit.Core.ObjectType
   alias Xgit.Core.ValidateObject
+  alias Xgit.Repository
 
   @doc ~S"""
   Computes an object ID and optionally writes that into the repository's object store.
@@ -31,6 +32,19 @@ defmodule Xgit.Plumbing.HashObject do
     * Default: `true`
     * This is the inverse of the [`--literally` option on `git hash-object`](https://git-scm.com/docs/git-hash-object#Documentation/git-hash-object.txt---literally).
 
+  `:repo`: where the content should be stored
+    * Type: `Xgit.Repository` (PID)
+    * Default: `nil`
+
+  `:write?`: `true` to write the object into the repository
+    * Type: boolean
+    * Default: `false`
+    * This option is meaningless if `:repo` is not specified.
+    * See [`-w` option on `git hash-object`](https://git-scm.com/docs/git-hash-object#Documentation/git-hash-object.txt--w).
+
+  **TO DO:** There is no support, at present, for filters as defined in a
+  `.gitattributes` file. See [issue #18](https://github.com/elixir-git/xgit/issues/18).
+
   ## Return Value
 
   `{:ok, object_id}` if the object could be validated and assigned an ID.
@@ -39,6 +53,18 @@ defmodule Xgit.Plumbing.HashObject do
   @spec run(content :: ContentSource.t(), type: ObjectType.t() | nil) ::
           {:ok, ObjectID.t()} | {:error, reason :: String.t()}
   def run(content, opts \\ []) when not is_nil(content) and is_list(opts) do
+    %{type: type, validate?: validate?, repo: repo, write?: write?} = validate_options(opts)
+
+    %Object{content: content, type: type}
+    |> apply_filters(repo)
+    |> annotate_with_size()
+    |> assign_object_id()
+    |> validate_content(validate?)
+    |> maybe_write_to_repo(repo, write?)
+    |> result(opts)
+  end
+
+  defp validate_options(opts) do
     type = Keyword.get(opts, :type, :blob)
 
     unless ObjectType.valid?(type) do
@@ -52,16 +78,25 @@ defmodule Xgit.Plumbing.HashObject do
             "Xgit.Plumbing.HashObject.run/2: validate? #{inspect(validate?)} is invalid"
     end
 
-    repo = nil
-    # Keyword.get(opts, :repository)
+    repo = Keyword.get(opts, :repo)
 
-    %Object{content: content, type: type}
-    |> apply_filters(repo)
-    |> annotate_with_size()
-    |> assign_object_id()
-    |> validate_content(validate?)
-    |> maybe_write_to_repo(opts)
-    |> result(opts)
+    unless repo == nil or Repository.valid?(repo) do
+      raise ArgumentError, "Xgit.Plumbing.HashObject.run/2: repo #{inspect(repo)} is invalid"
+    end
+
+    write? = Keyword.get(opts, :write?, false)
+
+    unless is_boolean(write?) do
+      raise ArgumentError,
+            "Xgit.Plumbing.HashObject.run/2: write? #{inspect(write?)} is invalid"
+    end
+
+    if write? and repo == nil do
+      raise ArgumentError,
+            "Xgit.Plumbing.HashObject.run/2: write?: true requires a repo to be specified"
+    end
+
+    %{type: type, validate?: validate?, repo: repo, write?: write?}
   end
 
   defp apply_filters(object, _repository) do
@@ -98,12 +133,16 @@ defmodule Xgit.Plumbing.HashObject do
   defp assign_object_id(%Object{content: content, type: type} = object),
     do: %{object | id: ObjectId.calculate_id(content, type)}
 
-  defp maybe_write_to_repo({:ok, object}, _opts) do
-    # TO DO: Pass the object through to repo to write it to disk.
-    {:ok, object}
+  defp maybe_write_to_repo({:ok, object}, _repo, false = _write?), do: {:ok, object}
+
+  defp maybe_write_to_repo({:ok, object}, repo, true = _write?) do
+    case Repository.put_loose_object(repo, object) do
+      :ok -> {:ok, object}
+      {:error, reason} -> {:error, reason}
+    end
   end
 
-  defp maybe_write_to_repo({:error, reason}, _opts), do: {:error, reason}
+  defp maybe_write_to_repo({:error, reason}, _repo, _write?), do: {:error, reason}
 
   defp result({:ok, %Object{id: id}}, _opts), do: {:ok, id}
   defp result({:error, reason}, _opts), do: {:error, reason}
