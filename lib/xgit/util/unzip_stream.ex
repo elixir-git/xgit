@@ -1,8 +1,12 @@
 defmodule Xgit.Util.UnzipStream do
   @moduledoc ~S"""
-  Implements a stream transformation to unzip a file.
+  Transforms a stream from a compressed ZIP stream to uncompressed data.
   """
 
+  @doc ~S"""
+  Transforms a stream from a compressed ZIP stream to uncompressed data.
+  """
+  @spec unzip(compressed_stream :: Enum.t) :: Enum.t
   def unzip(compressed_stream),
     do: Stream.transform(compressed_stream, &start/0, &process_data/2, &finish/1)
 
