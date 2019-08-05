@@ -25,6 +25,13 @@ defmodule Xgit.Util.UnzipStreamTest do
                |> Enum.to_list()
     end
 
-    # test "error: file isn't a zip"
+    test "error: file isn't a zip" do
+      assert_raise ErlangError, "Erlang error: :data_error", fn ->
+        "LICENSE"
+        |> File.stream!([:binary])
+        |> UnzipStream.unzip()
+        |> Enum.to_list()
+      end
+    end
   end
 end
