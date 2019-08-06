@@ -1,12 +1,11 @@
-# <img width="200" src="branding/xgit-logo.png" alt="Xgit"> Xgit
+# <img width="140" src="branding/xgit-logo.png" alt="Xgit"> Xgit
 
 Pure Elixir native implementation of git
-
----
 
 [![Build Status](https://travis-ci.org/elixir-git/xgit.svg?branch=master)](https://travis-ci.org/elixir-git/xgit) [![Coverage Status](https://coveralls.io/repos/github/elixir-git/xgit/badge.svg?branch=master)](https://coveralls.io/github/elixir-git/xgit?branch=master) [![Hex version](https://img.shields.io/hexpm/v/xgit.svg)](https://hex.pm/packages/xgit)
 [![License badge](https://img.shields.io/hexpm/l/xgit.svg)](https://github.com/elixir-git/xgit/blob/master/LICENSE)
 
+---
 
 ## WORK IN PROGRESS
 
