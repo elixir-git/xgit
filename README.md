@@ -1,8 +1,11 @@
-# <img width="140" src="./branding/xgit-logo.png" alt="Xgit"> Xgit
+# <img width="120" src="./branding/xgit-logo.png" alt="Xgit"> Xgit
 
 Pure Elixir native implementation of git
 
-[![Build Status](https://travis-ci.org/elixir-git/xgit.svg?branch=master)](https://travis-ci.org/elixir-git/xgit) [![Coverage Status](https://coveralls.io/repos/github/elixir-git/xgit/badge.svg?branch=master)](https://coveralls.io/github/elixir-git/xgit?branch=master) [![Hex version](https://img.shields.io/hexpm/v/xgit.svg)](https://hex.pm/packages/xgit)
+[![Build Status](https://travis-ci.org/elixir-git/xgit.svg?branch=master)](https://travis-ci.org/elixir-git/xgit)
+[![Coverage Status](https://coveralls.io/repos/github/elixir-git/xgit/badge.svg?branch=master)](https://coveralls.io/github/elixir-git/xgit?branch=master)
+[![Hex version](https://img.shields.io/hexpm/v/xgit.svg)](https://hex.pm/packages/xgit)
+[![API Docs](https://img.shields.io/badge/hexdocs-release-blue.svg)](https://hexdocs.pm/xgit)
 [![License badge](https://img.shields.io/hexpm/l/xgit.svg)](https://github.com/elixir-git/xgit/blob/master/LICENSE)
 
 ---
@@ -11,12 +14,12 @@ Pure Elixir native implementation of git
 
 **This is very much a work in progress and not ready to be used in production.** What is implemented is well-tested and believed to be correct and stable, but much of the core git infrastructure is not yet implemented. There has been little attention, as yet, to measuring performance.
 
-**For information about the progress of this project,** please see the [**Reflog** (blog)](https://xgit.io).
+**For information about the progress of this project,** please see the [**Xgit Reflog** (blog)](https://xgit.io).
 
 
 ## Where Can I Help?
 
-This version of xgit replaces an earlier version which was a port from the [Java implementation of git, jgit](https://www.eclipse.org/jgit/). In coming days/weeks, I'll share more about the new direction and where help would be most welcome.
+This version of Xgit replaces an earlier version which was a port from the [Java implementation of git, jgit](https://www.eclipse.org/jgit/). In coming days/weeks, I'll share more about the new direction and where help would be most welcome.
 
 For now, please see:
 
@@ -36,4 +39,4 @@ libgit2 is a big, complex library. And while it's been battle-tested, it's also 
 
 ## Credits
 
-xgit is heavily influenced by [jgit](https://www.eclipse.org/jgit/), an all-Java implementation of git. Many thanks to the jgit team for their hard work. Small portions of xgit are based on [an earlier port from Java to Elixir](https://github.com/elixir-git/archived-jgit-port/); those files retain the original credits and license from the jgit project.
+Xgit is heavily influenced by [jgit](https://www.eclipse.org/jgit/), an all-Java implementation of git. Many thanks to the jgit team for their hard work. Small portions of Xgit are based on [an earlier port from Java to Elixir](https://github.com/elixir-git/archived-jgit-port/); those files retain the original credits and license from the jgit project.
