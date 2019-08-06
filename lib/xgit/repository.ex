@@ -101,9 +101,9 @@ defmodule Xgit.Repository do
 
   ## Return Value
 
-  Should return `:ok` if written successfully.
+  Should return `{:ok, state}` if written successfully.
 
-  Should return `{:error, "reason"}` if unable to write the object.
+  Should return `{:error, "reason", state}` if unable to write the object.
   """
   @callback handle_put_loose_object(state :: any, object :: Object.t()) ::
               {:ok, state :: any} | {:error, reason :: String.t(), state :: any}
