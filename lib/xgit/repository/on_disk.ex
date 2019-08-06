@@ -72,6 +72,10 @@ defmodule Xgit.Repository.OnDisk do
   defdelegate create(work_dir), to: Xgit.Repository.OnDisk.Create
 
   @impl true
+  defdelegate handle_get_object(state, object_id),
+    to: Xgit.Repository.OnDisk.GetObject
+
+  @impl true
   defdelegate handle_put_loose_object(state, object),
     to: Xgit.Repository.OnDisk.PutLooseObject
 end

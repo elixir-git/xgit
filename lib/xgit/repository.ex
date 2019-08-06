@@ -29,6 +29,7 @@ defmodule Xgit.Repository do
   use GenServer
 
   alias Xgit.Core.Object
+  alias Xgit.Core.ObjectId
   alias Xgit.Util.GenServerUtils
 
   require Logger
@@ -81,6 +82,38 @@ defmodule Xgit.Repository do
   def valid?(_), do: false
 
   @doc ~S"""
+  Retrieves an object from the repository.
+
+  ## Return Value
+
+  `{:ok, object}` if the object exists in the database.
+
+  `{:error, :not_found}` if the object does not exist in the database.
+
+  `{:error, :invalid_object}` if object was found, but invalid.
+  """
+  @spec get_object(repository :: t, object_id :: ObjectId.t()) ::
+          {:ok, object :: Object.t()} | {:error, :not_found} | {:error, :invalid_object}
+  def get_object(repository, object_id) when is_pid(repository) and is_binary(object_id),
+    do: GenServer.call(repository, {:get_object, object_id})
+
+  @doc ~S"""
+  Retrieves an object from the repository.
+
+  Called when `get_object/2` is called.
+
+  ## Return Value
+
+  Should return `{:ok, object, state}` if read successfully.
+
+  Should return `{:error, :not_found, state}` if unable to find the object.
+
+  Should return `{:error, :invalid_object, state}` if object was found, but invalid.
+  """
+  @callback handle_get_object(state :: any, object_id :: ObjectId.t()) ::
+              {:ok, object :: Object.t(), state :: any} | {:error, reason :: atom, state :: any}
+
+  @doc ~S"""
   Writes a loose object to the repository.
 
   ## Return Value
@@ -110,6 +143,10 @@ defmodule Xgit.Repository do
 
   @impl true
   def handle_call(:valid_repository?, _from, state), do: {:reply, :valid_repository, state}
+
+  def handle_call({:get_object, object_id}, _from, {mod, mod_state}) do
+    GenServerUtils.delegate_call_to(mod, :handle_get_object, [mod_state, object_id], mod_state)
+  end
 
   def handle_call({:put_loose_object, %Object{} = object}, _from, {mod, mod_state}) do
     GenServerUtils.delegate_call_to(
