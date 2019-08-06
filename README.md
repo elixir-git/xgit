@@ -1,4 +1,4 @@
-# <img src="https://github.com/elixir-git/xgit/raw/master/branding/xgit-logo.png" alt="Xgit"> Xgit
+# <img width="200" src="branding/xgit-logo.png" alt="Xgit"> Xgit
 
 Pure Elixir native implementation of git
 
