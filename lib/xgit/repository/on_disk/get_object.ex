@@ -13,9 +13,8 @@ defmodule Xgit.Repository.OnDisk.GetObject do
     # TO DO: Look for object in packs.
     # https://github.com/elixir-git/xgit/issues/52
 
-    with %Object{} = object <- find_loose_object(git_dir, object_id) do
-      {:ok, object, state}
-    else
+    case find_loose_object(git_dir, object_id) do
+      %Object{} = object -> {:ok, object, state}
       {:error, :not_found} -> {:error, :not_found, state}
       {:error, :invalid_object} -> {:error, :invalid_object, state}
     end
