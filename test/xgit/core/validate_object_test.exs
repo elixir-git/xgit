@@ -572,7 +572,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid tagger header 1" do
-      assert {:error, "invalid tagger"} =
+      assert {:error, :invalid_tagger} =
                check(%Object{
                  type: :tag,
                  content:
@@ -584,7 +584,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid tagger header 3" do
-      assert {:error, "invalid tagger"} =
+      assert {:error, :invalid_tagger} =
                check(%Object{
                  type: :tag,
                  content: ~c"""
