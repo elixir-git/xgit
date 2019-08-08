@@ -516,7 +516,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no type 4" do
-      assert {:error, "no tag header"} =
+      assert {:error, :no_tag_header} =
                check(%Object{
                  type: :tag,
                  content:
@@ -526,7 +526,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no tag header 1" do
-      assert {:error, "no tag header"} =
+      assert {:error, :no_tag_header} =
                check(%Object{
                  type: :tag,
                  content: ~c"""
@@ -537,7 +537,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no tag header 2" do
-      assert {:error, "no tag header"} =
+      assert {:error, :no_tag_header} =
                check(%Object{
                  type: :tag,
                  content:
@@ -548,7 +548,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no tag header 3" do
-      assert {:error, "no tag header"} =
+      assert {:error, :no_tag_header} =
                check(%Object{
                  type: :tag,
                  content: ~c"""

@@ -159,7 +159,7 @@ defmodule Xgit.Core.ValidateObject do
       {:object, _} -> {:error, :no_object_header}
       {:object_id, _} -> {:error, :invalid_object}
       {:type, _} -> {:error, :no_type_header}
-      {:tag, _} -> {:error, "no tag header"}
+      {:tag, _} -> {:error, :no_tag_header}
       {:tagger, _} -> {:error, "invalid tagger"}
     end
   end
