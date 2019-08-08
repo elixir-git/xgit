@@ -117,6 +117,8 @@ defmodule Xgit.Core.ValidateObject do
 
   `{:error, :null_sha1}` if the object is a tree and one of the object IDs is all zeros.
 
+  `{:error, :truncated_in_mode}` if the object is a tree and one of the file modes is incomplete.
+
   `{:error, "reason"}` if the object can not be validated.
   """
   @spec check(object :: Object.t(), opts :: Keyword.t()) :: :ok | {:error, reason :: String.t()}
@@ -238,7 +240,7 @@ defmodule Xgit.Core.ValidateObject do
     end
   end
 
-  defp check_file_mode([], _mode), do: {:error, "truncated in mode"}
+  defp check_file_mode([], _mode), do: {:error, :truncated_in_mode}
 
   defp check_file_mode([?\s | data], mode), do: {:ok, mode, data}
 

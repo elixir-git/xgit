@@ -738,7 +738,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: truncated in mode" do
-      assert {:error, "truncated in mode"} =
+      assert {:error, :truncated_in_mode} =
                check(%Object{
                  type: :tree,
                  content: '1006'
