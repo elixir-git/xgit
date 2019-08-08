@@ -1037,7 +1037,7 @@ defmodule Xgit.Core.ValidateObjectTest do
 
     test "invalid: bad sorting" do
       Enum.each(@badly_sorted_trees, fn badly_sorted_names ->
-        assert {:error, "incorrectly sorted"} =
+        assert {:error, :incorrectly_sorted} =
                  check(%Object{
                    type: :tree,
                    content:
