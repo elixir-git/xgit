@@ -293,7 +293,7 @@ defmodule Xgit.Core.ValidateObjectTest do
       # Yes, really, we complain about author not being
       # found as the invalid parent line wasn't consumed.
 
-      assert {:error, "no author"} =
+      assert {:error, :no_author} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -304,7 +304,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no author" do
-      assert {:error, "no author"} =
+      assert {:error, :no_author} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
