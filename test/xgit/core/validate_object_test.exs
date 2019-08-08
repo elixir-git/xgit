@@ -1049,7 +1049,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: duplicate file name" do
-      assert {:error, "duplicate entry names"} =
+      assert {:error, :duplicate_entry_names} =
                check(%Object{
                  type: :tree,
                  content: entry("100644 a") ++ entry("100644 a")
@@ -1057,7 +1057,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: duplicate tree name" do
-      assert {:error, "duplicate entry names"} =
+      assert {:error, :duplicate_entry_names} =
                check(%Object{
                  type: :tree,
                  content: entry("40000 a") ++ entry("40000 a")
@@ -1065,7 +1065,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: duplicate names 2" do
-      assert {:error, "duplicate entry names"} =
+      assert {:error, :duplicate_entry_names} =
                check(%Object{
                  type: :tree,
                  content: entry("100644 a") ++ entry("100755 a")
@@ -1073,7 +1073,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: duplicate names 3" do
-      assert {:error, "duplicate entry names"} =
+      assert {:error, :duplicate_entry_names} =
                check(%Object{
                  type: :tree,
                  content: entry("100644 a") ++ entry("40000 a")
@@ -1081,7 +1081,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: duplicate names 4" do
-      assert {:error, "duplicate entry names"} =
+      assert {:error, :duplicate_entry_names} =
                check(%Object{
                  type: :tree,
                  content:
@@ -1095,7 +1095,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: duplicate names 5 (Windows case folding)" do
-      assert {:error, "duplicate entry names"} =
+      assert {:error, :duplicate_entry_names} =
                check(
                  %Object{
                    type: :tree,
@@ -1106,7 +1106,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: duplicate names 6 (Mac case folding)" do
-      assert {:error, "duplicate entry names"} =
+      assert {:error, :duplicate_entry_names} =
                check(
                  %Object{
                    type: :tree,
@@ -1117,7 +1117,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: duplicate names 7 (MacOS denormalized names)" do
-      assert {:error, "duplicate entry names"} =
+      assert {:error, :duplicate_entry_names} =
                check(
                  %Object{
                    type: :tree,
