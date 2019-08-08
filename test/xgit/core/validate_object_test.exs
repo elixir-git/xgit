@@ -659,7 +659,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: null SHA-1 in tree entry" do
-      assert {:error, "entry points to null SHA-1"} =
+      assert {:error, :null_sha1} =
                check(%Object{
                  type: :tree,
                  content: '100644 A' ++ Enum.map(0..20, fn _ -> 0 end)

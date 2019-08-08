@@ -115,6 +115,8 @@ defmodule Xgit.Core.ValidateObject do
   `{:error, :truncated_in_object_id}` if the object is a tree and one of the object IDs
   is invalid.
 
+  `{:error, :null_sha1}` if the object is a tree and one of the object IDs is all zeros.
+
   `{:error, "reason"}` if the object can not be validated.
   """
   @spec check(object :: Object.t(), opts :: Keyword.t()) :: :ok | {:error, reason :: String.t()}
@@ -232,7 +234,7 @@ defmodule Xgit.Core.ValidateObject do
       {:duplicate, _} -> {:error, :duplicate_entry_names}
       {:sorted, _} -> {:error, :incorrectly_sorted}
       {:object_id_length, _} -> {:error, :truncated_in_object_id}
-      {:object_id_null, _} -> {:error, "entry points to null SHA-1"}
+      {:object_id_null, _} -> {:error, :null_sha1}
     end
   end
 
