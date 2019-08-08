@@ -167,7 +167,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no tree 1" do
-      assert {:error, "no tree header"} =
+      assert {:error, :no_tree_header} =
                check(%Object{
                  type: :commit,
                  content: ~C"""
@@ -177,7 +177,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no tree 2" do
-      assert {:error, "no tree header"} =
+      assert {:error, :no_tree_header} =
                check(%Object{
                  type: :commit,
                  content: ~C"""
@@ -187,7 +187,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no tree 3" do
-      assert {:error, "no tree header"} =
+      assert {:error, :no_tree_header} =
                check(%Object{
                  type: :commit,
                  content: ~C"""
@@ -197,7 +197,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no tree 4" do
-      assert {:error, "no tree header"} =
+      assert {:error, :no_tree_header} =
                check(%Object{
                  type: :commit,
                  content: ~c"""

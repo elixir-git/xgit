@@ -78,6 +78,9 @@ defmodule Xgit.Core.ValidateObject do
 
   `:ok` if the object is successfully validated.
 
+  `{:error, :no_tree_header}` if the object is a commit but does not contain
+  a valid tree header.
+
   `{:error, "reason"}` if the object can not be validated.
   """
   @spec check(object :: Object.t(), opts :: Keyword.t()) :: :ok | {:error, reason :: String.t()}
@@ -101,7 +104,7 @@ defmodule Xgit.Core.ValidateObject do
          {:committer_id, data} when is_list(data) <- {:committer_id, check_person_ident(data)} do
       :ok
     else
-      {:tree, _} -> {:error, "no tree header"}
+      {:tree, _} -> {:error, :no_tree_header}
       {:tree_id, _} -> {:error, "invalid tree"}
       {:parents, _} -> {:error, "invalid parent"}
       {:author, _} -> {:error, "no author"}

@@ -135,7 +135,7 @@ defmodule Xgit.Plumbing.HashObjectTest do
       committer A. U. Thor <author@localhost> 1 +0000
       """
 
-      assert {:error, "no tree header"} = HashObject.run(content, type: :commit)
+      assert {:error, :no_tree_header} = HashObject.run(content, type: :commit)
     end
 
     test "error: content nil" do
