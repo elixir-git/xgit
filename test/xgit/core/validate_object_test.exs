@@ -1014,7 +1014,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: tree truncated in name" do
-      assert {:error, "truncated in name"} =
+      assert {:error, :truncated_in_name} =
                check(%Object{
                  type: :tree,
                  content: '100644 b'
