@@ -112,6 +112,9 @@ defmodule Xgit.Core.ValidateObject do
   `{:error, :incorrectly_sorted}` if the object is a tree and the entries are not
   in alphabetical order.
 
+  `{:error, :truncated_in_object_id}` if the object is a tree and one of the object IDs
+  is invalid.
+
   `{:error, "reason"}` if the object can not be validated.
   """
   @spec check(object :: Object.t(), opts :: Keyword.t()) :: :ok | {:error, reason :: String.t()}
@@ -228,7 +231,7 @@ defmodule Xgit.Core.ValidateObject do
       {:path_valid, {:error, reason}} -> {:error, reason}
       {:duplicate, _} -> {:error, :duplicate_entry_names}
       {:sorted, _} -> {:error, :incorrectly_sorted}
-      {:object_id_length, _} -> {:error, "truncated in object id"}
+      {:object_id_length, _} -> {:error, :truncated_in_object_id}
       {:object_id_null, _} -> {:error, "entry points to null SHA-1"}
     end
   end

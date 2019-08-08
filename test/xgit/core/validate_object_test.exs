@@ -1022,7 +1022,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: tree truncated in object ID" do
-      assert {:error, "truncated in object id"} =
+      assert {:error, :truncated_in_object_id} =
                check(%Object{
                  type: :tree,
                  content: '100644 b' ++ [0, 1, 2]
