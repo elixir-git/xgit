@@ -463,7 +463,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no object 4" do
-      assert {:error, "invalid object"} =
+      assert {:error, :invalid_object} =
                check(%Object{
                  type: :tag,
                  content: ~c"""
@@ -473,7 +473,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no object 5" do
-      assert {:error, "invalid object"} =
+      assert {:error, :invalid_object} =
                check(%Object{
                  type: :tag,
                  content: 'object be9bfa841874ccc9f2ef7c48d0c76226f89b7189 \n'
@@ -481,7 +481,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no object 6" do
-      assert {:error, "invalid object"} = check(%Object{type: :tag, content: 'object be9'})
+      assert {:error, :invalid_object} = check(%Object{type: :tag, content: 'object be9'})
     end
 
     test "invalid: no type 1" do

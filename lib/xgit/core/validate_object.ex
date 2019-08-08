@@ -95,6 +95,8 @@ defmodule Xgit.Core.ValidateObject do
 
   `{:error, :no_object_header}` if the object is a tag but there is no `object` header.
 
+  `{:error, :invalid_object}` if the object is a tag but the object ID is invalid.
+
   `{:error, "reason"}` if the object can not be validated.
   """
   @spec check(object :: Object.t(), opts :: Keyword.t()) :: :ok | {:error, reason :: String.t()}
@@ -153,7 +155,7 @@ defmodule Xgit.Core.ValidateObject do
       :ok
     else
       {:object, _} -> {:error, :no_object_header}
-      {:object_id, _} -> {:error, "invalid object"}
+      {:object_id, _} -> {:error, :invalid_object}
       {:type, _} -> {:error, "no type header"}
       {:tag, _} -> {:error, "no tag header"}
       {:tagger, _} -> {:error, "invalid tagger"}
