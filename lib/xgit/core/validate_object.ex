@@ -86,6 +86,9 @@ defmodule Xgit.Core.ValidateObject do
   `{:error, :invalid_tree}` if the object is a commit but the tree object ID
   is invalid.
 
+  `{:error, :invalid_parent}` if the object is a commit but one of the `parent`
+  headers is invalid.
+
   `{:error, "reason"}` if the object can not be validated.
   """
   @spec check(object :: Object.t(), opts :: Keyword.t()) :: :ok | {:error, reason :: String.t()}
@@ -95,7 +98,7 @@ defmodule Xgit.Core.ValidateObject do
   def check(%Object{type: :commit} = object, _opts), do: check_commit(object)
   def check(%Object{type: :tag} = object, _opts), do: check_tag(object)
   def check(%Object{type: :tree} = object, opts), do: check_tree(object, opts)
-  def check(%Object{type: type}, _opts), do: {:error, :invalid_type}
+  def check(%Object{type: _type}, _opts), do: {:error, :invalid_type}
 
   # -- commit specifics --
 
@@ -111,7 +114,7 @@ defmodule Xgit.Core.ValidateObject do
     else
       {:tree, _} -> {:error, :no_tree_header}
       {:tree_id, _} -> {:error, :invalid_tree}
-      {:parents, _} -> {:error, "invalid parent"}
+      {:parents, _} -> {:error, :invalid_parent}
       {:author, _} -> {:error, "no author"}
       {:author_id, why} when is_binary(why) -> {:error, why}
       {:committer, _} -> {:error, "no committer"}

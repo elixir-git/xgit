@@ -247,7 +247,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid parent 1" do
-      assert {:error, "invalid parent"} =
+      assert {:error, :invalid_parent} =
                check(%Object{
                  type: :commit,
                  content:
@@ -257,7 +257,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid parent 2" do
-      assert {:error, "invalid parent"} =
+      assert {:error, :invalid_parent} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -268,7 +268,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid parent 3" do
-      assert {:error, "invalid parent"} =
+      assert {:error, :invalid_parent} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -279,7 +279,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid parent 4" do
-      assert {:error, "invalid parent"} =
+      assert {:error, :invalid_parent} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
