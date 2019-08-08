@@ -102,6 +102,8 @@ defmodule Xgit.Core.ValidateObject do
   `{:error, :invalid_tagger}` if the object is a tag but one of the `tagger` headers
   is invalid.
 
+  `{:error, :invalid_file_mode}` if the object is a tree but one of the file modes is invalid.
+
   `{:error, "reason"}` if the object can not be validated.
   """
   @spec check(object :: Object.t(), opts :: Keyword.t()) :: :ok | {:error, reason :: String.t()}
@@ -213,7 +215,7 @@ defmodule Xgit.Core.ValidateObject do
       )
     else
       {:file_mode, {:error, reason}} -> {:error, reason}
-      {:file_mode, _} -> {:error, "invalid file mode"}
+      {:file_mode, _} -> {:error, :invalid_file_mode}
       {:path_split, _} -> {:error, "truncated in name"}
       {:path_valid, {:error, reason}} -> {:error, reason}
       {:duplicate, _} -> {:error, "duplicate entry names"}

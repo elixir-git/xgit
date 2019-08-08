@@ -786,7 +786,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: mode not supported mode 1" do
-      assert {:error, "invalid file mode"} =
+      assert {:error, :invalid_file_mode} =
                check(%Object{
                  type: :tree,
                  content: entry("1 a")
@@ -794,7 +794,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: mode not supported mode 2" do
-      assert {:error, "invalid file mode"} =
+      assert {:error, :invalid_file_mode} =
                check(%Object{
                  type: :tree,
                  content: entry("170000 a")
