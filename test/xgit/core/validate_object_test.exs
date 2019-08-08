@@ -441,11 +441,11 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no object 1" do
-      assert {:error, "no object header"} = check(%Object{type: :tag, content: []})
+      assert {:error, :no_object_header} = check(%Object{type: :tag, content: []})
     end
 
     test "invalid: no object 2" do
-      assert {:error, "no object header"} =
+      assert {:error, :no_object_header} =
                check(%Object{
                  type: :tag,
                  content: 'object\tbe9bfa841874ccc9f2ef7c48d0c76226f89b7189\n'
@@ -453,7 +453,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no object 3" do
-      assert {:error, "no object header"} =
+      assert {:error, :no_object_header} =
                check(%Object{
                  type: :tag,
                  content: ~c"""
