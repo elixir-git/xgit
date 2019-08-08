@@ -78,6 +78,8 @@ defmodule Xgit.Core.ValidateObject do
 
   `:ok` if the object is successfully validated.
 
+  `{:error, :invalid_type}` if the object's type is unknown.
+
   `{:error, :no_tree_header}` if the object is a commit but does not contain
   a valid tree header.
 
@@ -93,7 +95,7 @@ defmodule Xgit.Core.ValidateObject do
   def check(%Object{type: :commit} = object, _opts), do: check_commit(object)
   def check(%Object{type: :tag} = object, _opts), do: check_tag(object)
   def check(%Object{type: :tree} = object, opts), do: check_tree(object, opts)
-  def check(%Object{type: type}, _opts), do: {:error, "invalid type #{inspect(type)}"}
+  def check(%Object{type: type}, _opts), do: {:error, :invalid_type}
 
   # -- commit specifics --
 

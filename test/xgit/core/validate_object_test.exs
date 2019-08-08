@@ -55,7 +55,7 @@ defmodule Xgit.Core.ValidateObjectTest do
   @placeholder_object_id 0..19 |> Enum.to_list()
 
   test "invalid object type" do
-    assert {:error, "invalid type :bad"} = check(%Object{type: :bad, content: []})
+    assert {:error, :invalid_type} = check(%Object{type: :bad, content: []})
   end
 
   describe "check blob" do
