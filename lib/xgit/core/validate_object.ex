@@ -117,7 +117,7 @@ defmodule Xgit.Core.ValidateObject do
 
   `{:error, :null_sha1}` if the object is a tree and one of the object IDs is all zeros.
 
-  `{:error, :truncated_in_mode}` if the object is a tree and one of the file modes is incomplete.
+  `{:error, :invalid_mode}` if the object is a tree and one of the file modes is incomplete.
 
   `{:error, "reason"}` if the object can not be validated.
   """
@@ -240,16 +240,16 @@ defmodule Xgit.Core.ValidateObject do
     end
   end
 
-  defp check_file_mode([], _mode), do: {:error, :truncated_in_mode}
+  defp check_file_mode([], _mode), do: {:error, :invalid_mode}
 
   defp check_file_mode([?\s | data], mode), do: {:ok, mode, data}
 
-  defp check_file_mode([?0 | _data], 0), do: {:error, "mode starts with '0'"}
+  defp check_file_mode([?0 | _data], 0), do: {:error, :invalid_mode}
 
   defp check_file_mode([c | data], mode) when c >= ?0 and c <= ?7,
     do: check_file_mode(data, mode * 8 + (c - ?0))
 
-  defp check_file_mode([_c | _data], _mode), do: {:error, "invalid mode character"}
+  defp check_file_mode([_c | _data], _mode), do: {:error, :invalid_mode}
 
   defp path_and_object_id(data), do: Enum.split_while(data, &(&1 != 0))
 

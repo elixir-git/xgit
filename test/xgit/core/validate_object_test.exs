@@ -738,7 +738,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: truncated in mode" do
-      assert {:error, :truncated_in_mode} =
+      assert {:error, :invalid_mode} =
                check(%Object{
                  type: :tree,
                  content: '1006'
@@ -746,7 +746,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: mode starts with zero 1" do
-      assert {:error, "mode starts with '0'"} =
+      assert {:error, :invalid_mode} =
                check(%Object{
                  type: :tree,
                  content: entry("0 a")
@@ -754,7 +754,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: mode starts with zero 2" do
-      assert {:error, "mode starts with '0'"} =
+      assert {:error, :invalid_mode} =
                check(%Object{
                  type: :tree,
                  content: entry("0100644 a")
@@ -762,7 +762,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: mode starts with zero 3" do
-      assert {:error, "mode starts with '0'"} =
+      assert {:error, :invalid_mode} =
                check(%Object{
                  type: :tree,
                  content: entry("040000 a")
@@ -770,7 +770,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: mode not octal 1" do
-      assert {:error, "invalid mode character"} =
+      assert {:error, :invalid_mode} =
                check(%Object{
                  type: :tree,
                  content: entry("8 a")
@@ -778,7 +778,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: mode not octal 2" do
-      assert {:error, "invalid mode character"} =
+      assert {:error, :invalid_mode} =
                check(%Object{
                  type: :tree,
                  content: entry("Z a")
