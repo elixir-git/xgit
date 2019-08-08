@@ -75,6 +75,7 @@ defmodule Xgit.Core.ValidatePath do
   ## Return Values
 
   * `:ok` if the name is permissible given the constraints chosen above
+  * `{:error, :invalid_name}` if the name is not permissible
   * `{:error, "reason"}` if the name is not permissible
   """
   @spec check_path(path :: [byte], windows?: boolean, macosx?: boolean) :: result
@@ -118,6 +119,7 @@ defmodule Xgit.Core.ValidatePath do
   ## Return Values
 
   * `:ok` if the name is permissible given the constraints chosen above
+  * `{:error, :invalid_name}` if the name is not permissible
   * `{:error, "reason"}` if the name is not permissible
   """
   @spec check_path_segment(path :: [byte], windows?: boolean, macosx?: boolean) :: result
@@ -146,20 +148,20 @@ defmodule Xgit.Core.ValidatePath do
 
   defp refute_has_nil_bytes(path_segment) do
     if Enum.any?(path_segment, &(&1 == 0)),
-      do: {:error, "name contains byte 0x00"},
+      do: {:error, :invalid_name},
       else: :ok
   end
 
   defp refute_has_slash(path_segment) do
     if Enum.any?(path_segment, &(&1 == ?/)),
-      do: {:error, "name contains byte '/'"},
+      do: {:error, :invalid_name},
       else: :ok
   end
 
   defp check_windows_git_name(path_segment) do
     with 5 <- Enum.count(path_segment),
          'git~1' <- Enum.map(path_segment, &to_lower/1) do
-      {:error, "invalid name '#{path_segment}'"}
+      {:error, :invalid_name}
     else
       _ -> :ok
     end

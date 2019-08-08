@@ -802,7 +802,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: name contains slash" do
-      assert {:error, "name contains byte '/'"} =
+      assert {:error, :invalid_name} =
                check(%Object{
                  type: :tree,
                  content: entry("100644 a/b")
@@ -997,9 +997,7 @@ defmodule Xgit.Core.ValidateObjectTest do
 
     test "invalid: tree name is variant of git~1" do
       Enum.each(@bad_dot_git_tilde_names, fn bad_name ->
-        expected_error = "invalid name '#{bad_name}'"
-
-        assert {:error, ^expected_error} =
+        assert {:error, :invalid_name} =
                  check(%Object{
                    type: :tree,
                    content: entry("100644 #{bad_name}")

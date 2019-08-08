@@ -130,7 +130,7 @@ defmodule Xgit.Core.ValidatePathTest do
       assert check_path('a/b') == :ok
       assert check_path('a//b') == {:error, "duplicate '/' characters in path"}
       assert check_path('/a') == {:error, "absolute path"}
-      assert check_path('a\0b') == {:error, "name contains byte 0x00"}
+      assert check_path('a\0b') == {:error, :invalid_name}
       assert check_path('ab/cd/ef') == :ok
 
       assert check_path('ab/cd//ef') == {:error, "duplicate '/' characters in path"}
@@ -229,9 +229,9 @@ defmodule Xgit.Core.ValidatePathTest do
     test "basic case: no platform checks" do
       assert check_path_segment('') == {:error, "zero length name"}
       assert check_path_segment('a') == :ok
-      assert check_path_segment('a/b') == {:error, "name contains byte '/'"}
-      assert check_path_segment('/a') == {:error, "name contains byte '/'"}
-      assert check_path_segment('a\0b') == {:error, "name contains byte 0x00"}
+      assert check_path_segment('a/b') == {:error, :invalid_name}
+      assert check_path_segment('/a') == {:error, :invalid_name}
+      assert check_path_segment('a\0b') == {:error, :invalid_name}
     end
 
     test "Windows variations on .git (applies to all platforms)" do
@@ -315,7 +315,7 @@ defmodule Xgit.Core.ValidatePathTest do
     end
 
     test "rejects path with slash" do
-      assert check_path_segment('a/b') == {:error, "name contains byte '/'"}
+      assert check_path_segment('a/b') == {:error, :invalid_name}
     end
 
     test "rejects empty segment" do
