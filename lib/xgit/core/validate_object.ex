@@ -91,6 +91,8 @@ defmodule Xgit.Core.ValidateObject do
 
   `{:error, :no_author}` if the object is a commit but there is no `author` header.
 
+  `{:error, :no_committer}` if the object is a commit but there is no `committer` header.
+
   `{:error, "reason"}` if the object can not be validated.
   """
   @spec check(object :: Object.t(), opts :: Keyword.t()) :: :ok | {:error, reason :: String.t()}
@@ -119,7 +121,7 @@ defmodule Xgit.Core.ValidateObject do
       {:parents, _} -> {:error, :invalid_parent}
       {:author, _} -> {:error, :no_author}
       {:author_id, why} when is_binary(why) -> {:error, why}
-      {:committer, _} -> {:error, "no committer"}
+      {:committer, _} -> {:error, :no_committer}
       {:committer_id, why} when is_binary(why) -> {:error, why}
     end
   end

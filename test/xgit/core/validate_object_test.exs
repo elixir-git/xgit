@@ -315,7 +315,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no committer 1" do
-      assert {:error, "no committer"} =
+      assert {:error, :no_committer} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -326,7 +326,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no committer 2" do
-      assert {:error, "no committer"} =
+      assert {:error, :no_committer} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
