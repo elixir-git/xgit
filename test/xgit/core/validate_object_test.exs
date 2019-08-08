@@ -207,7 +207,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid tree 1" do
-      assert {:error, "invalid tree"} =
+      assert {:error, :invalid_tree} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -217,7 +217,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid tree 2" do
-      assert {:error, "invalid tree"} =
+      assert {:error, :invalid_tree} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -227,7 +227,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid tree 3" do
-      assert {:error, "invalid tree"} =
+      assert {:error, :invalid_tree} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -237,7 +237,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid tree 4" do
-      assert {:error, "invalid tree"} =
+      assert {:error, :invalid_tree} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
