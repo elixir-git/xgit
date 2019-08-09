@@ -48,7 +48,7 @@ defmodule Xgit.Plumbing.HashObject do
   ## Return Value
 
   `{:ok, object_id}` if the object could be validated and assigned an ID.
-  `{:error, "reason"}` if unable.
+  `{:error, :reason}` if unable.
   """
   @spec run(content :: ContentSource.t(), type: ObjectType.t() | nil) ::
           {:ok, ObjectID.t()} | {:error, reason :: String.t()}
