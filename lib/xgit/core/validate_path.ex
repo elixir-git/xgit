@@ -50,8 +50,6 @@ defmodule Xgit.Core.ValidatePath do
   Verifies that a path is an acceptable part of a tree structure.
   """
 
-  alias Xgit.Util.RawParseUtils
-
   @typedoc ~S"""
   Response to validation functions in this module.
   """
@@ -80,6 +78,8 @@ defmodule Xgit.Core.ValidatePath do
   * `{:error, :absolute_path}` if the name starts with a `/`
   * `{:error, :duplicate_slash}` if the name contains two `/` characters in a row
   * `{:error, :trailing_slash}` if the name contains a trailing `/`
+
+  See also: error return values from `check_path_segment/2`.
   """
   @spec check_path(path :: [byte], windows?: boolean, macosx?: boolean) :: result
   def check_path(path, opts \\ [])
@@ -123,12 +123,19 @@ defmodule Xgit.Core.ValidatePath do
 
   * `:ok` if the name is permissible given the constraints chosen above
   * `{:error, :invalid_name}` if the name is not permissible
-  * `{:error, "reason"}` if the name is not permissible
+  * `{:error, :empty_name}` if the name is empty
+  * `{:error, :reserved_name}` if the name is reserved for git's use (i.e. `.git`)
+  * `{:error, :invalid_utf8_sequence}` if the name contains certain incomplete UTF-8 byte sequences
+    (only when `macosx?: true` is selected)
+  * `{:error, :invalid_name_on_windows}` if the name contains characters that are
+     not allowed on Windows file systems (only when `windows?: true` is selected)
+  * `{:error, :windows_device_name}` if the name matches a Windows device name (`aux`, etc.)
+    (only when `windows?: true` is selected)
   """
   @spec check_path_segment(path :: [byte], windows?: boolean, macosx?: boolean) :: result
   def check_path_segment(path, opts \\ [])
 
-  def check_path_segment([], opts) when is_list(opts), do: {:error, "zero length name"}
+  def check_path_segment([], opts) when is_list(opts), do: {:error, :empty_name}
 
   def check_path_segment(path_segment, opts) when is_list(path_segment) and is_list(opts) do
     windows? = Keyword.get(opts, :windows?, false)
@@ -175,7 +182,7 @@ defmodule Xgit.Core.ValidatePath do
   defp check_windows_characters(path_segment, true = _windows?) do
     case Enum.find(path_segment, &invalid_on_windows?/1) do
       nil -> :ok
-      c -> {:error, invalid_windows_char_message(c)}
+      _ -> {:error, :invalid_name_on_windows}
     end
   end
 
@@ -190,19 +197,13 @@ defmodule Xgit.Core.ValidatePath do
   defp invalid_on_windows?(c) when c >= 1 and c <= 31, do: true
   defp invalid_on_windows?(_), do: false
 
-  defp invalid_windows_char_message(c) when c > 31,
-    do: "char '#{List.to_string([c])}' not allowed in Windows filename"
+  defp check_git_special_name('.'), do: {:error, :reserved_name}
+  defp check_git_special_name('..'), do: {:error, :reserved_name}
+  defp check_git_special_name('.git'), do: {:error, :reserved_name}
 
-  defp invalid_windows_char_message(c),
-    do: "byte 0x'#{byte_to_hex(c)}' not allowed in Windows filename"
-
-  defp check_git_special_name('.'), do: {:error, "invalid name '.'"}
-  defp check_git_special_name('..'), do: {:error, "invalid name '..'"}
-  defp check_git_special_name('.git'), do: {:error, "invalid name '.git'"}
-
-  defp check_git_special_name([?. | rem] = name) do
+  defp check_git_special_name([?. | rem] = _name) do
     if normalized_git?(rem),
-      do: {:error, "invalid name '#{name}'"},
+      do: {:error, :reserved_name},
       else: :ok
   end
 
@@ -244,12 +245,9 @@ defmodule Xgit.Core.ValidatePath do
   defp check_git_path_with_mac_ignorables(_path_segment, false = _macosx?), do: :ok
 
   defp check_git_path_with_mac_ignorables(path_segment, true = _macosx?) do
-    if match_mac_hfs_path?(path_segment, '.git') do
-      utf8_name = RawParseUtils.decode(path_segment)
-      {:error, "invalid name '#{utf8_name}' contains ignorable Unicode characters"}
-    else
-      :ok
-    end
+    if match_mac_hfs_path?(path_segment, '.git'),
+      do: {:error, :reserved_name},
+      else: :ok
   end
 
   defp check_truncated_utf8_for_mac(_path_segment, false = _macosx?), do: :ok
@@ -257,14 +255,9 @@ defmodule Xgit.Core.ValidatePath do
   defp check_truncated_utf8_for_mac(path_segment, true = _macosx?) do
     tail3 = Enum.slice(path_segment, -2, 2)
 
-    if Enum.any?(tail3, &(&1 == 0xE2 or &1 == 0xEF)) do
-      invalid_tail = Enum.drop_while(tail3, &(&1 != 0xE2 and &1 != 0xEF))
-
-      {:error,
-       "invalid name contains byte sequence '#{to_hex_string(invalid_tail)}' which is not a valid UTF-8 character"}
-    else
-      :ok
-    end
+    if Enum.any?(tail3, &(&1 == 0xE2 or &1 == 0xEF)),
+      do: {:error, :invalid_utf8_sequence},
+      else: :ok
   end
 
   defp check_illegal_windows_name_ending(_path_segment, false = _windows?), do: :ok
@@ -273,7 +266,7 @@ defmodule Xgit.Core.ValidatePath do
     last_char = List.last(path_segment)
 
     if last_char == ?\s || last_char == ?.,
-      do: {:error, "invalid name ends with '#{<<last_char>>}'"},
+      do: {:error, :invalid_name_on_windows},
       else: :ok
   end
 
@@ -286,7 +279,7 @@ defmodule Xgit.Core.ValidatePath do
       |> Enum.take_while(&(&1 != ?.))
 
     if windows_device_name?(lc_name),
-      do: {:error, "invalid name '#{path_segment}'"},
+      do: {:error, :windows_device_name},
       else: :ok
   end
 
@@ -460,11 +453,4 @@ defmodule Xgit.Core.ValidatePath do
 
   defp to_lower(b) when b >= ?A and b <= ?Z, do: b + 32
   defp to_lower(b), do: b
-
-  defp to_hex_string(data), do: "0x#{Enum.map_join(data, &byte_to_hex/1)}"
-
-  defp byte_to_hex(b) when b < 16, do: "0" <> integer_to_lc_hex_string(b)
-  defp byte_to_hex(b), do: integer_to_lc_hex_string(b)
-
-  defp integer_to_lc_hex_string(b), do: b |> Integer.to_string(16) |> String.downcase()
 end

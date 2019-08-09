@@ -810,7 +810,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: name is empty" do
-      assert {:error, "zero length name"} =
+      assert {:error, :empty_name} =
                check(%Object{
                  type: :tree,
                  content: entry("100644 ")
@@ -818,7 +818,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: name is '.'" do
-      assert {:error, "invalid name '.'"} =
+      assert {:error, :reserved_name} =
                check(%Object{
                  type: :tree,
                  content: entry("100644 .")
@@ -826,7 +826,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: name is '..'" do
-      assert {:error, "invalid name '..'"} =
+      assert {:error, :reserved_name} =
                check(%Object{
                  type: :tree,
                  content: entry("100644 ..")
@@ -834,7 +834,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: name is '.git'" do
-      assert {:error, "invalid name '.git'"} =
+      assert {:error, :reserved_name} =
                check(%Object{
                  type: :tree,
                  content: entry("100644 .git")
@@ -842,7 +842,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: name is '.git' (mixed case)" do
-      assert {:error, "invalid name '.GiT'"} =
+      assert {:error, :reserved_name} =
                check(%Object{
                  type: :tree,
                  content: entry("100644 .GiT")
@@ -876,9 +876,7 @@ defmodule Xgit.Core.ValidateObjectTest do
         assert :ok = check(%Object{type: :tree, content: data})
 
         # Rejected on Mac OS.
-        expected_error = "invalid name '#{name}' contains ignorable Unicode characters"
-
-        assert {:error, ^expected_error} =
+        assert {:error, :reserved_name} =
                  check(%Object{type: :tree, content: data}, macosx?: true)
       end)
     end
@@ -890,10 +888,8 @@ defmodule Xgit.Core.ValidateObjectTest do
       assert :ok = check(%Object{type: :tree, content: data})
 
       # Rejected on Mac OS.
-      expected_error =
-        "invalid name contains byte sequence '0xef' which is not a valid UTF-8 character"
-
-      assert {:error, ^expected_error} = check(%Object{type: :tree, content: data}, macosx?: true)
+      assert {:error, :invalid_utf8_sequence} =
+               check(%Object{type: :tree, content: data}, macosx?: true)
     end
 
     test "invalid: name is Mac HFS .git with corrupt UTF-8 at end 2" do
@@ -903,10 +899,8 @@ defmodule Xgit.Core.ValidateObjectTest do
       assert :ok = check(%Object{type: :tree, content: data})
 
       # Rejected on Mac OS.
-      expected_error =
-        "invalid name contains byte sequence '0xe2ab' which is not a valid UTF-8 character"
-
-      assert {:error, ^expected_error} = check(%Object{type: :tree, content: data}, macosx?: true)
+      assert {:error, :invalid_utf8_sequence} =
+               check(%Object{type: :tree, content: data}, macosx?: true)
     end
 
     test "valid: name is not Mac HFS .git 1" do
@@ -943,9 +937,7 @@ defmodule Xgit.Core.ValidateObjectTest do
 
     test "invalid: tree name is variant of .git" do
       Enum.each(@bad_dot_git_names, fn bad_name ->
-        expected_error = "invalid name '#{bad_name}'"
-
-        assert {:error, ^expected_error} =
+        assert {:error, :reserved_name} =
                  check(%Object{
                    type: :tree,
                    content: entry("100644 #{bad_name}")
@@ -1139,7 +1131,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: space at end on Windows" do
-      assert {:error, "invalid name ends with ' '"} =
+      assert {:error, :invalid_name_on_windows} =
                check(
                  %Object{
                    type: :tree,
@@ -1150,7 +1142,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: dot at end on Windows" do
-      assert {:error, "invalid name ends with '.'"} =
+      assert {:error, :invalid_name_on_windows} =
                check(
                  %Object{
                    type: :tree,
@@ -1187,9 +1179,7 @@ defmodule Xgit.Core.ValidateObjectTest do
 
     test "invalid: device names on Windows" do
       Enum.each(@windows_device_names, fn name ->
-        expected_error = "invalid name '#{name}'"
-
-        assert {:error, ^expected_error} =
+        assert {:error, :windows_device_name} =
                  check(
                    %Object{
                      type: :tree,
@@ -1204,9 +1194,7 @@ defmodule Xgit.Core.ValidateObjectTest do
 
     test "invalid: characters not allowed on Windows" do
       Enum.each(@invalid_windows_chars, fn c ->
-        expected_error = "char '#{c}' not allowed in Windows filename"
-
-        assert {:error, ^expected_error} =
+        assert {:error, :invalid_name_on_windows} =
                  check(
                    %Object{
                      type: :tree,
@@ -1217,9 +1205,7 @@ defmodule Xgit.Core.ValidateObjectTest do
       end)
 
       Enum.each(1..31, fn b ->
-        expected_error = "byte 0x'#{byte_to_hex(b)}' not allowed in Windows filename"
-
-        assert {:error, ^expected_error} =
+        assert {:error, :invalid_name_on_windows} =
                  check(
                    %Object{
                      type: :tree,
@@ -1230,11 +1216,6 @@ defmodule Xgit.Core.ValidateObjectTest do
       end)
     end
   end
-
-  defp byte_to_hex(b) when b < 16, do: "0" <> integer_to_lc_hex_string(b)
-  defp byte_to_hex(b), do: integer_to_lc_hex_string(b)
-
-  defp integer_to_lc_hex_string(b), do: b |> Integer.to_string(16) |> String.downcase()
 
   defp check_one_name(name, opts \\ []),
     do: assert(:ok = check(%Object{type: :tree, content: entry("100644 #{name}")}, opts))

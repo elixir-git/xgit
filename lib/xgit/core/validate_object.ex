@@ -118,6 +118,9 @@ defmodule Xgit.Core.ValidateObject do
   `{:error, :null_sha1}` if the object is a tree and one of the object IDs is all zeros.
 
   `{:error, :invalid_mode}` if the object is a tree and one of the file modes is incomplete.
+
+  See also error responses from `Xgit.Core.ValidatePath.check_path/2` and
+  `Xgit.Core.ValidatePath.check_path_segment/2`.
   """
   @spec check(object :: Object.t(), opts :: Keyword.t()) :: :ok | {:error, reason :: String.t()}
   def check(object, opts \\ [])
