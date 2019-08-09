@@ -66,7 +66,7 @@ defmodule Xgit.Repository.OnDisk do
 
   `:ok` if created successfully.
 
-  `{:error, "reason"}` if not.
+  `{:error, :work_dir_must_not_exist}` if `work_dir` already exists.
   """
   @spec create(work_dir :: String.t()) :: :ok | {:error, reason :: String.t()}
   defdelegate create(work_dir), to: Xgit.Repository.OnDisk.Create

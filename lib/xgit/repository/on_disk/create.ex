@@ -11,7 +11,7 @@ defmodule Xgit.Repository.OnDisk.Create do
 
   defp assert_not_exists(path) do
     if File.exists?(path),
-      do: {:error, "work_dir must be a directory that doesn't already exist"},
+      do: {:error, :work_dir_must_not_exist},
       else: {:ok, path}
   end
 
