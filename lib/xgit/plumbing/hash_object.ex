@@ -42,13 +42,19 @@ defmodule Xgit.Plumbing.HashObject do
     * This option is meaningless if `:repo` is not specified.
     * See [`-w` option on `git hash-object`](https://git-scm.com/docs/git-hash-object#Documentation/git-hash-object.txt--w).
 
-  **TO DO:** There is no support, at present, for filters as defined in a
+  _TO DO:_ There is no support, at present, for filters as defined in a
   `.gitattributes` file. See [issue #18](https://github.com/elixir-git/xgit/issues/18).
 
-  ## Return Value
+  ## Return Values
 
   `{:ok, object_id}` if the object could be validated and assigned an ID.
-  `{:error, :reason}` if unable.
+
+  `{:error, :reason}` if unable. The relevant reason codes may come from:
+
+  * `Xgit.Core.ValidateObject.check/2`
+  * `Xgit.Core.ValidatePath.check_path/2`
+  * `Xgit.Core.ValidatePath.check_path_segment/2`.
+
   """
   @spec run(content :: ContentSource.t(), type: ObjectType.t() | nil) ::
           {:ok, ObjectID.t()} | {:error, reason :: String.t()}
