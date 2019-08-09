@@ -125,24 +125,24 @@ defmodule Xgit.Core.ValidatePathTest do
 
   describe "check_path/2" do
     test "basic case: no platform checks" do
-      assert check_path('') == {:error, "empty path"}
+      assert check_path('') == {:error, :empty_path}
       assert check_path('a') == :ok
       assert check_path('a/b') == :ok
-      assert check_path('a//b') == {:error, "duplicate '/' characters in path"}
-      assert check_path('/a') == {:error, "absolute path"}
-      assert check_path('a\0b') == {:error, "name contains byte 0x00"}
+      assert check_path('a//b') == {:error, :duplicate_slash}
+      assert check_path('/a') == {:error, :absolute_path}
+      assert check_path('a\0b') == {:error, :invalid_name}
       assert check_path('ab/cd/ef') == :ok
 
-      assert check_path('ab/cd//ef') == {:error, "duplicate '/' characters in path"}
-      assert check_path('a/') == {:error, "trailing '/'"}
-      assert check_path('ab/cd/ef/') == {:error, "trailing '/'"}
+      assert check_path('ab/cd//ef') == {:error, :duplicate_slash}
+      assert check_path('a/') == {:error, :trailing_slash}
+      assert check_path('ab/cd/ef/') == {:error, :trailing_slash}
     end
 
     test "Windows variations on .git (applies to all platforms)" do
       for name <- @windows_git_names do
-        assert {:error, _reason} = check_path(name)
-        assert {:error, _reason} = check_path(name, windows?: true)
-        assert {:error, _reason} = check_path(name, macosx?: true)
+        assert {:error, :invalid_name} = check_path(name)
+        assert {:error, :invalid_name} = check_path(name, windows?: true)
+        assert {:error, :invalid_name} = check_path(name, macosx?: true)
       end
 
       for name <- @almost_windows_git_names do
@@ -155,7 +155,7 @@ defmodule Xgit.Core.ValidatePathTest do
     test "variations on .git on Mac" do
       for name <- @mac_hfs_git_names do
         assert :ok = check_path(:binary.bin_to_list(name))
-        assert {:error, _reason} = check_path(:binary.bin_to_list(name), macosx?: true)
+        assert {:error, :reserved_name} = check_path(:binary.bin_to_list(name), macosx?: true)
       end
 
       for name <- @almost_mac_hfs_git_names do
@@ -168,21 +168,21 @@ defmodule Xgit.Core.ValidatePathTest do
       for char <- @invalid_windows_chars do
         assert :ok = check_path([char])
         assert :ok = check_path([?a, char, ?b])
-        assert {:error, _} = check_path([char], windows?: true)
-        assert {:error, _} = check_path([?a, char, ?b], windows?: true)
+        assert {:error, :invalid_name_on_windows} = check_path([char], windows?: true)
+        assert {:error, :invalid_name_on_windows} = check_path([?a, char, ?b], windows?: true)
       end
 
       for char <- 1..31 do
         assert :ok = check_path([char])
         assert :ok = check_path([?a, char, ?b])
-        assert {:error, _} = check_path([char], windows?: true)
-        assert {:error, _} = check_path([?a, char, ?b], windows?: true)
+        assert {:error, :invalid_name_on_windows} = check_path([char], windows?: true)
+        assert {:error, :invalid_name_on_windows} = check_path([?a, char, ?b], windows?: true)
       end
     end
 
     test "git special names" do
       for name <- @git_special_names do
-        assert {:error, _} = check_path(name)
+        assert {:error, :reserved_name} = check_path(name)
       end
 
       for name <- @almost_git_special_names do
@@ -191,31 +191,31 @@ defmodule Xgit.Core.ValidatePathTest do
     end
 
     test "badly-formed UTF8 on Mac" do
-      assert {:error, _} = check_path([?a, ?b, 0xE2, 0x80], macosx?: true)
-      assert {:error, _} = check_path([?a, ?b, 0xEF, 0x80], macosx?: true)
+      assert {:error, :invalid_utf8_sequence} = check_path([?a, ?b, 0xE2, 0x80], macosx?: true)
+      assert {:error, :invalid_utf8_sequence} = check_path([?a, ?b, 0xEF, 0x80], macosx?: true)
       assert :ok = check_path([?a, ?b, 0xE2, 0x80, 0xAE], macosx?: true)
 
       bad_name = '.git' ++ [0xEF]
       assert :ok = check_path(bad_name)
-      assert {:error, _} = check_path(bad_name, macosx?: true)
+      assert {:error, :invalid_utf8_sequence} = check_path(bad_name, macosx?: true)
 
       bad_name = '.git' ++ [0xE2, 0xAB]
       assert :ok = check_path(bad_name)
-      assert {:error, _} = check_path(bad_name, macosx?: true)
+      assert {:error, :invalid_utf8_sequence} = check_path(bad_name, macosx?: true)
     end
 
     test "Windows name ending with ." do
       assert :ok = check_path('abc.')
       assert :ok = check_path('abc ')
 
-      assert {:error, "invalid name ends with '.'"} = check_path('abc.', windows?: true)
-      assert {:error, "invalid name ends with ' '"} = check_path('abc ', windows?: true)
+      assert {:error, :invalid_name_on_windows} = check_path('abc.', windows?: true)
+      assert {:error, :invalid_name_on_windows} = check_path('abc ', windows?: true)
     end
 
     test "Windows device names" do
       for name <- @windows_device_names do
         assert :ok = check_path(name)
-        assert {:error, _} = check_path(name, windows?: true)
+        assert {:error, :windows_device_name} = check_path(name, windows?: true)
       end
 
       for name <- @almost_windows_device_names do
@@ -227,18 +227,18 @@ defmodule Xgit.Core.ValidatePathTest do
 
   describe "check_path_segment/2" do
     test "basic case: no platform checks" do
-      assert check_path_segment('') == {:error, "zero length name"}
+      assert check_path_segment('') == {:error, :empty_name}
       assert check_path_segment('a') == :ok
-      assert check_path_segment('a/b') == {:error, "name contains byte '/'"}
-      assert check_path_segment('/a') == {:error, "name contains byte '/'"}
-      assert check_path_segment('a\0b') == {:error, "name contains byte 0x00"}
+      assert check_path_segment('a/b') == {:error, :invalid_name}
+      assert check_path_segment('/a') == {:error, :invalid_name}
+      assert check_path_segment('a\0b') == {:error, :invalid_name}
     end
 
     test "Windows variations on .git (applies to all platforms)" do
       for name <- @windows_git_names do
-        assert {:error, _reason} = check_path_segment(name)
-        assert {:error, _reason} = check_path_segment(name, windows?: true)
-        assert {:error, _reason} = check_path_segment(name, macosx?: true)
+        assert {:error, :invalid_name} = check_path_segment(name)
+        assert {:error, :invalid_name} = check_path_segment(name, windows?: true)
+        assert {:error, :invalid_name} = check_path_segment(name, macosx?: true)
       end
 
       for name <- @almost_windows_git_names do
@@ -250,7 +250,8 @@ defmodule Xgit.Core.ValidatePathTest do
 
     test "variations on .git on Mac" do
       for name <- @mac_hfs_git_names do
-        assert {:error, _reason} = check_path_segment(:binary.bin_to_list(name), macosx?: true)
+        assert {:error, :reserved_name} =
+                 check_path_segment(:binary.bin_to_list(name), macosx?: true)
       end
     end
 
@@ -258,21 +259,25 @@ defmodule Xgit.Core.ValidatePathTest do
       for char <- @invalid_windows_chars do
         assert :ok = check_path_segment([char])
         assert :ok = check_path_segment([?a, char, ?b])
-        assert {:error, _} = check_path_segment([char], windows?: true)
-        assert {:error, _} = check_path_segment([?a, char, ?b], windows?: true)
+        assert {:error, :invalid_name_on_windows} = check_path_segment([char], windows?: true)
+
+        assert {:error, :invalid_name_on_windows} =
+                 check_path_segment([?a, char, ?b], windows?: true)
       end
 
       for char <- 1..31 do
         assert :ok = check_path_segment([char])
         assert :ok = check_path_segment([?a, char, ?b])
-        assert {:error, _} = check_path_segment([char], windows?: true)
-        assert {:error, _} = check_path_segment([?a, char, ?b], windows?: true)
+        assert {:error, :invalid_name_on_windows} = check_path_segment([char], windows?: true)
+
+        assert {:error, :invalid_name_on_windows} =
+                 check_path_segment([?a, char, ?b], windows?: true)
       end
     end
 
     test "git special names" do
       for name <- @git_special_names do
-        assert {:error, _} = check_path_segment(name)
+        assert {:error, :reserved_name} = check_path_segment(name)
       end
 
       for name <- @almost_git_special_names do
@@ -281,31 +286,35 @@ defmodule Xgit.Core.ValidatePathTest do
     end
 
     test "badly-formed UTF8 on Mac" do
-      assert {:error, _} = check_path_segment([?a, ?b, 0xE2, 0x80], macosx?: true)
-      assert {:error, _} = check_path_segment([?a, ?b, 0xEF, 0x80], macosx?: true)
+      assert {:error, :invalid_utf8_sequence} =
+               check_path_segment([?a, ?b, 0xE2, 0x80], macosx?: true)
+
+      assert {:error, :invalid_utf8_sequence} =
+               check_path_segment([?a, ?b, 0xEF, 0x80], macosx?: true)
+
       assert :ok = check_path_segment([?a, ?b, 0xE2, 0x80, 0xAE], macosx?: true)
 
       bad_name = '.git' ++ [0xEF]
       assert :ok = check_path_segment(bad_name)
-      assert {:error, _} = check_path_segment(bad_name, macosx?: true)
+      assert {:error, :invalid_utf8_sequence} = check_path_segment(bad_name, macosx?: true)
 
       bad_name = '.git' ++ [0xE2, 0xAB]
       assert :ok = check_path_segment(bad_name)
-      assert {:error, _} = check_path_segment(bad_name, macosx?: true)
+      assert {:error, :invalid_utf8_sequence} = check_path_segment(bad_name, macosx?: true)
     end
 
     test "Windows name ending with . or space" do
       assert :ok = check_path_segment('abc.')
       assert :ok = check_path_segment('abc ')
 
-      assert {:error, "invalid name ends with '.'"} = check_path_segment('abc.', windows?: true)
-      assert {:error, "invalid name ends with ' '"} = check_path_segment('abc ', windows?: true)
+      assert {:error, :invalid_name_on_windows} = check_path_segment('abc.', windows?: true)
+      assert {:error, :invalid_name_on_windows} = check_path_segment('abc ', windows?: true)
     end
 
     test "Windows device names" do
       for name <- @windows_device_names do
         assert :ok = check_path_segment(name)
-        assert {:error, _} = check_path_segment(name, windows?: true)
+        assert {:error, :windows_device_name} = check_path_segment(name, windows?: true)
       end
 
       for name <- @almost_windows_device_names do
@@ -315,11 +324,11 @@ defmodule Xgit.Core.ValidatePathTest do
     end
 
     test "rejects path with slash" do
-      assert check_path_segment('a/b') == {:error, "name contains byte '/'"}
+      assert check_path_segment('a/b') == {:error, :invalid_name}
     end
 
     test "rejects empty segment" do
-      assert check_path_segment([]) == {:error, "zero length name"}
+      assert check_path_segment([]) == {:error, :empty_name}
     end
 
     test "jgit bug 477090" do

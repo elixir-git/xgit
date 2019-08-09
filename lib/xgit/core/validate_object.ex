@@ -78,7 +78,62 @@ defmodule Xgit.Core.ValidateObject do
 
   `:ok` if the object is successfully validated.
 
-  `{:error, "reason"}` if the object can not be validated.
+  `{:error, :invalid_type}` if the object's type is unknown.
+
+  `{:error, :no_tree_header}` if the object is a commit but does not contain
+  a valid tree header.
+
+  `{:error, :invalid_tree}` if the object is a commit but the tree object ID
+  is invalid.
+
+  `{:error, :invalid_parent}` if the object is a commit but one of the `parent`
+  headers is invalid.
+
+  `{:error, :no_author}` if the object is a commit but there is no `author` header.
+
+  `{:error, :no_committer}` if the object is a commit but there is no `committer` header.
+
+  `{:error, :no_object_header}` if the object is a tag but there is no `object` header.
+
+  `{:error, :invalid_object}` if the object is a tag but the object ID is invalid.
+
+  `{:error, :no_type_header}` if the object is a tag but there is no `type` header.
+
+  `{:error, :invalid_tagger}` if the object is a tag but one of the `tagger` headers
+  is invalid.
+
+  `{:error, :bad_date}` if the object is a tag or a commit but has a malformed date entry.
+
+  `{:error, :bad_email}` if the object is a tag or a commit but has a malformed e-mail address.
+
+  `{:error, :missing_email}` if the object is a tag or a commit but has a missing e-mail address
+  where one is expected.
+
+  `{:error, :missing_space_before_date}` if the object is a tag or a commit but
+  has no space preceding the place where a date is expected.
+
+  `{:error, :bad_time_zone}` if the object is a tag or a commit but has a malformed
+  time zone entry.
+
+  `{:error, :invalid_file_mode}` if the object is a tree but one of the file modes is invalid.
+
+  `{:error, :truncated_in_name}` if the object is a tree but one of the file names is incomplete.
+
+  `{:error, :duplicate_entry_names}` if the object is a tree and contains duplicate
+  entry names.
+
+  `{:error, :incorrectly_sorted}` if the object is a tree and the entries are not
+  in alphabetical order.
+
+  `{:error, :truncated_in_object_id}` if the object is a tree and one of the object IDs
+  is invalid.
+
+  `{:error, :null_sha1}` if the object is a tree and one of the object IDs is all zeros.
+
+  `{:error, :invalid_mode}` if the object is a tree and one of the file modes is incomplete.
+
+  See also error responses from `Xgit.Core.ValidatePath.check_path/2` and
+  `Xgit.Core.ValidatePath.check_path_segment/2`.
   """
   @spec check(object :: Object.t(), opts :: Keyword.t()) :: :ok | {:error, reason :: String.t()}
   def check(object, opts \\ [])
@@ -87,7 +142,7 @@ defmodule Xgit.Core.ValidateObject do
   def check(%Object{type: :commit} = object, _opts), do: check_commit(object)
   def check(%Object{type: :tag} = object, _opts), do: check_tag(object)
   def check(%Object{type: :tree} = object, opts), do: check_tree(object, opts)
-  def check(%Object{type: type}, _opts), do: {:error, "invalid type #{inspect(type)}"}
+  def check(%Object{type: _type}, _opts), do: {:error, :invalid_type}
 
   # -- commit specifics --
 
@@ -101,13 +156,13 @@ defmodule Xgit.Core.ValidateObject do
          {:committer_id, data} when is_list(data) <- {:committer_id, check_person_ident(data)} do
       :ok
     else
-      {:tree, _} -> {:error, "no tree header"}
-      {:tree_id, _} -> {:error, "invalid tree"}
-      {:parents, _} -> {:error, "invalid parent"}
-      {:author, _} -> {:error, "no author"}
-      {:author_id, why} when is_binary(why) -> {:error, why}
-      {:committer, _} -> {:error, "no committer"}
-      {:committer_id, why} when is_binary(why) -> {:error, why}
+      {:tree, _} -> {:error, :no_tree_header}
+      {:tree_id, _} -> {:error, :invalid_tree}
+      {:parents, _} -> {:error, :invalid_parent}
+      {:author, _} -> {:error, :no_author}
+      {:author_id, why} when is_atom(why) -> {:error, why}
+      {:committer, _} -> {:error, :no_committer}
+      {:committer_id, why} when is_atom(why) -> {:error, why}
     end
   end
 
@@ -135,11 +190,11 @@ defmodule Xgit.Core.ValidateObject do
          {:tagger, data} when is_list(data) <- {:tagger, maybe_match_tagger(data)} do
       :ok
     else
-      {:object, _} -> {:error, "no object header"}
-      {:object_id, _} -> {:error, "invalid object"}
-      {:type, _} -> {:error, "no type header"}
-      {:tag, _} -> {:error, "no tag header"}
-      {:tagger, _} -> {:error, "invalid tagger"}
+      {:object, _} -> {:error, :no_object_header}
+      {:object_id, _} -> {:error, :invalid_object}
+      {:type, _} -> {:error, :no_type_header}
+      {:tag, _} -> {:error, :no_tag_header}
+      {:tagger, _} -> {:error, :invalid_tagger}
     end
   end
 
@@ -189,26 +244,26 @@ defmodule Xgit.Core.ValidateObject do
       )
     else
       {:file_mode, {:error, reason}} -> {:error, reason}
-      {:file_mode, _} -> {:error, "invalid file mode"}
-      {:path_split, _} -> {:error, "truncated in name"}
+      {:file_mode, _} -> {:error, :invalid_file_mode}
+      {:path_split, _} -> {:error, :truncated_in_name}
       {:path_valid, {:error, reason}} -> {:error, reason}
-      {:duplicate, _} -> {:error, "duplicate entry names"}
-      {:sorted, _} -> {:error, "incorrectly sorted"}
-      {:object_id_length, _} -> {:error, "truncated in object id"}
-      {:object_id_null, _} -> {:error, "entry points to null SHA-1"}
+      {:duplicate, _} -> {:error, :duplicate_entry_names}
+      {:sorted, _} -> {:error, :incorrectly_sorted}
+      {:object_id_length, _} -> {:error, :truncated_in_object_id}
+      {:object_id_null, _} -> {:error, :null_sha1}
     end
   end
 
-  defp check_file_mode([], _mode), do: {:error, "truncated in mode"}
+  defp check_file_mode([], _mode), do: {:error, :invalid_mode}
 
   defp check_file_mode([?\s | data], mode), do: {:ok, mode, data}
 
-  defp check_file_mode([?0 | _data], 0), do: {:error, "mode starts with '0'"}
+  defp check_file_mode([?0 | _data], 0), do: {:error, :invalid_mode}
 
   defp check_file_mode([c | data], mode) when c >= ?0 and c <= ?7,
     do: check_file_mode(data, mode * 8 + (c - ?0))
 
-  defp check_file_mode([_c | _data], _mode), do: {:error, "invalid mode character"}
+  defp check_file_mode([_c | _data], _mode), do: {:error, :invalid_mode}
 
   defp path_and_object_id(data), do: Enum.split_while(data, &(&1 != 0))
 
@@ -274,11 +329,11 @@ defmodule Xgit.Core.ValidateObject do
          {:bad_timezone, {_tz, [?\n | next]}} <- {:bad_timezone, RawParseUtils.parse_base_10(tz)} do
       next
     else
-      {:missing_email, _} -> "missing email"
-      {:bad_email, _} -> "bad email"
-      {:missing_space_before_date, _} -> "missing space before date"
-      {:bad_date, _} -> "bad date"
-      {:bad_timezone, _} -> "bad time zone"
+      {:missing_email, _} -> :missing_email
+      {:bad_email, _} -> :bad_email
+      {:missing_space_before_date, _} -> :missing_space_before_date
+      {:bad_date, _} -> :bad_date
+      {:bad_timezone, _} -> :bad_time_zone
     end
   end
 

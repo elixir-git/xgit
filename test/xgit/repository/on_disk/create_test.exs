@@ -19,9 +19,7 @@ defmodule Xgit.Repository.OnDisk.CreateTest do
 
     test "error: work dir exists already", %{xgit: xgit} do
       File.mkdir_p!(xgit)
-
-      assert {:error, "work_dir must be a directory that doesn't already exist"} =
-               OnDisk.create(xgit)
+      assert {:error, :work_dir_must_not_exist} = OnDisk.create(xgit)
     end
   end
 end

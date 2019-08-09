@@ -55,7 +55,7 @@ defmodule Xgit.Core.ValidateObjectTest do
   @placeholder_object_id 0..19 |> Enum.to_list()
 
   test "invalid object type" do
-    assert {:error, "invalid type :bad"} = check(%Object{type: :bad, content: []})
+    assert {:error, :invalid_type} = check(%Object{type: :bad, content: []})
   end
 
   describe "check blob" do
@@ -92,7 +92,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: corrupt author" do
-      assert {:error, "bad date"} =
+      assert {:error, :bad_date} =
                check(%Object{
                  type: :commit,
                  content: ~C"""
@@ -104,7 +104,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: corrupt committer" do
-      assert {:error, "bad date"} =
+      assert {:error, :bad_date} =
                check(%Object{
                  type: :commit,
                  content: ~C"""
@@ -167,7 +167,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no tree 1" do
-      assert {:error, "no tree header"} =
+      assert {:error, :no_tree_header} =
                check(%Object{
                  type: :commit,
                  content: ~C"""
@@ -177,7 +177,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no tree 2" do
-      assert {:error, "no tree header"} =
+      assert {:error, :no_tree_header} =
                check(%Object{
                  type: :commit,
                  content: ~C"""
@@ -187,7 +187,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no tree 3" do
-      assert {:error, "no tree header"} =
+      assert {:error, :no_tree_header} =
                check(%Object{
                  type: :commit,
                  content: ~C"""
@@ -197,7 +197,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no tree 4" do
-      assert {:error, "no tree header"} =
+      assert {:error, :no_tree_header} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -207,7 +207,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid tree 1" do
-      assert {:error, "invalid tree"} =
+      assert {:error, :invalid_tree} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -217,7 +217,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid tree 2" do
-      assert {:error, "invalid tree"} =
+      assert {:error, :invalid_tree} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -227,7 +227,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid tree 3" do
-      assert {:error, "invalid tree"} =
+      assert {:error, :invalid_tree} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -237,7 +237,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid tree 4" do
-      assert {:error, "invalid tree"} =
+      assert {:error, :invalid_tree} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -247,7 +247,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid parent 1" do
-      assert {:error, "invalid parent"} =
+      assert {:error, :invalid_parent} =
                check(%Object{
                  type: :commit,
                  content:
@@ -257,7 +257,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid parent 2" do
-      assert {:error, "invalid parent"} =
+      assert {:error, :invalid_parent} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -268,7 +268,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid parent 3" do
-      assert {:error, "invalid parent"} =
+      assert {:error, :invalid_parent} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -279,7 +279,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid parent 4" do
-      assert {:error, "invalid parent"} =
+      assert {:error, :invalid_parent} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -293,7 +293,7 @@ defmodule Xgit.Core.ValidateObjectTest do
       # Yes, really, we complain about author not being
       # found as the invalid parent line wasn't consumed.
 
-      assert {:error, "no author"} =
+      assert {:error, :no_author} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -304,7 +304,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no author" do
-      assert {:error, "no author"} =
+      assert {:error, :no_author} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -315,7 +315,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no committer 1" do
-      assert {:error, "no committer"} =
+      assert {:error, :no_committer} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -326,7 +326,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no committer 2" do
-      assert {:error, "no committer"} =
+      assert {:error, :no_committer} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -338,7 +338,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid author 1" do
-      assert {:error, "bad email"} =
+      assert {:error, :bad_email} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -349,7 +349,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid author 2" do
-      assert {:error, "missing email"} =
+      assert {:error, :missing_email} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -360,7 +360,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid author 3" do
-      assert {:error, "missing email"} =
+      assert {:error, :missing_email} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -371,7 +371,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid author 4" do
-      assert {:error, "bad date"} =
+      assert {:error, :bad_date} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -382,7 +382,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid author 5" do
-      assert {:error, "missing space before date"} =
+      assert {:error, :missing_space_before_date} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -393,7 +393,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid author 6" do
-      assert {:error, "bad date"} =
+      assert {:error, :bad_date} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -404,7 +404,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid author 7" do
-      assert {:error, "bad time zone"} =
+      assert {:error, :bad_time_zone} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -415,7 +415,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid committer" do
-      assert {:error, "bad email"} =
+      assert {:error, :bad_email} =
                check(%Object{
                  type: :commit,
                  content:
@@ -441,11 +441,11 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no object 1" do
-      assert {:error, "no object header"} = check(%Object{type: :tag, content: []})
+      assert {:error, :no_object_header} = check(%Object{type: :tag, content: []})
     end
 
     test "invalid: no object 2" do
-      assert {:error, "no object header"} =
+      assert {:error, :no_object_header} =
                check(%Object{
                  type: :tag,
                  content: 'object\tbe9bfa841874ccc9f2ef7c48d0c76226f89b7189\n'
@@ -453,7 +453,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no object 3" do
-      assert {:error, "no object header"} =
+      assert {:error, :no_object_header} =
                check(%Object{
                  type: :tag,
                  content: ~c"""
@@ -463,7 +463,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no object 4" do
-      assert {:error, "invalid object"} =
+      assert {:error, :invalid_object} =
                check(%Object{
                  type: :tag,
                  content: ~c"""
@@ -473,7 +473,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no object 5" do
-      assert {:error, "invalid object"} =
+      assert {:error, :invalid_object} =
                check(%Object{
                  type: :tag,
                  content: 'object be9bfa841874ccc9f2ef7c48d0c76226f89b7189 \n'
@@ -481,11 +481,11 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no object 6" do
-      assert {:error, "invalid object"} = check(%Object{type: :tag, content: 'object be9'})
+      assert {:error, :invalid_object} = check(%Object{type: :tag, content: 'object be9'})
     end
 
     test "invalid: no type 1" do
-      assert {:error, "no type header"} =
+      assert {:error, :no_type_header} =
                check(%Object{
                  type: :tag,
                  content: ~c"""
@@ -495,7 +495,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no type 2" do
-      assert {:error, "no type header"} =
+      assert {:error, :no_type_header} =
                check(%Object{
                  type: :tag,
                  content:
@@ -505,7 +505,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no type 3" do
-      assert {:error, "no type header"} =
+      assert {:error, :no_type_header} =
                check(%Object{
                  type: :tag,
                  content: ~c"""
@@ -516,7 +516,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no type 4" do
-      assert {:error, "no tag header"} =
+      assert {:error, :no_tag_header} =
                check(%Object{
                  type: :tag,
                  content:
@@ -526,7 +526,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no tag header 1" do
-      assert {:error, "no tag header"} =
+      assert {:error, :no_tag_header} =
                check(%Object{
                  type: :tag,
                  content: ~c"""
@@ -537,7 +537,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no tag header 2" do
-      assert {:error, "no tag header"} =
+      assert {:error, :no_tag_header} =
                check(%Object{
                  type: :tag,
                  content:
@@ -548,7 +548,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: no tag header 3" do
-      assert {:error, "no tag header"} =
+      assert {:error, :no_tag_header} =
                check(%Object{
                  type: :tag,
                  content: ~c"""
@@ -572,7 +572,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid tagger header 1" do
-      assert {:error, "invalid tagger"} =
+      assert {:error, :invalid_tagger} =
                check(%Object{
                  type: :tag,
                  content:
@@ -584,7 +584,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid tagger header 3" do
-      assert {:error, "invalid tagger"} =
+      assert {:error, :invalid_tagger} =
                check(%Object{
                  type: :tag,
                  content: ~c"""
@@ -659,7 +659,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: null SHA-1 in tree entry" do
-      assert {:error, "entry points to null SHA-1"} =
+      assert {:error, :null_sha1} =
                check(%Object{
                  type: :tree,
                  content: '100644 A' ++ Enum.map(0..20, fn _ -> 0 end)
@@ -738,7 +738,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: truncated in mode" do
-      assert {:error, "truncated in mode"} =
+      assert {:error, :invalid_mode} =
                check(%Object{
                  type: :tree,
                  content: '1006'
@@ -746,7 +746,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: mode starts with zero 1" do
-      assert {:error, "mode starts with '0'"} =
+      assert {:error, :invalid_mode} =
                check(%Object{
                  type: :tree,
                  content: entry("0 a")
@@ -754,7 +754,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: mode starts with zero 2" do
-      assert {:error, "mode starts with '0'"} =
+      assert {:error, :invalid_mode} =
                check(%Object{
                  type: :tree,
                  content: entry("0100644 a")
@@ -762,7 +762,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: mode starts with zero 3" do
-      assert {:error, "mode starts with '0'"} =
+      assert {:error, :invalid_mode} =
                check(%Object{
                  type: :tree,
                  content: entry("040000 a")
@@ -770,7 +770,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: mode not octal 1" do
-      assert {:error, "invalid mode character"} =
+      assert {:error, :invalid_mode} =
                check(%Object{
                  type: :tree,
                  content: entry("8 a")
@@ -778,7 +778,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: mode not octal 2" do
-      assert {:error, "invalid mode character"} =
+      assert {:error, :invalid_mode} =
                check(%Object{
                  type: :tree,
                  content: entry("Z a")
@@ -786,7 +786,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: mode not supported mode 1" do
-      assert {:error, "invalid file mode"} =
+      assert {:error, :invalid_file_mode} =
                check(%Object{
                  type: :tree,
                  content: entry("1 a")
@@ -794,7 +794,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: mode not supported mode 2" do
-      assert {:error, "invalid file mode"} =
+      assert {:error, :invalid_file_mode} =
                check(%Object{
                  type: :tree,
                  content: entry("170000 a")
@@ -802,7 +802,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: name contains slash" do
-      assert {:error, "name contains byte '/'"} =
+      assert {:error, :invalid_name} =
                check(%Object{
                  type: :tree,
                  content: entry("100644 a/b")
@@ -810,7 +810,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: name is empty" do
-      assert {:error, "zero length name"} =
+      assert {:error, :empty_name} =
                check(%Object{
                  type: :tree,
                  content: entry("100644 ")
@@ -818,7 +818,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: name is '.'" do
-      assert {:error, "invalid name '.'"} =
+      assert {:error, :reserved_name} =
                check(%Object{
                  type: :tree,
                  content: entry("100644 .")
@@ -826,7 +826,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: name is '..'" do
-      assert {:error, "invalid name '..'"} =
+      assert {:error, :reserved_name} =
                check(%Object{
                  type: :tree,
                  content: entry("100644 ..")
@@ -834,7 +834,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: name is '.git'" do
-      assert {:error, "invalid name '.git'"} =
+      assert {:error, :reserved_name} =
                check(%Object{
                  type: :tree,
                  content: entry("100644 .git")
@@ -842,7 +842,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: name is '.git' (mixed case)" do
-      assert {:error, "invalid name '.GiT'"} =
+      assert {:error, :reserved_name} =
                check(%Object{
                  type: :tree,
                  content: entry("100644 .GiT")
@@ -876,9 +876,7 @@ defmodule Xgit.Core.ValidateObjectTest do
         assert :ok = check(%Object{type: :tree, content: data})
 
         # Rejected on Mac OS.
-        expected_error = "invalid name '#{name}' contains ignorable Unicode characters"
-
-        assert {:error, ^expected_error} =
+        assert {:error, :reserved_name} =
                  check(%Object{type: :tree, content: data}, macosx?: true)
       end)
     end
@@ -890,10 +888,8 @@ defmodule Xgit.Core.ValidateObjectTest do
       assert :ok = check(%Object{type: :tree, content: data})
 
       # Rejected on Mac OS.
-      expected_error =
-        "invalid name contains byte sequence '0xef' which is not a valid UTF-8 character"
-
-      assert {:error, ^expected_error} = check(%Object{type: :tree, content: data}, macosx?: true)
+      assert {:error, :invalid_utf8_sequence} =
+               check(%Object{type: :tree, content: data}, macosx?: true)
     end
 
     test "invalid: name is Mac HFS .git with corrupt UTF-8 at end 2" do
@@ -903,10 +899,8 @@ defmodule Xgit.Core.ValidateObjectTest do
       assert :ok = check(%Object{type: :tree, content: data})
 
       # Rejected on Mac OS.
-      expected_error =
-        "invalid name contains byte sequence '0xe2ab' which is not a valid UTF-8 character"
-
-      assert {:error, ^expected_error} = check(%Object{type: :tree, content: data}, macosx?: true)
+      assert {:error, :invalid_utf8_sequence} =
+               check(%Object{type: :tree, content: data}, macosx?: true)
     end
 
     test "valid: name is not Mac HFS .git 1" do
@@ -943,9 +937,7 @@ defmodule Xgit.Core.ValidateObjectTest do
 
     test "invalid: tree name is variant of .git" do
       Enum.each(@bad_dot_git_names, fn bad_name ->
-        expected_error = "invalid name '#{bad_name}'"
-
-        assert {:error, ^expected_error} =
+        assert {:error, :reserved_name} =
                  check(%Object{
                    type: :tree,
                    content: entry("100644 #{bad_name}")
@@ -997,9 +989,7 @@ defmodule Xgit.Core.ValidateObjectTest do
 
     test "invalid: tree name is variant of git~1" do
       Enum.each(@bad_dot_git_tilde_names, fn bad_name ->
-        expected_error = "invalid name '#{bad_name}'"
-
-        assert {:error, ^expected_error} =
+        assert {:error, :invalid_name} =
                  check(%Object{
                    type: :tree,
                    content: entry("100644 #{bad_name}")
@@ -1016,7 +1006,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: tree truncated in name" do
-      assert {:error, "truncated in name"} =
+      assert {:error, :truncated_in_name} =
                check(%Object{
                  type: :tree,
                  content: '100644 b'
@@ -1024,7 +1014,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: tree truncated in object ID" do
-      assert {:error, "truncated in object id"} =
+      assert {:error, :truncated_in_object_id} =
                check(%Object{
                  type: :tree,
                  content: '100644 b' ++ [0, 1, 2]
@@ -1039,7 +1029,7 @@ defmodule Xgit.Core.ValidateObjectTest do
 
     test "invalid: bad sorting" do
       Enum.each(@badly_sorted_trees, fn badly_sorted_names ->
-        assert {:error, "incorrectly sorted"} =
+        assert {:error, :incorrectly_sorted} =
                  check(%Object{
                    type: :tree,
                    content:
@@ -1051,7 +1041,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: duplicate file name" do
-      assert {:error, "duplicate entry names"} =
+      assert {:error, :duplicate_entry_names} =
                check(%Object{
                  type: :tree,
                  content: entry("100644 a") ++ entry("100644 a")
@@ -1059,7 +1049,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: duplicate tree name" do
-      assert {:error, "duplicate entry names"} =
+      assert {:error, :duplicate_entry_names} =
                check(%Object{
                  type: :tree,
                  content: entry("40000 a") ++ entry("40000 a")
@@ -1067,7 +1057,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: duplicate names 2" do
-      assert {:error, "duplicate entry names"} =
+      assert {:error, :duplicate_entry_names} =
                check(%Object{
                  type: :tree,
                  content: entry("100644 a") ++ entry("100755 a")
@@ -1075,7 +1065,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: duplicate names 3" do
-      assert {:error, "duplicate entry names"} =
+      assert {:error, :duplicate_entry_names} =
                check(%Object{
                  type: :tree,
                  content: entry("100644 a") ++ entry("40000 a")
@@ -1083,7 +1073,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: duplicate names 4" do
-      assert {:error, "duplicate entry names"} =
+      assert {:error, :duplicate_entry_names} =
                check(%Object{
                  type: :tree,
                  content:
@@ -1097,7 +1087,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: duplicate names 5 (Windows case folding)" do
-      assert {:error, "duplicate entry names"} =
+      assert {:error, :duplicate_entry_names} =
                check(
                  %Object{
                    type: :tree,
@@ -1108,7 +1098,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: duplicate names 6 (Mac case folding)" do
-      assert {:error, "duplicate entry names"} =
+      assert {:error, :duplicate_entry_names} =
                check(
                  %Object{
                    type: :tree,
@@ -1119,7 +1109,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: duplicate names 7 (MacOS denormalized names)" do
-      assert {:error, "duplicate entry names"} =
+      assert {:error, :duplicate_entry_names} =
                check(
                  %Object{
                    type: :tree,
@@ -1141,7 +1131,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: space at end on Windows" do
-      assert {:error, "invalid name ends with ' '"} =
+      assert {:error, :invalid_name_on_windows} =
                check(
                  %Object{
                    type: :tree,
@@ -1152,7 +1142,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: dot at end on Windows" do
-      assert {:error, "invalid name ends with '.'"} =
+      assert {:error, :invalid_name_on_windows} =
                check(
                  %Object{
                    type: :tree,
@@ -1189,9 +1179,7 @@ defmodule Xgit.Core.ValidateObjectTest do
 
     test "invalid: device names on Windows" do
       Enum.each(@windows_device_names, fn name ->
-        expected_error = "invalid name '#{name}'"
-
-        assert {:error, ^expected_error} =
+        assert {:error, :windows_device_name} =
                  check(
                    %Object{
                      type: :tree,
@@ -1206,9 +1194,7 @@ defmodule Xgit.Core.ValidateObjectTest do
 
     test "invalid: characters not allowed on Windows" do
       Enum.each(@invalid_windows_chars, fn c ->
-        expected_error = "char '#{c}' not allowed in Windows filename"
-
-        assert {:error, ^expected_error} =
+        assert {:error, :invalid_name_on_windows} =
                  check(
                    %Object{
                      type: :tree,
@@ -1219,9 +1205,7 @@ defmodule Xgit.Core.ValidateObjectTest do
       end)
 
       Enum.each(1..31, fn b ->
-        expected_error = "byte 0x'#{byte_to_hex(b)}' not allowed in Windows filename"
-
-        assert {:error, ^expected_error} =
+        assert {:error, :invalid_name_on_windows} =
                  check(
                    %Object{
                      type: :tree,
@@ -1232,11 +1216,6 @@ defmodule Xgit.Core.ValidateObjectTest do
       end)
     end
   end
-
-  defp byte_to_hex(b) when b < 16, do: "0" <> integer_to_lc_hex_string(b)
-  defp byte_to_hex(b), do: integer_to_lc_hex_string(b)
-
-  defp integer_to_lc_hex_string(b), do: b |> Integer.to_string(16) |> String.downcase()
 
   defp check_one_name(name, opts \\ []),
     do: assert(:ok = check(%Object{type: :tree, content: entry("100644 #{name}")}, opts))

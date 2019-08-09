@@ -120,7 +120,7 @@ defmodule Xgit.Repository do
 
   `:ok` if written successfully.
 
-  `{:error, "reason"}` if unable to write the object.
+  `{:error, :reason}` if unable to write the object.
   """
   @spec put_loose_object(repository :: t, object :: Object.t()) ::
           :ok | {:error, reason :: String.t()}
@@ -136,7 +136,7 @@ defmodule Xgit.Repository do
 
   Should return `{:ok, state}` if written successfully.
 
-  Should return `{:error, "reason", state}` if unable to write the object.
+  Should return `{:error, :reason, state}` if unable to write the object.
   """
   @callback handle_put_loose_object(state :: any, object :: Object.t()) ::
               {:ok, state :: any} | {:error, reason :: String.t(), state :: any}
