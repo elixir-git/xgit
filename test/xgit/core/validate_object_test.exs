@@ -92,7 +92,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: corrupt author" do
-      assert {:error, "bad date"} =
+      assert {:error, :bad_date} =
                check(%Object{
                  type: :commit,
                  content: ~C"""
@@ -104,7 +104,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: corrupt committer" do
-      assert {:error, "bad date"} =
+      assert {:error, :bad_date} =
                check(%Object{
                  type: :commit,
                  content: ~C"""
@@ -338,7 +338,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid author 1" do
-      assert {:error, "bad email"} =
+      assert {:error, :bad_email} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -349,7 +349,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid author 2" do
-      assert {:error, "missing email"} =
+      assert {:error, :missing_email} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -360,7 +360,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid author 3" do
-      assert {:error, "missing email"} =
+      assert {:error, :missing_email} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -371,7 +371,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid author 4" do
-      assert {:error, "bad date"} =
+      assert {:error, :bad_date} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -382,7 +382,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid author 5" do
-      assert {:error, "missing space before date"} =
+      assert {:error, :missing_space_before_date} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -393,7 +393,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid author 6" do
-      assert {:error, "bad date"} =
+      assert {:error, :bad_date} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -404,7 +404,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid author 7" do
-      assert {:error, "bad time zone"} =
+      assert {:error, :bad_time_zone} =
                check(%Object{
                  type: :commit,
                  content: ~c"""
@@ -415,7 +415,7 @@ defmodule Xgit.Core.ValidateObjectTest do
     end
 
     test "invalid: invalid committer" do
-      assert {:error, "bad email"} =
+      assert {:error, :bad_email} =
                check(%Object{
                  type: :commit,
                  content:

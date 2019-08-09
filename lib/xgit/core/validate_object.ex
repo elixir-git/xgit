@@ -102,6 +102,19 @@ defmodule Xgit.Core.ValidateObject do
   `{:error, :invalid_tagger}` if the object is a tag but one of the `tagger` headers
   is invalid.
 
+  `{:error, :bad_date}` if the object is a tag or a commit but has a malformed date entry.
+
+  `{:error, :bad_email}` if the object is a tag or a commit but has a malformed e-mail address.
+
+  `{:error, :missing_email}` if the object is a tag or a commit but has a missing e-mail address
+  where one is expected.
+
+  `{:error, :missing_space_before_date}` if the object is a tag or a commit but
+  has no space preceding the place where a date is expected.
+
+  `{:error, :bad_time_zone}` if the object is a tag or a commit but has a malformed
+  time zone entry.
+
   `{:error, :invalid_file_mode}` if the object is a tree but one of the file modes is invalid.
 
   `{:error, :truncated_in_name}` if the object is a tree but one of the file names is incomplete.
@@ -147,9 +160,9 @@ defmodule Xgit.Core.ValidateObject do
       {:tree_id, _} -> {:error, :invalid_tree}
       {:parents, _} -> {:error, :invalid_parent}
       {:author, _} -> {:error, :no_author}
-      {:author_id, why} when is_binary(why) -> {:error, why}
+      {:author_id, why} when is_atom(why) -> {:error, why}
       {:committer, _} -> {:error, :no_committer}
-      {:committer_id, why} when is_binary(why) -> {:error, why}
+      {:committer_id, why} when is_atom(why) -> {:error, why}
     end
   end
 
@@ -316,11 +329,11 @@ defmodule Xgit.Core.ValidateObject do
          {:bad_timezone, {_tz, [?\n | next]}} <- {:bad_timezone, RawParseUtils.parse_base_10(tz)} do
       next
     else
-      {:missing_email, _} -> "missing email"
-      {:bad_email, _} -> "bad email"
-      {:missing_space_before_date, _} -> "missing space before date"
-      {:bad_date, _} -> "bad date"
-      {:bad_timezone, _} -> "bad time zone"
+      {:missing_email, _} -> :missing_email
+      {:bad_email, _} -> :bad_email
+      {:missing_space_before_date, _} -> :missing_space_before_date
+      {:bad_date, _} -> :bad_date
+      {:bad_timezone, _} -> :bad_time_zone
     end
   end
 
