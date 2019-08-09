@@ -76,13 +76,16 @@ defmodule Xgit.Core.ValidatePath do
 
   * `:ok` if the name is permissible given the constraints chosen above
   * `{:error, :invalid_name}` if the name is not permissible
-  * `{:error, "reason"}` if the name is not permissible
+  * `{:error, :empty_path}` if the name is empty
+  * `{:error, :absolute_path}` if the name starts with a `/`
+  * `{:error, :duplicate_slash}` if the name contains two `/` characters in a row
+  * `{:error, :trailing_slash}` if the name contains a trailing `/`
   """
   @spec check_path(path :: [byte], windows?: boolean, macosx?: boolean) :: result
   def check_path(path, opts \\ [])
 
-  def check_path([], opts) when is_list(opts), do: {:error, "empty path"}
-  def check_path([?/ | _], opts) when is_list(opts), do: {:error, "absolute path"}
+  def check_path([], opts) when is_list(opts), do: {:error, :empty_path}
+  def check_path([?/ | _], opts) when is_list(opts), do: {:error, :absolute_path}
 
   def check_path(path, opts) when is_list(path) and is_list(opts) do
     {first_segment, remaining_path} = Enum.split_while(path, &(&1 != ?/))
@@ -96,10 +99,10 @@ defmodule Xgit.Core.ValidatePath do
   defp check_remaining_path([], _opts), do: :ok
 
   defp check_remaining_path([?/], _opts),
-    do: {:error, "trailing '/'"}
+    do: {:error, :trailing_slash}
 
   defp check_remaining_path([?/, ?/ | _remainder], _opts),
-    do: {:error, "duplicate '/' characters in path"}
+    do: {:error, :duplicate_slash}
 
   defp check_remaining_path([?/ | remainder], opts), do: check_path(remainder, opts)
 

@@ -125,17 +125,17 @@ defmodule Xgit.Core.ValidatePathTest do
 
   describe "check_path/2" do
     test "basic case: no platform checks" do
-      assert check_path('') == {:error, "empty path"}
+      assert check_path('') == {:error, :empty_path}
       assert check_path('a') == :ok
       assert check_path('a/b') == :ok
-      assert check_path('a//b') == {:error, "duplicate '/' characters in path"}
-      assert check_path('/a') == {:error, "absolute path"}
+      assert check_path('a//b') == {:error, :duplicate_slash}
+      assert check_path('/a') == {:error, :absolute_path}
       assert check_path('a\0b') == {:error, :invalid_name}
       assert check_path('ab/cd/ef') == :ok
 
-      assert check_path('ab/cd//ef') == {:error, "duplicate '/' characters in path"}
-      assert check_path('a/') == {:error, "trailing '/'"}
-      assert check_path('ab/cd/ef/') == {:error, "trailing '/'"}
+      assert check_path('ab/cd//ef') == {:error, :duplicate_slash}
+      assert check_path('a/') == {:error, :trailing_slash}
+      assert check_path('ab/cd/ef/') == {:error, :trailing_slash}
     end
 
     test "Windows variations on .git (applies to all platforms)" do
