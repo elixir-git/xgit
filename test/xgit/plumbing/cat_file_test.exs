@@ -8,7 +8,10 @@ defmodule Xgit.Plumbing.CatFileTest do
   defmodule NotRepo do
     use GenServer
 
+    @impl true
     def init(_init_arg), do: {:ok, nil}
+
+    @impl true
     def handle_call(_request, _from, _state), do: {:reply, :whatever, nil}
   end
 
