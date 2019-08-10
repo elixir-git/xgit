@@ -4,7 +4,7 @@ defmodule Xgit.MixProject do
   def project do
     [
       app: :xgit,
-      version: "0.1.0",
+      version: "0.1.1",
       name: "Xgit",
       elixir: "~> 1.8",
       elixirc_options: [warnings_as_errors: true],
