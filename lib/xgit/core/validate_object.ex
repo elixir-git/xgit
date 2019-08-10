@@ -67,7 +67,7 @@ defmodule Xgit.Core.ValidateObject do
   @typedoc ~S"""
   Error codes which can be returned by `check/2`.
   """
-  @type check_reasons ::
+  @type check_reason ::
           :invalid_type
           | :no_tree_header
           | :invalid_tree
@@ -164,9 +164,9 @@ defmodule Xgit.Core.ValidateObject do
   """
   @spec check(object :: Object.t(), opts :: Keyword.t()) ::
           :ok
-          | {:error, reason :: check_reasons}
-          | {:error, reason :: ValidatePath.check_path_reasons()}
-          | {:error, reason :: ValidatePath.check_path_segment_reasons()}
+          | {:error, reason :: check_reason}
+          | {:error, reason :: ValidatePath.check_path_reason()}
+          | {:error, reason :: ValidatePath.check_path_segment_reason()}
   def check(object, opts \\ [])
 
   def check(%Object{type: :blob}, _opts), do: :ok
@@ -332,7 +332,7 @@ defmodule Xgit.Core.ValidateObject do
     end
   end
 
-  defp correctly_sorted?(nil, _previous_mode, _this_name, _this_mode), do: true
+  defp correctly_sorted?([], _previous_mode, _this_name, _this_mode), do: true
 
   defp correctly_sorted?(previous_name, previous_mode, this_name, this_mode),
     do: Paths.compare(previous_name, previous_mode, this_name, this_mode) != :gt

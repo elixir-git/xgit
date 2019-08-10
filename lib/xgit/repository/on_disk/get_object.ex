@@ -3,6 +3,7 @@ defmodule Xgit.Repository.OnDisk.GetObject do
   # Implements Xgit.Repository.OnDisk.handle_get_object/2.
 
   alias Xgit.Core.Object
+  alias Xgit.Core.ObjectId
   alias Xgit.Util.RawParseUtils
   alias Xgit.Util.UnzipStream
 
