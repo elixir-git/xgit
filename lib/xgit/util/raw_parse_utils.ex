@@ -60,7 +60,7 @@ defmodule Xgit.Util.RawParseUtils do
 
   If not, return `nil`.
   """
-  @spec after_prefix(b :: charlist, prefix :: charlist) :: charlist | false
+  @spec after_prefix(b :: charlist, prefix :: charlist) :: charlist | nil
   def after_prefix(b, prefix)
 
   def after_prefix(b, []), do: b
@@ -324,7 +324,7 @@ defmodule Xgit.Util.RawParseUtils do
   Returns the encoding header as specified in the commit or `nil` if the header
   was not present and UTF-8 should be assumed.
   """
-  @spec parse_encoding_name(b :: charlist) :: charlist | nil
+  @spec parse_encoding_name(b :: charlist) :: String.t() | nil
   def parse_encoding_name(b) when is_list(b) do
     enc = encoding(b)
 
@@ -369,7 +369,7 @@ defmodule Xgit.Util.RawParseUtils do
   implementation. Should other character sets come into play, this will necessarily
   become more complicated.
   """
-  @spec decode(b :: [byte]) :: charlist
+  @spec decode(b :: [byte]) :: String.t()
   def decode(b) when is_list(b) do
     raw = :erlang.list_to_binary(b)
 

@@ -7,8 +7,8 @@ defmodule Xgit.Plumbing.CatFile do
   """
 
   alias Xgit.Core.ContentSource
+  alias Xgit.Core.Object
   alias Xgit.Core.ObjectId
-  alias Xgit.Core.ObjectType
   alias Xgit.Repository
 
   @typedoc ~S"""
@@ -41,8 +41,8 @@ defmodule Xgit.Plumbing.CatFile do
 
   `{:error, :invalid_object}` if object was found, but invalid.
   """
-  @spec run(content :: ContentSource.t(), type: ObjectType.t() | nil) ::
-          {:ok, ObjectID.t()}
+  @spec run(content :: ContentSource.t(), object_id :: ObjectId.t()) ::
+          {:ok, Object}
           | {:error, reason :: reason}
           | {:error, reason :: Repository.get_object_reason()}
   def run(repository, object_id) when is_pid(repository) and is_binary(object_id) do

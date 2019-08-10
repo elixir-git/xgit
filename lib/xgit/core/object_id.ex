@@ -8,7 +8,6 @@ defmodule Xgit.Core.ObjectId do
   use Xgit.Core.ObjectType
 
   alias Xgit.Core.ContentSource
-  alias Xgit.Core.ObjectId
 
   @typedoc "A string containing 40 bytes of lowercase hex digits."
   @type t :: String.t()
@@ -66,7 +65,7 @@ defmodule Xgit.Core.ObjectId do
 
   The object ID. (See `Xgit.Core.ObjectId`.)
   """
-  @spec calculate_id(data :: ContentSource.t(), type :: ObjectType.t()) :: ObjectId.t()
+  @spec calculate_id(data :: ContentSource.t(), type :: ObjectType.t()) :: t()
   def calculate_id(data, type) when not is_nil(data) and is_object_type(type) do
     size = ContentSource.length(data)
 

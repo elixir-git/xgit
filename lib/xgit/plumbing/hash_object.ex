@@ -59,7 +59,7 @@ defmodule Xgit.Plumbing.HashObject do
 
   """
   @spec run(content :: ContentSource.t(), type: ObjectType.t() | nil) ::
-          {:ok, ObjectID.t()}
+          {:ok, ObjectId.t()}
           | {:error, reason :: ValidateObject.check_reason()}
           | {:error, reason :: ValidatePath.check_path_reason()}
           | {:error, reason :: ValidatePath.check_path_segment_reason()}

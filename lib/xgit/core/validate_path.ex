@@ -53,13 +53,13 @@ defmodule Xgit.Core.ValidatePath do
   @typedoc ~S"""
   Error codes which can be returned by `check_path/2`.
   """
-  @type check_path_reasons ::
+  @type check_path_reason ::
           :invalid_name | :empty_path | :absolute_path | :duplicate_slash | :trailing_slash
 
   @typedoc ~S"""
   Error codes which can be returned by `check_path_segment/2`.
   """
-  @type check_path_segment_reasons ::
+  @type check_path_segment_reason ::
           :invalid_name
           | :empty_name
           | :reserved_name
@@ -94,7 +94,7 @@ defmodule Xgit.Core.ValidatePath do
   See also: error return values from `check_path_segment/2`.
   """
   @spec check_path(path :: [byte], windows?: boolean, macosx?: boolean) ::
-          :ok | {:error, check_path_reasons} | {:error, check_path_segment_reasons}
+          :ok | {:error, check_path_reason} | {:error, check_path_segment_reason}
   def check_path(path, opts \\ [])
 
   def check_path([], opts) when is_list(opts), do: {:error, :empty_path}
@@ -146,7 +146,7 @@ defmodule Xgit.Core.ValidatePath do
     (only when `windows?: true` is selected)
   """
   @spec check_path_segment(path :: [byte], windows?: boolean, macosx?: boolean) ::
-          :ok | {:error, check_path_segment_reasons}
+          :ok | {:error, check_path_segment_reason}
   def check_path_segment(path, opts \\ [])
 
   def check_path_segment([], opts) when is_list(opts), do: {:error, :empty_name}
