@@ -6,7 +6,6 @@ defmodule Xgit.Plumbing.CatFile do
   Analogous to the first form of [`git cat-file`](https://git-scm.com/docs/git-cat-file).
   """
 
-  alias Xgit.Core.ContentSource
   alias Xgit.Core.Object
   alias Xgit.Core.ObjectId
   alias Xgit.Repository
@@ -41,7 +40,7 @@ defmodule Xgit.Plumbing.CatFile do
 
   `{:error, :invalid_object}` if object was found, but invalid.
   """
-  @spec run(content :: ContentSource.t(), object_id :: ObjectId.t()) ::
+  @spec run(repository :: Repository.t(), object_id :: ObjectId.t()) ::
           {:ok, Object}
           | {:error, reason :: reason}
           | {:error, reason :: Repository.get_object_reason()}
