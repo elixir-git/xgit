@@ -64,6 +64,33 @@ defmodule Xgit.Core.ValidateObject do
 
   import Xgit.Util.RawParseUtils, only: [after_prefix: 2]
 
+  @typedoc ~S"""
+  Error codes which can be returned by `check/2`.
+  """
+  @type check_reasons ::
+          :invalid_type
+          | :no_tree_header
+          | :invalid_tree
+          | :invalid_parent
+          | :no_author
+          | :no_committer
+          | :no_object_header
+          | :invalid_object
+          | :no_type_header
+          | :invalid_tagger
+          | :bad_date
+          | :bad_email
+          | :missing_email
+          | :missing_space_before_date
+          | :bad_time_zone
+          | :invalid_file_mode
+          | :truncated_in_name
+          | :duplicate_entry_names
+          | :incorrectly_sorted
+          | :truncated_in_object_id
+          | :null_sha1
+          | :invalid_mode
+
   @doc ~S"""
   Verify that a proposed object is valid.
 
@@ -135,7 +162,11 @@ defmodule Xgit.Core.ValidateObject do
   See also error responses from `Xgit.Core.ValidatePath.check_path/2` and
   `Xgit.Core.ValidatePath.check_path_segment/2`.
   """
-  @spec check(object :: Object.t(), opts :: Keyword.t()) :: :ok | {:error, reason :: String.t()}
+  @spec check(object :: Object.t(), opts :: Keyword.t()) ::
+          :ok
+          | {:error, reason :: check_reasons}
+          | {:error, reason :: ValidatePath.check_path_reasons()}
+          | {:error, reason :: ValidatePath.check_path_segment_reasons()}
   def check(object, opts \\ [])
 
   def check(%Object{type: :blob}, _opts), do: :ok

@@ -68,7 +68,7 @@ defmodule Xgit.Repository.OnDisk do
 
   `{:error, :work_dir_must_not_exist}` if `work_dir` already exists.
   """
-  @spec create(work_dir :: String.t()) :: :ok | {:error, reason :: String.t()}
+  @spec create(work_dir :: String.t()) :: :ok | {:error, :work_dir_must_not_exist}
   defdelegate create(work_dir), to: Xgit.Repository.OnDisk.Create
 
   @impl true

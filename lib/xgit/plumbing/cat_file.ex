@@ -11,6 +11,11 @@ defmodule Xgit.Plumbing.CatFile do
   alias Xgit.Core.ObjectType
   alias Xgit.Repository
 
+  @typedoc ~S"""
+  Reason codes that can be returned by `run/2`.
+  """
+  @type reason :: :invalid_repository | :invalid_object_id
+
   @doc ~S"""
   Retrieves the content, type, and size information for a single object in a
   repository's object store.
@@ -37,7 +42,9 @@ defmodule Xgit.Plumbing.CatFile do
   `{:error, :invalid_object}` if object was found, but invalid.
   """
   @spec run(content :: ContentSource.t(), type: ObjectType.t() | nil) ::
-          {:ok, ObjectID.t()} | {:error, reason :: atom}
+          {:ok, ObjectID.t()}
+          | {:error, reason :: reason}
+          | {:error, reason :: Repository.get_object_reason()}
   def run(repository, object_id) when is_pid(repository) and is_binary(object_id) do
     with {:repository_valid?, true} <- {:repository_valid?, Repository.valid?(repository)},
          {:object_id_valid?, true} <- {:object_id_valid?, ObjectId.valid?(object_id)} do

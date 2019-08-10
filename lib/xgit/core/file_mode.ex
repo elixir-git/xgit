@@ -59,7 +59,7 @@ defmodule Xgit.Core.FileMode do
   def regular_file?(0o100644), do: true
   def regular_file?(_), do: false
 
-  @doc "Return `true` if the file omde represents an executable file."
+  @doc "Return `true` if the file mode represents an executable file."
   @spec executable_file?(file_mode :: term) :: boolean
   def executable_file?(file_mode)
   def executable_file?(0o100755), do: true
