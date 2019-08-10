@@ -23,6 +23,7 @@ defmodule Xgit.MixProject do
   defp deps do
     [
       {:credo, "~> 1.1", only: [:dev, :test]},
+      {:dialyxir, "~> 1.0.0-rc.6", only: :dev, runtime: false},
       {:excoveralls, "~> 0.10", only: :test},
       {:ex_doc, "~> 0.20", only: :dev},
       {:temp, "~> 0.4", only: :test}
