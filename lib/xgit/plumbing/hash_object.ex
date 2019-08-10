@@ -10,6 +10,7 @@ defmodule Xgit.Plumbing.HashObject do
   alias Xgit.Core.ObjectId
   alias Xgit.Core.ObjectType
   alias Xgit.Core.ValidateObject
+  alias Xgit.Core.ValidatePath
   alias Xgit.Repository
 
   @doc ~S"""
@@ -53,11 +54,16 @@ defmodule Xgit.Plumbing.HashObject do
 
   * `Xgit.Core.ValidateObject.check/2`
   * `Xgit.Core.ValidatePath.check_path/2`
-  * `Xgit.Core.ValidatePath.check_path_segment/2`.
+  * `Xgit.Core.ValidatePath.check_path_segment/2`
+  * `Xgit.Repository.put_loose_object/2`.
 
   """
   @spec run(content :: ContentSource.t(), type: ObjectType.t() | nil) ::
-          {:ok, ObjectID.t()} | {:error, reason :: String.t()}
+          {:ok, ObjectID.t()}
+          | {:error, reason :: ValidateObject.check_reason()}
+          | {:error, reason :: ValidatePath.check_path_reason()}
+          | {:error, reason :: ValidatePath.check_path_segment_reason()}
+          | {:error, reason :: Repository.put_loose_object_reason()}
   def run(content, opts \\ []) when not is_nil(content) and is_list(opts) do
     %{type: type, validate?: validate?, repo: repo, write?: write?} = validate_options(opts)
 

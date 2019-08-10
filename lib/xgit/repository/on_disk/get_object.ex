@@ -7,7 +7,8 @@ defmodule Xgit.Repository.OnDisk.GetObject do
   alias Xgit.Util.UnzipStream
 
   @spec handle_get_object(state :: any, object_id :: ObjectId.t()) ::
-          {:ok, object :: Object.t(), state :: any} | {:error, reason :: String.t(), state :: any}
+          {:ok, object :: Object.t(), state :: any}
+          | {:error, :not_found | :invalid_object, state :: any}
   def handle_get_object(%{git_dir: git_dir} = state, object_id) do
     # Currently only checks for loose objects.
     # TO DO: Look for object in packs.

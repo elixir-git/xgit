@@ -63,7 +63,7 @@ defmodule Xgit.Repository.OnDisk.PutLooseObjectTest do
       File.write!(objects_dir, "sand in the gears")
 
       object = %Object{type: :blob, content: @test_content, size: 13, id: @test_content_id}
-      assert {:error, :cant_create_dir} = Repository.put_loose_object(repo, object)
+      assert {:error, :cant_create_file} = Repository.put_loose_object(repo, object)
     end
 
     test "error: object exists already", %{xgit: xgit} do

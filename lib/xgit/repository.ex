@@ -74,12 +74,17 @@ defmodule Xgit.Repository do
   Returns `true` if the argument is a PID representing a valid `Repository` process.
   """
   @spec valid?(repository :: term) :: boolean
-  def valid?(repository) when is_pid(repository),
-    do:
-      Process.alive?(repository) &&
-        GenServer.call(repository, :valid_repository?) == :valid_repository
+  def valid?(repository) when is_pid(repository) do
+    Process.alive?(repository) &&
+      GenServer.call(repository, :valid_repository?) == :valid_repository
+  end
 
   def valid?(_), do: false
+
+  @typedoc ~S"""
+  Error codes that can be returned by `get_object/2`.
+  """
+  @type get_object_reason :: :not_found | :invalid_object
 
   @doc ~S"""
   Retrieves an object from the repository.
@@ -93,7 +98,7 @@ defmodule Xgit.Repository do
   `{:error, :invalid_object}` if object was found, but invalid.
   """
   @spec get_object(repository :: t, object_id :: ObjectId.t()) ::
-          {:ok, object :: Object.t()} | {:error, :not_found} | {:error, :invalid_object}
+          {:ok, object :: Object.t()} | {:error, reason :: get_object_reason}
   def get_object(repository, object_id) when is_pid(repository) and is_binary(object_id),
     do: GenServer.call(repository, {:get_object, object_id})
 
@@ -111,7 +116,14 @@ defmodule Xgit.Repository do
   Should return `{:error, :invalid_object, state}` if object was found, but invalid.
   """
   @callback handle_get_object(state :: any, object_id :: ObjectId.t()) ::
-              {:ok, object :: Object.t(), state :: any} | {:error, reason :: atom, state :: any}
+              {:ok, object :: Object.t(), state :: any}
+              | {:error, reason :: get_object_reason, state :: any}
+
+  @typedoc ~S"""
+  Error codes that can be returned by `put_loose_object/2`.
+  """
+
+  @type put_loose_object_reason :: :cant_create_file | :object_exists
 
   @doc ~S"""
   Writes a loose object to the repository.
@@ -120,10 +132,12 @@ defmodule Xgit.Repository do
 
   `:ok` if written successfully.
 
-  `{:error, :reason}` if unable to write the object.
+  `{:error, :cant_create_file}` if unable to create the storage for the loose object.
+
+  `{:error, :object_exists}` if the object already exists in the database.
   """
   @spec put_loose_object(repository :: t, object :: Object.t()) ::
-          :ok | {:error, reason :: String.t()}
+          :ok | {:error, reason :: put_loose_object_reason}
   def put_loose_object(repository, %Object{} = object) when is_pid(repository),
     do: GenServer.call(repository, {:put_loose_object, object})
 
@@ -136,10 +150,13 @@ defmodule Xgit.Repository do
 
   Should return `{:ok, state}` if written successfully.
 
-  Should return `{:error, :reason, state}` if unable to write the object.
+  Should return `{:error, :cant_create_file}` if unable to create the storage for
+  the loose object.
+
+  Should return `{:error, :object_exists}` if the object already exists in the database.
   """
   @callback handle_put_loose_object(state :: any, object :: Object.t()) ::
-              {:ok, state :: any} | {:error, reason :: String.t(), state :: any}
+              {:ok, state :: any} | {:error, reason :: put_loose_object_reason, state :: any}
 
   @impl true
   def handle_call(:valid_repository?, _from, state), do: {:reply, :valid_repository, state}
@@ -165,9 +182,7 @@ defmodule Xgit.Repository do
   defmacro __using__(opts) do
     quote location: :keep, bind_quoted: [opts: opts] do
       use GenServer, opts
-
       alias Xgit.Repository
-
       @behaviour Repository
     end
   end

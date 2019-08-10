@@ -6,7 +6,8 @@ defmodule Xgit.Repository.OnDisk.PutLooseObject do
   alias Xgit.Core.Object
 
   @spec handle_put_loose_object(state :: any, object :: Object.t()) ::
-          {:ok, state :: any} | {:error, reason :: String.t(), state :: any}
+          {:ok, state :: any}
+          | {:error, reason :: :cant_create_file | :object_exists, state :: any}
   def handle_put_loose_object(%{git_dir: git_dir} = state, %Object{id: id} = object) do
     object_dir = Path.join([git_dir, "objects", String.slice(id, 0, 2)])
     path = Path.join(object_dir, String.slice(id, 2, 38))
@@ -21,7 +22,7 @@ defmodule Xgit.Repository.OnDisk.PutLooseObject do
       {:ok, state}
     else
       {:mkdir, _} ->
-        {:error, :cant_create_dir, state}
+        {:error, :cant_create_file, state}
 
       {:file, {:error, :eexist}} ->
         {:error, :object_exists, state}

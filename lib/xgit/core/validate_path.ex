@@ -51,9 +51,21 @@ defmodule Xgit.Core.ValidatePath do
   """
 
   @typedoc ~S"""
-  Response to validation functions in this module.
+  Error codes which can be returned by `check_path/2`.
   """
-  @type result :: :ok | {:error, reason :: String.t()}
+  @type check_path_reasons ::
+          :invalid_name | :empty_path | :absolute_path | :duplicate_slash | :trailing_slash
+
+  @typedoc ~S"""
+  Error codes which can be returned by `check_path_segment/2`.
+  """
+  @type check_path_segment_reasons ::
+          :invalid_name
+          | :empty_name
+          | :reserved_name
+          | :invalid_utf8_sequence
+          | :invalid_name_on_windows
+          | :windows_device_name
 
   @doc ~S"""
   Check the provided path to see if it is a valid path within a git repository.
@@ -81,7 +93,8 @@ defmodule Xgit.Core.ValidatePath do
 
   See also: error return values from `check_path_segment/2`.
   """
-  @spec check_path(path :: [byte], windows?: boolean, macosx?: boolean) :: result
+  @spec check_path(path :: [byte], windows?: boolean, macosx?: boolean) ::
+          :ok | {:error, check_path_reasons} | {:error, check_path_segment_reasons}
   def check_path(path, opts \\ [])
 
   def check_path([], opts) when is_list(opts), do: {:error, :empty_path}
@@ -132,7 +145,8 @@ defmodule Xgit.Core.ValidatePath do
   * `{:error, :windows_device_name}` if the name matches a Windows device name (`aux`, etc.)
     (only when `windows?: true` is selected)
   """
-  @spec check_path_segment(path :: [byte], windows?: boolean, macosx?: boolean) :: result
+  @spec check_path_segment(path :: [byte], windows?: boolean, macosx?: boolean) ::
+          :ok | {:error, check_path_segment_reasons}
   def check_path_segment(path, opts \\ [])
 
   def check_path_segment([], opts) when is_list(opts), do: {:error, :empty_name}
