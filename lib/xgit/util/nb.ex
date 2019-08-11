@@ -68,6 +68,17 @@ defmodule Xgit.Util.NB do
     do: {b1 * 0x1000000 + b2 * 0x10000 + b3 * 0x100 + b4, tail}
 
   @doc ~S"""
+  Parses a sequence of 2 bytes (network byte order) as an unsigned integer.
+
+  Reads the first four bytes from `intbuf` and returns `{value, buf}`
+  where value is the unsigned integer value from the first two bytes at `intbuf`
+  and `buf` is the remainder of the byte array after those bytes.
+  """
+  @spec decode_uint16(intbuf :: [byte]) :: {integer, [byte]}
+  def decode_uint16(intbuf)
+  def decode_uint16([b1, b2 | tail]), do: {b1 * 0x100 + b2, tail}
+
+  @doc ~S"""
   Parses a sequence of 4 bytes (network byte order) as an unsigned integer.
 
   Reads the first four bytes from `intbuf` and returns `{value, buf}`
