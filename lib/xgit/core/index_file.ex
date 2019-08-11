@@ -146,13 +146,18 @@ defmodule Xgit.Core.IndexFile do
 
   `{:error, :unsupported_version}` if the index file is not a version 2 index file.
   Other versions are not supported at this time.
+
+  `{:error, :too_many_entries}` if the index files contains more than 100,000
+  entries. This is an arbitrary limit to guard against malformed files and to
+  prevent overconsumption of memory. With experience, it could be revisited.
   """
   @spec from_iodevice(iodevice :: IO.device()) ::
           {:ok, index_file :: t} | {:error, reason :: from_iodevice_reason}
   def from_iodevice(iodevice) do
     with {:dirc, true} <- {:dirc, read_dirc(iodevice)},
          {:version, version = 2} <- {:version, read_uint32(iodevice)},
-         {:entry_count, entry_count} when is_integer(entry_count) <-
+         {:entry_count, entry_count}
+         when is_integer(entry_count) and entry_count <= 100_000 <-
            {:entry_count, read_uint32(iodevice)},
          {:entries, entries} when is_list(entries) <-
            {:entries, read_entries(iodevice, version, entry_count)} do
@@ -165,6 +170,8 @@ defmodule Xgit.Core.IndexFile do
     else
       {:dirc, _} -> {:error, :invalid_format}
       {:version, _} -> {:error, :unsupported_version}
+      {:entry_count, :invalid} -> {:error, :invalid_format}
+      {:entry_count, _} -> {:error, :too_many_entries}
       {:entries, _} -> {:error, :invalid_format}
     end
   end
@@ -176,7 +183,7 @@ defmodule Xgit.Core.IndexFile do
     end
   end
 
-  defp read_entries(_iodevice, _version, 0 = _entry_count), do: []
+  defp read_entries(_iodevice, _version, 0), do: []
 
   defp read_entries(iodevice, version, entry_count) do
     entries =
@@ -200,8 +207,10 @@ defmodule Xgit.Core.IndexFile do
          uid when is_integer(uid) <- read_uint32(iodevice),
          gid when is_integer(gid) <- read_uint32(iodevice),
          size when is_integer(size) <- read_uint32(iodevice),
-         object_id when is_binary(object_id) <- read_object_id(iodevice),
-         flags when is_integer(flags) <- read_uint16(iodevice),
+         object_id
+         when is_binary(object_id) and object_id != "0000000000000000000000000000000000000000" <-
+           read_object_id(iodevice),
+         flags when is_integer(flags) and flags > 0 <- read_uint16(iodevice),
          name when is_list(name) <- read_name(iodevice, flags &&& 0xFFF, first?) do
       %__MODULE__.Entry{
         name: name,
@@ -282,6 +291,8 @@ defmodule Xgit.Core.IndexFile do
         :invalid
     end
   end
+
+  defp read_name(_iodevice, _length, _first?), do: :invalid
 
   defp padding(length_mod_8) when length_mod_8 < 6, do: 6 - length_mod_8
   defp padding(6), do: 8
