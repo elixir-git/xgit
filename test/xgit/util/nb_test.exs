@@ -75,6 +75,30 @@ defmodule Xgit.Util.NBTest do
     end
   end
 
+  describe "decode_uint16/1" do
+    test "simple cases" do
+      assert NB.decode_uint16([0, 0, 0]) == {0, [0]}
+      assert NB.decode_uint16([0, 0, 3]) == {0, [3]}
+
+      assert NB.decode_uint16([0, 0, 3, 42]) == {0, [3, 42]}
+
+      assert NB.decode_uint16([0, 3]) == {3, []}
+      assert NB.decode_uint16([0, 3, 0]) == {3, [0]}
+      assert NB.decode_uint16([0, 3, 3]) == {3, [3]}
+
+      assert NB.decode_uint16([0xAD, 0xEF, 1]) == {0xADEF, [1]}
+
+      assert NB.decode_uint16([0xFF, 0xFF, 0xFE]) == {0xFFFF, [0xFE]}
+      assert NB.decode_uint16([0xBE, 0xEF, 1]) == {0xBEEF, [1]}
+    end
+
+    test "rejects byte list too short" do
+      assert_raise FunctionClauseError, fn ->
+        NB.decode_uint16([1])
+      end
+    end
+  end
+
   describe "decode_uint32/1" do
     test "simple cases" do
       assert NB.decode_uint32([0, 0, 0, 0, 0]) == {0, [0]}
