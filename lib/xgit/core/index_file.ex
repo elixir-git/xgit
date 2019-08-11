@@ -161,6 +161,9 @@ defmodule Xgit.Core.IndexFile do
            {:entry_count, read_uint32(iodevice)},
          {:entries, entries} when is_list(entries) <-
            {:entries, read_entries(iodevice, version, entry_count)} do
+      # TO DO: Parse extensions and trailing checksum.
+      # https://github.com/elixir-git/xgit/issues/67
+
       {:ok,
        %__MODULE__{
          version: version,

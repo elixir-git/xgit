@@ -3,7 +3,7 @@ defmodule Xgit.Core.IndexFileTest do
 
   alias Xgit.Core.IndexFile
 
-  describe "from_stream/2" do
+  describe "from_iodevice/1" do
     test "happy path: can read from command-line git (empty index)", %{ref: ref} do
       {_output, 0} =
         System.cmd(
