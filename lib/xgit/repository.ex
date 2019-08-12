@@ -16,8 +16,8 @@ defmodule Xgit.Repository do
 
   Xgit intends to allow repositories to be stored in multiple different mechanisms.
   While it includes built-in support for local on-disk repositories
-  (see `Xgit.Repository.OnDisk`), you could envision repositories stored entirely
-  in memory, or on a remote file system or database.
+  (see `Xgit.Repository.OnDisk`), and in-lib repositories (see `Xgit.Repository.InMemory`),
+  you could envision repositories stored entirely on a remote file system or database.
 
   ## Implementing a Storage Architecture
 
