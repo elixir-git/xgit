@@ -5,16 +5,6 @@ defmodule Xgit.Plumbing.CatFileTest do
   alias Xgit.Plumbing.HashObject
   alias Xgit.Repository.OnDisk
 
-  defmodule NotRepo do
-    use GenServer
-
-    @impl true
-    def init(_init_arg), do: {:ok, nil}
-
-    @impl true
-    def handle_call(_request, _from, _state), do: {:reply, :whatever, nil}
-  end
-
   describe "run/2" do
     test "happy path: can read from command-line git (small file)", %{ref: ref} do
       Temp.track!()
@@ -74,7 +64,7 @@ defmodule Xgit.Plumbing.CatFileTest do
     end
 
     test "error: repository invalid (PID, but not repo)" do
-      {:ok, not_repo} = GenServer.start_link(NotRepo, [])
+      {:ok, not_repo} = GenServer.start_link(NotValid, nil)
 
       assert {:error, :invalid_repository} =
                CatFile.run(not_repo, "18a4a651653d7caebd3af9c05b0dc7ffa2cd0ae0")
