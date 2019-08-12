@@ -1,7 +1,7 @@
-defmodule Xgit.Core.IndexFileTest do
+defmodule Xgit.Core.DirCacheTest do
   use Xgit.GitInitTestCase, async: true
 
-  alias Xgit.Core.IndexFile
+  alias Xgit.Core.DirCache
 
   describe "from_iodevice/1" do
     test "happy path: can read from command-line git (empty index)", %{ref: ref} do
@@ -34,9 +34,9 @@ defmodule Xgit.Core.IndexFileTest do
                [ref, ".git", "index"]
                |> Path.join()
                |> File.open!()
-               |> IndexFile.from_iodevice()
+               |> DirCache.from_iodevice()
 
-      assert index_file = %IndexFile{
+      assert index_file = %DirCache{
                entries: [],
                entry_count: 0,
                version: 2
@@ -76,11 +76,11 @@ defmodule Xgit.Core.IndexFileTest do
                [ref, ".git", "index"]
                |> Path.join()
                |> File.open!()
-               |> IndexFile.from_iodevice()
+               |> DirCache.from_iodevice()
 
-      assert index_file = %IndexFile{
+      assert index_file = %DirCache{
                entries: [
-                 %IndexFile.Entry{
+                 %DirCache.Entry{
                    assume_valid?: false,
                    ctime: 0,
                    ctime_ns: 0,
@@ -99,7 +99,7 @@ defmodule Xgit.Core.IndexFileTest do
                    stage: 0,
                    uid: 0
                  },
-                 %IndexFile.Entry{
+                 %DirCache.Entry{
                    assume_valid?: false,
                    ctime: 0,
                    ctime_ns: 0,
@@ -215,7 +215,7 @@ defmodule Xgit.Core.IndexFileTest do
     iodata
     |> IO.iodata_to_binary()
     |> stringio_open!()
-    |> IndexFile.from_iodevice()
+    |> DirCache.from_iodevice()
   end
 
   defp stringio_open!(s) do

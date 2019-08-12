@@ -1,14 +1,18 @@
-defmodule Xgit.Core.IndexFile do
+defmodule Xgit.Core.DirCache do
   @moduledoc ~S"""
-  The index file records the current (intended) contents of a working tree
+  A directory cache records the current (intended) contents of a working tree
   when last scanned or created by git.
 
-  In Xgit, the `IndexFile` structure is an abstract, in-memory data structure
+  In Xgit, the `DirCache` structure is an abstract, in-memory data structure
   without any tie to a specific persistence mechanism. Persistence is implemented
   by a specific implementation of the `Xgit.Repository` behaviour.
 
+  This content is commonly persisted on disk as an `index` file at the root of
+  the git tree; support for reading and writing that file format is provided
+  here as a convenience.
+
   Changes in the working tree can be detected by comparing the modification times
-  to the cached modification time within the index file.
+  to the cached modification time within the dir cache.
 
   Index files are also used during merges, where the merge happens within the
   index file first, and the working directory is updated as a post-merge step.
@@ -40,7 +44,7 @@ defmodule Xgit.Core.IndexFile do
           version: version,
           entry_count: non_neg_integer,
           entries: [__MODULE__.Entry.t()]
-          # extensions: [Extention.t()]
+          # extensions: [Extension.t()]
         }
 
   @enforce_keys [:version, :entry_count, :entries]
@@ -48,7 +52,7 @@ defmodule Xgit.Core.IndexFile do
 
   defmodule Entry do
     @moduledoc ~S"""
-    A single file (or stage of a file) in an index file.
+    A single file (or stage of a file) in a directory cache.
 
     An entry represents exactly one stage of a file. If a file path is unmerged
     then multiple instances may appear for the same path name.
@@ -58,7 +62,7 @@ defmodule Xgit.Core.IndexFile do
     alias Xgit.Core.ObjectId
 
     @typedoc ~S"""
-    A single file (or stage of a file) in an index file.
+    A single file (or stage of a file) in a directory cache.
 
     An entry represents exactly one stage of a file. If a file path is unmerged
     then multiple instances may appear for the same path name.
@@ -136,11 +140,11 @@ defmodule Xgit.Core.IndexFile do
 
   @doc ~S"""
   Read index file from an `IO.device` (typically an opened file) and returns a
-  corresponding `IndexFile` struct.
+  corresponding `DirCache` struct.
 
   ## Return Value
 
-  `{:ok, index_file}` if the iodevice contains a valid index file.
+  `{:ok, dir_cache}` if the iodevice contains a valid index file.
 
   `{:error, :invalid_format}` if the iodevice can not be parsed as an index file.
 
@@ -152,7 +156,7 @@ defmodule Xgit.Core.IndexFile do
   prevent overconsumption of memory. With experience, it could be revisited.
   """
   @spec from_iodevice(iodevice :: IO.device()) ::
-          {:ok, index_file :: t} | {:error, reason :: from_iodevice_reason}
+          {:ok, dir_cache :: t} | {:error, reason :: from_iodevice_reason}
   def from_iodevice(iodevice) do
     with {:dirc, true} <- {:dirc, read_dirc(iodevice)},
          {:version, version = 2} <- {:version, read_uint32(iodevice)},
