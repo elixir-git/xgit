@@ -1,7 +1,8 @@
-defmodule Xgit.Core.DirCacheTest do
+defmodule Xgit.Repository.WorkingTree.ParseIndexFileTest do
   use Xgit.GitInitTestCase, async: true
 
   alias Xgit.Core.DirCache
+  alias Xgit.Repository.WorkingTree.ParseIndexFile
 
   describe "from_iodevice/1" do
     test "happy path: can read from command-line git (empty index)", %{ref: ref} do
@@ -34,7 +35,7 @@ defmodule Xgit.Core.DirCacheTest do
                [ref, ".git", "index"]
                |> Path.join()
                |> File.open!()
-               |> DirCache.from_iodevice()
+               |> ParseIndexFile.from_iodevice()
 
       assert index_file = %DirCache{
                entries: [],
@@ -76,7 +77,7 @@ defmodule Xgit.Core.DirCacheTest do
                [ref, ".git", "index"]
                |> Path.join()
                |> File.open!()
-               |> DirCache.from_iodevice()
+               |> ParseIndexFile.from_iodevice()
 
       assert index_file = %DirCache{
                entries: [
@@ -215,7 +216,7 @@ defmodule Xgit.Core.DirCacheTest do
     iodata
     |> IO.iodata_to_binary()
     |> stringio_open!()
-    |> DirCache.from_iodevice()
+    |> ParseIndexFile.from_iodevice()
   end
 
   defp stringio_open!(s) do
