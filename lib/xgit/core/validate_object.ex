@@ -94,6 +94,10 @@ defmodule Xgit.Core.ValidateObject do
   @doc ~S"""
   Verify that a proposed object is valid.
 
+  This function performs a detailed check on the _content_ of the object.
+  For a simpler verification that the `Xgit.Core.Object` struct is _itself_
+  valid, see `Xgit.Core.Object.valid?/1`.
+
   ## Options
 
   By default, this function will only enforce Posix file name restrictions.
