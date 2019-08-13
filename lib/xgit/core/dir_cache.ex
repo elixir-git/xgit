@@ -129,5 +129,40 @@ defmodule Xgit.Core.DirCache do
       skip_worktree?: false,
       intent_to_add?: false
     ]
+
+    @doc ~S"""
+    Compare two entries according to git dir cache entry sort ordering rules.
+
+    For this purpose, only the following fields are considered (in this priority order):
+
+    * `:name`
+    * `:mode`
+    * `:stage`
+
+    ## Return Value
+
+    * `:lt` if `entry1` sorts before `entry2`.
+    * `:eq` if they are the same.
+    * `:gt` if `entry1` sorts after `entry2`.
+    """
+    @spec compare(entry1 :: t | nil, entry2 :: t) :: :lt | :eq | :gt
+    def compare(entry1, entry2)
+
+    def compare(nil, _entry2), do: :lt
+
+    def compare(
+          %{name: name1, mode: mode1, stage: stage1} = _entry1,
+          %{name: name2, mode: mode2, stage: stage2} = _entry2
+        ) do
+      cond do
+        name1 < name2 -> :lt
+        name2 < name1 -> :gt
+        mode1 < mode2 -> :lt
+        mode2 < mode1 -> :gt
+        stage1 < stage2 -> :lt
+        stage2 < stage1 -> :gt
+        true -> :eq
+      end
+    end
   end
 end
