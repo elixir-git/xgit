@@ -190,7 +190,6 @@ defmodule Xgit.Core.DirCache do
     For this purpose, only the following fields are considered (in this priority order):
 
     * `:name`
-    * `:mode`
     * `:stage`
 
     ## Return Value
@@ -205,14 +204,12 @@ defmodule Xgit.Core.DirCache do
     def compare(nil, _entry2), do: :lt
 
     def compare(
-          %{name: name1, mode: mode1, stage: stage1} = _entry1,
-          %{name: name2, mode: mode2, stage: stage2} = _entry2
+          %{name: name1, stage: stage1} = _entry1,
+          %{name: name2, stage: stage2} = _entry2
         ) do
       cond do
         name1 < name2 -> :lt
         name2 < name1 -> :gt
-        mode1 < mode2 -> :lt
-        mode2 < mode1 -> :gt
         stage1 < stage2 -> :lt
         stage2 < stage1 -> :gt
         true -> :eq

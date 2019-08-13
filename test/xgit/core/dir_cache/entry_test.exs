@@ -81,9 +81,9 @@ defmodule Xgit.Core.DirCache.EntryTest do
     end
 
     @mode_gt Map.put(@valid, :mode, 0o100755)
-    test "comparison based on mode" do
-      assert Entry.compare(@valid, @mode_gt) == :lt
-      assert Entry.compare(@mode_gt, @valid) == :gt
+    test "doesn't compare based on mode" do
+      assert Entry.compare(@valid, @mode_gt) == :eq
+      assert Entry.compare(@mode_gt, @valid) == :eq
     end
 
     @stage_gt Map.put(@valid, :stage, 2)
