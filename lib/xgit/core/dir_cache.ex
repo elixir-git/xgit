@@ -139,6 +139,8 @@ defmodule Xgit.Core.DirCache do
     Return `true` if this entry struct describes a valid dir cache entry.
     """
     @spec valid?(entry :: any) :: boolean
+    def valid?(entry)
+
     # credo:disable-for-lines:30 Credo.Check.Refactor.CyclomaticComplexity
     def valid?(
           %__MODULE__{
@@ -221,6 +223,8 @@ defmodule Xgit.Core.DirCache do
   Return `true` if this entry struct describes a valid dir cache.
   """
   @spec valid?(dir_cache :: any) :: boolean
+  def valid?(dir_cache)
+
   def valid?(%__MODULE__{version: version, entry_count: entry_count, entries: entries})
       when version == 2 and is_integer(entry_count) and is_list(entries) do
     Enum.count(entries) == entry_count &&
