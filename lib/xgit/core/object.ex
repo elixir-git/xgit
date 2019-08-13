@@ -30,4 +30,16 @@ defmodule Xgit.Core.Object do
 
   @enforce_keys [:type, :content]
   defstruct [:type, :content, size: :unknown, id: :unknown]
+
+  @doc ~S"""
+  Return `true` if the struct describes a valid object.
+  """
+  @spec valid?(object :: any) :: boolean
+  def valid?(object)
+
+  def valid?(%__MODULE__{type: type, content: content, size: size, id: id})
+      when is_object_type(type) and is_integer(size) and size >= 0,
+      do: ObjectId.valid?(id) && content != nil
+
+  def valid?(_), do: false
 end
