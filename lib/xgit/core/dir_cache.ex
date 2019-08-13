@@ -56,7 +56,8 @@ defmodule Xgit.Core.DirCache do
     then multiple instances may appear for the same path name.
     """
 
-    alias Xgit.Core.FileMode
+    use Xgit.Core.FileMode
+
     alias Xgit.Core.ObjectId
 
     @typedoc ~S"""
@@ -89,7 +90,7 @@ defmodule Xgit.Core.DirCache do
     * `intent_to_add?`: (boolean)
     """
     @type t :: %__MODULE__{
-            name: charlist,
+            name: [byte],
             stage: 0..3,
             object_id: ObjectId.t(),
             mode: FileMode.t(),
@@ -129,5 +130,70 @@ defmodule Xgit.Core.DirCache do
       skip_worktree?: false,
       intent_to_add?: false
     ]
+
+    alias Xgit.Core.FileMode
+    alias Xgit.Core.ObjectId
+    alias Xgit.Core.ValidatePath
+
+    @doc ~S"""
+    Return `true` if this entry struct describes a valid dir cache entry.
+    """
+    @spec valid?(entry :: any) :: boolean
+    # credo:disable-for-lines:30 Credo.Check.Refactor.CyclomaticComplexity
+    def valid?(
+          %__MODULE__{
+            name: name,
+            stage: stage,
+            object_id: object_id,
+            mode: mode,
+            size: size,
+            ctime: ctime,
+            ctime_ns: ctime_ns,
+            mtime: mtime,
+            mtime_ns: mtime_ns,
+            dev: dev,
+            ino: ino,
+            uid: uid,
+            gid: gid,
+            assume_valid?: assume_valid?,
+            extended?: extended?,
+            skip_worktree?: skip_worktree?,
+            intent_to_add?: intent_to_add?
+          } = _entry
+        )
+        when is_list(name) and is_integer(stage) and stage >= 0 and stage < 3 and
+               is_binary(object_id) and
+               is_file_mode(mode) and
+               is_integer(size) and
+               size >= 0 and
+               is_integer(ctime) and
+               is_integer(ctime_ns) and ctime_ns >= 0 and
+               is_integer(mtime) and
+               is_integer(mtime_ns) and mtime_ns >= 0 and
+               is_integer(dev) and
+               is_integer(ino) and
+               is_integer(uid) and
+               is_integer(gid) and
+               is_boolean(assume_valid?) and
+               is_boolean(extended?) and
+               is_boolean(skip_worktree?) and
+               is_boolean(intent_to_add?) do
+      ValidatePath.check_path(name) == :ok && ObjectId.valid?(object_id) &&
+        object_id != ObjectId.zero()
+    end
+
+    def valid?(_), do: false
   end
+
+  @doc ~S"""
+  Return `true` if this entry struct describes a valid dir cache.
+  """
+  @spec valid?(dir_cache :: any) :: boolean
+  def valid?(%__MODULE__{version: version, entry_count: entry_count, entries: entries})
+      when version == 2 and is_integer(entry_count) and is_list(entries) do
+    Enum.count(entries) == entry_count && Enum.all?(entries, &Entry.valid?/1)
+    # TO DO: Verify that entries are sorted and does not contain duplicates.
+  end
+
+  def valid?(_), do: false
 end
