@@ -33,6 +33,10 @@ defmodule Xgit.Core.Object do
 
   @doc ~S"""
   Return `true` if the struct describes a valid object.
+
+  _IMPORTANT:_ This validation _only_ verifies that the struct itself is valid.
+  It does not inspect the content of the object. That check can be performed by
+  `Xgit.Core.ValidateObject.check/2`.
   """
   @spec valid?(object :: any) :: boolean
   def valid?(object)
