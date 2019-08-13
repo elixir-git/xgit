@@ -56,7 +56,8 @@ defmodule Xgit.Core.DirCache do
     then multiple instances may appear for the same path name.
     """
 
-    alias Xgit.Core.FileMode
+    use Xgit.Core.FileMode
+
     alias Xgit.Core.ObjectId
 
     @typedoc ~S"""
@@ -89,7 +90,7 @@ defmodule Xgit.Core.DirCache do
     * `intent_to_add?`: (boolean)
     """
     @type t :: %__MODULE__{
-            name: charlist,
+            name: [byte],
             stage: 0..3,
             object_id: ObjectId.t(),
             mode: FileMode.t(),
@@ -130,13 +131,67 @@ defmodule Xgit.Core.DirCache do
       intent_to_add?: false
     ]
 
+    alias Xgit.Core.FileMode
+    alias Xgit.Core.ObjectId
+    alias Xgit.Core.ValidatePath
+
+    @doc ~S"""
+    Return `true` if this entry struct describes a valid dir cache entry.
+    """
+    @spec valid?(entry :: any) :: boolean
+    def valid?(entry)
+
+    # credo:disable-for-lines:30 Credo.Check.Refactor.CyclomaticComplexity
+    def valid?(
+          %__MODULE__{
+            name: name,
+            stage: stage,
+            object_id: object_id,
+            mode: mode,
+            size: size,
+            ctime: ctime,
+            ctime_ns: ctime_ns,
+            mtime: mtime,
+            mtime_ns: mtime_ns,
+            dev: dev,
+            ino: ino,
+            uid: uid,
+            gid: gid,
+            assume_valid?: assume_valid?,
+            extended?: extended?,
+            skip_worktree?: skip_worktree?,
+            intent_to_add?: intent_to_add?
+          } = _entry
+        )
+        when is_list(name) and is_integer(stage) and stage >= 0 and stage <= 3 and
+               is_binary(object_id) and
+               is_file_mode(mode) and
+               is_integer(size) and
+               size >= 0 and
+               is_integer(ctime) and
+               is_integer(ctime_ns) and ctime_ns >= 0 and
+               is_integer(mtime) and
+               is_integer(mtime_ns) and mtime_ns >= 0 and
+               is_integer(dev) and
+               is_integer(ino) and
+               is_integer(uid) and
+               is_integer(gid) and
+               is_boolean(assume_valid?) and
+               is_boolean(extended?) and
+               is_boolean(skip_worktree?) and
+               is_boolean(intent_to_add?) do
+      ValidatePath.check_path(name) == :ok && ObjectId.valid?(object_id) &&
+        object_id != ObjectId.zero()
+    end
+
+    def valid?(_), do: false
+
     @doc ~S"""
     Compare two entries according to git dir cache entry sort ordering rules.
 
     For this purpose, only the following fields are considered (in this priority order):
 
     * `:name`
-    * `:mode`
     * `:stage`
 
     ## Return Value
@@ -151,18 +206,36 @@ defmodule Xgit.Core.DirCache do
     def compare(nil, _entry2), do: :lt
 
     def compare(
-          %{name: name1, mode: mode1, stage: stage1} = _entry1,
-          %{name: name2, mode: mode2, stage: stage2} = _entry2
+          %{name: name1, stage: stage1} = _entry1,
+          %{name: name2, stage: stage2} = _entry2
         ) do
       cond do
         name1 < name2 -> :lt
         name2 < name1 -> :gt
-        mode1 < mode2 -> :lt
-        mode2 < mode1 -> :gt
         stage1 < stage2 -> :lt
         stage2 < stage1 -> :gt
         true -> :eq
       end
     end
   end
+
+  @doc ~S"""
+  Return `true` if this entry struct describes a valid dir cache.
+  """
+  @spec valid?(dir_cache :: any) :: boolean
+  def valid?(dir_cache)
+
+  def valid?(%__MODULE__{version: version, entry_count: entry_count, entries: entries})
+      when version == 2 and is_integer(entry_count) and is_list(entries) do
+    Enum.count(entries) == entry_count &&
+      Enum.all?(entries, &Entry.valid?/1) &&
+      entries_sorted?([nil | entries])
+  end
+
+  def valid?(_), do: false
+
+  defp entries_sorted?([entry1, entry2 | tail]),
+    do: Entry.compare(entry1, entry2) == :lt && entries_sorted?([entry2 | tail])
+
+  defp entries_sorted?([_]), do: true
 end
