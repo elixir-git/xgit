@@ -161,7 +161,7 @@ defmodule Xgit.Core.DirCache do
             intent_to_add?: intent_to_add?
           } = _entry
         )
-        when is_list(name) and is_integer(stage) and stage >= 0 and stage < 3 and
+        when is_list(name) and is_integer(stage) and stage >= 0 and stage <= 3 and
                is_binary(object_id) and
                is_file_mode(mode) and
                is_integer(size) and
@@ -226,9 +226,15 @@ defmodule Xgit.Core.DirCache do
   @spec valid?(dir_cache :: any) :: boolean
   def valid?(%__MODULE__{version: version, entry_count: entry_count, entries: entries})
       when version == 2 and is_integer(entry_count) and is_list(entries) do
-    Enum.count(entries) == entry_count && Enum.all?(entries, &Entry.valid?/1)
-    # TO DO: Verify that entries are sorted and does not contain duplicates.
+    Enum.count(entries) == entry_count &&
+      Enum.all?(entries, &Entry.valid?/1) &&
+      entries_sorted?([nil | entries])
   end
 
   def valid?(_), do: false
+
+  defp entries_sorted?([entry1, entry2 | tail]),
+    do: Entry.compare(entry1, entry2) == :lt && entries_sorted?([entry2 | tail])
+
+  defp entries_sorted?([_]), do: true
 end

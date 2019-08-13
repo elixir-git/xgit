@@ -52,5 +52,53 @@ defmodule Xgit.Core.DirCacheTest do
         )
       end)
     end
+
+    test "sorted (name)" do
+      assert DirCache.valid?(%DirCache{
+               version: 2,
+               entry_count: 3,
+               entries: [
+                 Map.put(@valid_entry, :name, 'abc'),
+                 Map.put(@valid_entry, :name, 'abd'),
+                 Map.put(@valid_entry, :name, 'abe')
+               ]
+             })
+    end
+
+    test "sorted (stage)" do
+      assert DirCache.valid?(%DirCache{
+               version: 2,
+               entry_count: 3,
+               entries: [
+                 Map.put(@valid_entry, :stage, 0),
+                 Map.put(@valid_entry, :stage, 1),
+                 Map.put(@valid_entry, :stage, 3)
+               ]
+             })
+    end
+
+    test "not sorted (name)" do
+      refute DirCache.valid?(%DirCache{
+               version: 2,
+               entry_count: 3,
+               entries: [
+                 Map.put(@valid_entry, :name, 'abc'),
+                 Map.put(@valid_entry, :name, 'abf'),
+                 Map.put(@valid_entry, :name, 'abe')
+               ]
+             })
+    end
+
+    test "not sorted (stage)" do
+      refute DirCache.valid?(%{
+               version: 2,
+               entry_count: 3,
+               entries: [
+                 Map.put(@valid_entry, :stage, 0),
+                 Map.put(@valid_entry, :stage, 3),
+                 Map.put(@valid_entry, :stage, 2)
+               ]
+             })
+    end
   end
 end
