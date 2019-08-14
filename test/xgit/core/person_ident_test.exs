@@ -201,6 +201,33 @@ defmodule Xgit.Core.PersonIdentTest do
     end
   end
 
+  describe "valid?/1" do
+    @valid %PersonIdent{
+      name: "A U Thor",
+      email: "author@example.com",
+      when: 1_142_878_501_000,
+      tz_offset: 150
+    }
+
+    test "happy path" do
+      assert PersonIdent.valid?(@valid)
+    end
+
+    @invalid_substitutions [
+      name: 'A U Thor',
+      name: :some_random_atom,
+      email: 'not@binary.com',
+      when: 42.5,
+      tz_offset: 9000
+    ]
+
+    test "invalid" do
+      for {k, v} <- @invalid_substitutions do
+        refute PersonIdent.valid?(Map.put(@valid, k, v))
+      end
+    end
+  end
+
   describe "to_external_string/1" do
     # We don't have support for named timezones yet. (Elixir 1.9?)
     # test "converts EST to numeric timezone" do

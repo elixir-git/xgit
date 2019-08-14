@@ -206,6 +206,19 @@ defmodule Xgit.Core.PersonIdent do
   end
 
   @doc ~S"""
+  Returns `true` if the struct is a valid `PersonIdent`.
+  """
+  @spec valid?(person_ident :: any) :: boolean
+  def valid?(person_ident)
+
+  def valid?(%__MODULE__{name: name, email: email, when: whxn, tz_offset: tz_offset})
+      when is_binary(name) and is_binary(email) and is_integer(whxn) and is_integer(tz_offset) and
+             tz_offset >= -720 and tz_offset <= 840,
+      do: true
+
+  def valid?(_), do: false
+
+  @doc ~S"""
   Formats the person identity for git storage.
   """
   @spec to_external_string(person_ident :: t) :: String.t()
