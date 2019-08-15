@@ -30,7 +30,6 @@ defmodule Xgit.Repository do
 
   alias Xgit.Core.Object
   alias Xgit.Core.ObjectId
-  alias Xgit.Util.GenServerUtils
 
   require Logger
 
@@ -65,7 +64,7 @@ defmodule Xgit.Repository do
   @impl true
   def init({mod, mod_init_arg}) do
     case mod.init(mod_init_arg) do
-      {:ok, state} -> {:ok, {mod, state}}
+      {:ok, mod_state} -> {:ok, %{mod: mod, mod_state: mod_state}}
       {:stop, reason} -> {:stop, reason}
     end
   end
@@ -161,22 +160,27 @@ defmodule Xgit.Repository do
   @impl true
   def handle_call(:valid_repository?, _from, state), do: {:reply, :valid_repository, state}
 
-  def handle_call({:get_object, object_id}, _from, {mod, mod_state}) do
-    GenServerUtils.delegate_call_to(mod, :handle_get_object, [mod_state, object_id], mod_state)
+  def handle_call({:get_object, object_id}, _from, state) do
+    delegate_call_to(state, :handle_get_object, [object_id])
   end
 
-  def handle_call({:put_loose_object, %Object{} = object}, _from, {mod, mod_state}) do
-    GenServerUtils.delegate_call_to(
-      mod,
-      :handle_put_loose_object,
-      [mod_state, object],
-      mod_state
-    )
+  def handle_call({:put_loose_object, %Object{} = object}, _from, state) do
+    delegate_call_to(state, :handle_put_loose_object, [object])
   end
 
   def handle_call(message, _from, state) do
     Logger.warn("Repository received unrecognized call #{inspect(message)}")
     {:reply, {:error, :unknown_message}, state}
+  end
+
+  defp delegate_call_to(%{mod: mod, mod_state: mod_state} = state, function, args) do
+    case apply(mod, function, [mod_state | args]) do
+      {:ok, mod_state} -> {:reply, :ok, %{state | mod_state: mod_state}}
+      {:ok, response, mod_state} -> {:reply, {:ok, response}, %{state | mod_state: mod_state}}
+      {:error, reason, mod_state} -> {:reply, {:error, reason}, %{state | mod_state: mod_state}}
+    end
+  rescue
+    e -> {:reply, {:error, e}, %{state | mod_state: mod_state}}
   end
 
   defmacro __using__(opts) do
