@@ -30,6 +30,7 @@ defmodule Xgit.Repository do
 
   alias Xgit.Core.Object
   alias Xgit.Core.ObjectId
+  alias Xgit.Repository.WorkingTree
 
   require Logger
 
@@ -192,7 +193,7 @@ defmodule Xgit.Repository do
     do: {:reply, working_tree, state}
 
   def handle_call({:set_default_working_tree, working_tree}, _from, %{working_tree: nil} = state) do
-    if Xgit.Repository.WorkingTree.valid?(working_tree),
+    if WorkingTree.valid?(working_tree),
       do: {:reply, :ok, %{state | working_tree: working_tree}},
       else: {:reply, :error, state}
   end
