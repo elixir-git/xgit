@@ -160,13 +160,11 @@ defmodule Xgit.Repository do
   @impl true
   def handle_call(:valid_repository?, _from, state), do: {:reply, :valid_repository, state}
 
-  def handle_call({:get_object, object_id}, _from, state) do
-    delegate_call_to(state, :handle_get_object, [object_id])
-  end
+  def handle_call({:get_object, object_id}, _from, state),
+    do: delegate_call_to(state, :handle_get_object, [object_id])
 
-  def handle_call({:put_loose_object, %Object{} = object}, _from, state) do
-    delegate_call_to(state, :handle_put_loose_object, [object])
-  end
+  def handle_call({:put_loose_object, %Object{} = object}, _from, state),
+    do: delegate_call_to(state, :handle_put_loose_object, [object])
 
   def handle_call(message, _from, state) do
     Logger.warn("Repository received unrecognized call #{inspect(message)}")
@@ -179,8 +177,6 @@ defmodule Xgit.Repository do
       {:ok, response, mod_state} -> {:reply, {:ok, response}, %{state | mod_state: mod_state}}
       {:error, reason, mod_state} -> {:reply, {:error, reason}, %{state | mod_state: mod_state}}
     end
-  rescue
-    e -> {:reply, {:error, e}, %{state | mod_state: mod_state}}
   end
 
   defmacro __using__(opts) do
