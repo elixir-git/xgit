@@ -87,7 +87,7 @@ defmodule Xgit.Repository do
   Other working trees may also be attached to this repository, but do not have
   special status with regard to the repository.
   """
-  @spec default_working_tree(repository :: t) :: pid | nil
+  @spec default_working_tree(repository :: t) :: WorkingTree.t() | nil
   def default_working_tree(repository) when is_pid(repository),
     do: GenServer.call(repository, :default_working_tree)
 
@@ -104,7 +104,7 @@ defmodule Xgit.Repository do
   `:error` if a working tree was already attached or the proposed working tree
   was not valid.
   """
-  @spec set_default_working_tree(repository :: t, working_tree :: pid) :: :ok | :error
+  @spec set_default_working_tree(repository :: t, working_tree :: WorkingTree.t()) :: :ok | :error
   def set_default_working_tree(repository, working_tree)
       when is_pid(repository) and is_pid(working_tree),
       do: GenServer.call(repository, {:set_default_working_tree, working_tree})
