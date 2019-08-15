@@ -58,6 +58,7 @@ defmodule Xgit.Repository.WorkingTree do
   def init({repository, work_dir}) do
     case File.mkdir_p(work_dir) do
       :ok ->
+        Process.monitor(repository)
         # Read index file here or maybe in a :continue handler?
         {:ok, %{repository: repository, work_dir: work_dir}}
 
@@ -84,4 +85,7 @@ defmodule Xgit.Repository.WorkingTree do
     Logger.warn("WorkingTree received unrecognized call #{inspect(message)}")
     {:reply, {:error, :unknown_message}, state}
   end
+
+  @impl true
+  def handle_info({:DOWN, _ref, :process, _object, reason}, state), do: {:stop, reason, state}
 end

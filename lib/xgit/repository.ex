@@ -64,7 +64,7 @@ defmodule Xgit.Repository do
   @impl true
   def init({mod, mod_init_arg}) do
     case mod.init(mod_init_arg) do
-      {:ok, mod_state} -> {:ok, %{mod: mod, mod_state: mod_state}}
+      {:ok, mod_state} -> {:ok, %{mod: mod, mod_state: mod_state, working_tree: nil}}
       {:stop, reason} -> {:stop, reason}
     end
   end
@@ -79,6 +79,34 @@ defmodule Xgit.Repository do
   end
 
   def valid?(_), do: false
+
+  @doc ~S"""
+  Get the default working tree if one has been attached.
+
+  Other working trees may also be attached to this repository, but do not have
+  special status with regard to the repository.
+  """
+  @spec default_working_tree(repository :: t) :: pid | nil
+  def default_working_tree(repository) when is_pid(repository),
+    do: GenServer.call(repository, :default_working_tree)
+
+  @doc ~S"""
+  Attach a working tree to this repository as the default working tree.
+
+  Future plumbing and API commands that target this repository will use this
+  working tree unless otherwise dictated.
+
+  ## Return Value
+
+  `:ok` if the working tree was successfully attached.
+
+  `:error` if a working tree was already attached or the proposed working tree
+  was not valid.
+  """
+  @spec set_default_working_tree(repository :: t, working_tree :: pid) :: :ok | :error
+  def set_default_working_tree(repository, working_tree)
+      when is_pid(repository) and is_pid(working_tree),
+      do: GenServer.call(repository, {:set_default_working_tree, working_tree})
 
   @typedoc ~S"""
   Error codes that can be returned by `get_object/2`.
@@ -159,6 +187,18 @@ defmodule Xgit.Repository do
 
   @impl true
   def handle_call(:valid_repository?, _from, state), do: {:reply, :valid_repository, state}
+
+  def handle_call(:default_working_tree, _from, %{working_tree: working_tree} = state),
+    do: {:reply, working_tree, state}
+
+  def handle_call({:set_default_working_tree, working_tree}, _from, %{working_tree: nil} = state) do
+    if Xgit.Repository.WorkingTree.valid?(working_tree),
+      do: {:reply, :ok, %{state | working_tree: working_tree}},
+      else: {:reply, :error, state}
+  end
+
+  def handle_call({:set_default_working_tree, _working_tree}, _from, state),
+    do: {:reply, :error, state}
 
   def handle_call({:get_object, object_id}, _from, state),
     do: delegate_call_to(state, :handle_get_object, [object_id])
