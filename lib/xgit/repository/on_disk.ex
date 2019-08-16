@@ -18,6 +18,9 @@ defmodule Xgit.Repository.OnDisk do
 
   Use the functions in `Xgit.Repository` to interact with this repository process.
 
+  An `Xgit.Repository.WorkingTree` will be automatically created and attached
+  to this repository.
+
   ## Options
 
   * `:work_dir` (required): Top-level working directory. A `.git` directory should
