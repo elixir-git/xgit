@@ -220,6 +220,12 @@ defmodule Xgit.Core.DirCache do
   end
 
   @doc ~S"""
+  Returns a dir cache that is the canonical "empty" dir cache (i.e. contains no entries).
+  """
+  @spec empty() :: t
+  def empty, do: %__MODULE__{version: 2, entry_count: 0, entries: []}
+
+  @doc ~S"""
   Return `true` if this entry struct describes a valid dir cache.
   """
   @spec valid?(dir_cache :: any) :: boolean

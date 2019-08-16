@@ -4,6 +4,11 @@ defmodule Xgit.Core.DirCacheTest do
   alias Xgit.Core.DirCache
   alias Xgit.Core.DirCache.Entry
 
+  describe "empty/0" do
+    assert %DirCache{version: 2, entry_count: 0, entries: []} = empty = DirCache.empty()
+    assert DirCache.valid?(empty)
+  end
+
   describe "valid?/1" do
     @valid_entry %Entry{
       name: 'hello.txt',
