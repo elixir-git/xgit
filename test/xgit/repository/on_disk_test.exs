@@ -3,17 +3,21 @@ defmodule Xgit.Repository.OnDiskTest do
 
   alias Xgit.Repository
   alias Xgit.Repository.OnDisk
+  alias Xgit.Repository.WorkingTree
 
   import ExUnit.CaptureLog
 
   describe "start_link/1" do
-    test "happy path: starts and is valid", %{xgit: xgit} do
+    test "happy path: starts and is valid and has a working directory attached", %{xgit: xgit} do
       assert :ok = OnDisk.create(xgit)
 
       assert {:ok, repo} = OnDisk.start_link(work_dir: xgit)
       assert is_pid(repo)
-
       assert Repository.valid?(repo)
+
+      assert working_tree = Repository.default_working_tree(repo)
+      assert is_pid(working_tree)
+      assert WorkingTree.valid?(working_tree)
     end
 
     test "handles unknown message", %{xgit: xgit} do
