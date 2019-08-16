@@ -103,7 +103,7 @@ defmodule Xgit.Repository.WorkingTree do
   all. [Issue #87](https://github.com/elixir-git/xgit/issues/87)
 
   Consider scalability of passing a potentially large `Xgit.Core.DirCache` structure
-  cross process boundaries. [Issue #88](https://github.com/elixir-git/xgit/issues/88)
+  across process boundaries. [Issue #88](https://github.com/elixir-git/xgit/issues/88)
   """
   @spec dir_cache(working_tree :: t) ::
           {:ok, DirCache.t()} | {:error, reason :: ParseIndexFile.from_iodevice_reason()}
