@@ -93,6 +93,17 @@ defmodule Xgit.Repository.WorkingTree do
 
   See `Xgit.Repository.WorkingTree.ParseIndexFile.from_iodevice/1` for possible
   reason codes.
+
+  ## TO DO
+
+  Find index file in appropriate location (i.e. as potentially modified
+  by `.git/config` file). [Issue #86](https://github.com/elixir-git/xgit/issues/86)
+
+  Cache state of index file so we don't have to parse it for every
+  all. [Issue #87](https://github.com/elixir-git/xgit/issues/87)
+
+  Consider scalability of passing a potentially large `Xgit.Core.DirCache` structure
+  cross process boundaries. [Issue #88](https://github.com/elixir-git/xgit/issues/88)
   """
   @spec dir_cache(working_tree :: t) ::
           {:ok, DirCache.t()} | {:error, reason :: ParseIndexFile.from_iodevice_reason()}
@@ -100,14 +111,6 @@ defmodule Xgit.Repository.WorkingTree do
     do: GenServer.call(working_tree, :dir_cache)
 
   defp handle_dir_cache(%{work_dir: work_dir} = state) do
-    # TO DO: Find index file in appropriate location (i.e. as potentially modified
-    # by .git/config file). (Add GH issue number.)
-
-    # TO DO: Cache state of index file so we don't have to parse it for every call.
-    # (Add GH issue number.)
-
-    # TO DO: Consider scalability of passing a potentially large DirCache structure
-    # across process boundaries. (Add GH issue number.)
 
     index_path = Path.join([work_dir, ".git", "index"])
 
