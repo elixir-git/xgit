@@ -156,8 +156,14 @@ defmodule Xgit.Util.FileSnapshot do
       snapshot
     end
   ```
+
+  ## Return Value
+
+  `:ok`
   """
-  @spec set_clean(snapshot :: t, other :: t) :: t
+  @spec set_clean(snapshot :: t, other :: t) :: :ok
+  def set_clean(sanpshot, other)
+  
   def set_clean(
         %__MODULE__{last_modified: last_modified, ref: ref},
         %__MODULE__{ref: other_ref}
@@ -167,6 +173,8 @@ defmodule Xgit.Util.FileSnapshot do
     if not_racy_clean?(last_modified, other_last_read),
       do: ConCache.delete(:xgit_file_snapshot, ref),
       else: record_time_for_ref(ref, not_racy_clean?(last_modified, other_last_read))
+
+    :ok
   end
 
   defp modified_impl?(file_last_modified, last_modified, ref) do
