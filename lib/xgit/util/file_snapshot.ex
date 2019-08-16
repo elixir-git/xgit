@@ -122,16 +122,12 @@ defmodule Xgit.Util.FileSnapshot do
   def modified?(%__MODULE__{last_modified: :dirty}, _path), do: true
   def modified?(%__MODULE__{last_modified: :missing}, path), do: File.exists?(path)
 
-  # Dialyzer appears unaware of the effect of `time: :posix` on `File.Stat!/1`
-  # and produces warnings that it can not succeed.
-  # @dialyzer {:nowarn_function, last_modified_time: 1}
   defp last_modified_time(path) when is_binary(path) do
     path
     |> File.stat!(time: :posix)
     |> extract_last_modified_time()
   end
 
-  # @dialyzer {:nowarn_function, extract_last_modified_time: 1}
   defp extract_last_modified_time(%{mtime: lmt}) when is_integer(lmt), do: lmt
 
   @doc ~S"""
@@ -163,7 +159,7 @@ defmodule Xgit.Util.FileSnapshot do
   """
   @spec set_clean(snapshot :: t, other :: t) :: :ok
   def set_clean(sanpshot, other)
-  
+
   def set_clean(
         %__MODULE__{last_modified: last_modified, ref: ref},
         %__MODULE__{ref: other_ref}
