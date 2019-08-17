@@ -11,7 +11,7 @@ _17 August 2019_
 * Implement `Xgit.Util.FileSnapshot` (borrowed from old jgit port). (#83)
 * Add Elixir 1.9.1 and OTP 22.0 to test matrix. (#82)
 * Add `valid?/1` test functions to most `Xgit.Core.*` modules. (#74, #76, #77, #78)
-* Add a second implementation (in-memory) of `Xgit.Repository.InMemory`. (#68)
+* Add a second implementation (in-memory) of `Xgit.Repository`. (#68)
 
 ## v0.1.1
 
