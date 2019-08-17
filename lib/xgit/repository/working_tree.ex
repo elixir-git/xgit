@@ -111,7 +111,6 @@ defmodule Xgit.Repository.WorkingTree do
     do: GenServer.call(working_tree, :dir_cache)
 
   defp handle_dir_cache(%{work_dir: work_dir} = state) do
-
     index_path = Path.join([work_dir, ".git", "index"])
 
     with true <- File.exists?(index_path),
