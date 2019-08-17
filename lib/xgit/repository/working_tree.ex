@@ -18,7 +18,9 @@ defmodule Xgit.Repository.WorkingTree do
   """
   use GenServer
 
+  alias Xgit.Core.DirCache
   alias Xgit.Repository
+  alias Xgit.Repository.WorkingTree.ParseIndexFile
 
   require Logger
 
@@ -78,8 +80,59 @@ defmodule Xgit.Repository.WorkingTree do
 
   def valid?(_), do: false
 
+  @doc ~S"""
+  Returns a current snapshot of the working tree state.
+
+  ## Return Value
+
+  `{:ok, dir_cache}` if an index file exists and could be parsed as a dir cache file.
+
+  `{:ok, dir_cache}` if no index file exists. (`dir_cache` will have zero entries.)
+
+  `{:error, reason}` if the file exists but could not be parsed.
+
+  See `Xgit.Repository.WorkingTree.ParseIndexFile.from_iodevice/1` for possible
+  reason codes.
+
+  ## TO DO
+
+  Find index file in appropriate location (i.e. as potentially modified
+  by `.git/config` file). [Issue #86](https://github.com/elixir-git/xgit/issues/86)
+
+  Cache state of index file so we don't have to parse it for every
+  all. [Issue #87](https://github.com/elixir-git/xgit/issues/87)
+
+  Consider scalability of passing a potentially large `Xgit.Core.DirCache` structure
+  across process boundaries. [Issue #88](https://github.com/elixir-git/xgit/issues/88)
+  """
+  @spec dir_cache(working_tree :: t) ::
+          {:ok, DirCache.t()} | {:error, reason :: ParseIndexFile.from_iodevice_reason()}
+  def dir_cache(working_tree) when is_pid(working_tree),
+    do: GenServer.call(working_tree, :dir_cache)
+
+  defp handle_dir_cache(%{work_dir: work_dir} = state) do
+    index_path = Path.join([work_dir, ".git", "index"])
+
+    with true <- File.exists?(index_path),
+         {:ok, iodevice} when is_pid(iodevice) <- File.open(index_path) do
+      res = ParseIndexFile.from_iodevice(iodevice)
+      :ok = File.close(iodevice)
+
+      {:reply, res, state}
+    else
+      false ->
+        dir_cache = %DirCache{version: 2, entry_count: 0, entries: []}
+        {:reply, {:ok, dir_cache}, state}
+
+      {:error, reason} ->
+        {:reply, {:error, reason}, state}
+    end
+  end
+
   @impl true
   def handle_call(:valid_working_tree?, _from, state), do: {:reply, :valid_working_tree, state}
+
+  def handle_call(:dir_cache, _from, state), do: handle_dir_cache(state)
 
   def handle_call(message, _from, state) do
     Logger.warn("WorkingTree received unrecognized call #{inspect(message)}")
