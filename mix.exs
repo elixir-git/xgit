@@ -1,10 +1,12 @@
 defmodule Xgit.MixProject do
   use Mix.Project
 
+  @version "0.1.3"
+
   def project do
     [
       app: :xgit,
-      version: "0.1.2",
+      version: @version,
       name: "Xgit",
       elixir: "~> 1.8",
       elixirc_options: [warnings_as_errors: true],
@@ -14,7 +16,8 @@ defmodule Xgit.MixProject do
       build_per_environment: false,
       test_coverage: [tool: ExCoveralls],
       description: description(),
-      package: package()
+      package: package(),
+      docs: docs()
     ]
   end
 
@@ -37,7 +40,18 @@ defmodule Xgit.MixProject do
     [
       maintainers: ["Eric Scouten"],
       licenses: ["Apache2"],
-      links: %{"Github" => "https://github.com/elixir-git/xgit"}
+      links: %{"Github" => "https://github.com/elixir-git/xgit", "Reflog" => "https://xgit.io"}
+    ]
+  end
+
+  defp docs do
+    [
+      main: "Xgit",
+      source_ref: "v#{@version}",
+      logo: "branding/xgit-logo.png",
+      canonical: "http://hexdocs.pm/xgit",
+      source_url: "https://github.com/elixir-git/xgit",
+      homepage_url: "https://xgit.io"
     ]
   end
 

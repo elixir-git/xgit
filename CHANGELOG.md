@@ -1,5 +1,11 @@
 # Changelog for v0.1.x Series
 
+## v0.1.3
+
+_17 August 2019_
+
+* Fix a couple minor issues in documentation. (#92, #93, #94)
+
 ## v0.1.2
 
 _17 August 2019_
