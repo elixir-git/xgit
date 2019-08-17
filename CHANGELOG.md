@@ -1,5 +1,11 @@
 # Changelog for v0.1.x Series
 
+## v0.1.4
+
+_17 August 2019_
+
+* Fix logo in exdoc. (#95)
+
 ## v0.1.3
 
 _17 August 2019_
