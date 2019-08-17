@@ -226,7 +226,14 @@ defmodule Xgit.Core.DirCache do
   def empty, do: %__MODULE__{version: 2, entry_count: 0, entries: []}
 
   @doc ~S"""
-  Return `true` if this entry struct describes a valid dir cache.
+  Return `true` if the value is a `DirCache` struct that is valid.
+
+  All of the following must be true for this to occur:
+  * The value is a `DirCache` struct.
+  * The version is supported by Xgit. (Currently, only version 2 is supported.)
+  * The `entry_count` matches the actual number of entries.
+  * The entries are properly sorted.
+  * All entries are valid, as determined by `Xgit.Core.DirCache.Entry.valid?/1`.
   """
   @spec valid?(dir_cache :: any) :: boolean
   def valid?(dir_cache)
