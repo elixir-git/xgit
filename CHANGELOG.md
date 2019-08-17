@@ -1,5 +1,18 @@
 # Changelog for v0.1.x Series
 
+## v0.1.2
+
+_17 August 2019_
+
+* **Implement `Xgit.Plumbing.LsFiles.Stage`. (#90)** This is an API equivalent of `git ls-files --stage`.
+* Implement `Xgit.Repository.WorkingTree`. (#72, #80, #89)
+* Implement `Xgit.Core.DirCache`. (#65, #70, #71, #73, #85)
+* Automatically attach a working tree to on-disk repository. (#84)
+* Implement `Xgit.Util.FileSnapshot` (borrowed from old jgit port). (#83)
+* Add Elixir 1.9.1 and OTP 22.0 to test matrix. (#82)
+* Add `valid?/1` test functions to most `Xgit.Core.*` modules. (#74, #76, #77, #78)
+* Add a second implementation (in-memory) of `Xgit.Repository.InMemory`. (#68)
+
 ## v0.1.1
 
 _10 August 2019_
