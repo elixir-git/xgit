@@ -8,7 +8,7 @@ defmodule Xgit.Plumbing.LsFiles.StageTest do
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.WorkingTree
 
-  describe "dir_cache/1" do
+  describe "run/1" do
     test "happy path: no index file" do
       {:ok, repo} = InMemory.start_link()
 
