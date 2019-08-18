@@ -251,4 +251,62 @@ defmodule Xgit.Core.DirCache do
     do: Entry.compare(entry1, entry2) == :lt && entries_sorted?([entry2 | tail])
 
   defp entries_sorted?([_]), do: true
+
+  @doc ~S"""
+  Returns a dir cache that has new directory entries added in.
+
+  In the event of a collision between entries (same path and stage), the existing
+  entry will be replaced by the new one.
+
+  ## Parameters
+
+  `entries` a list of entries to add to the existing dir cache
+
+  ## Return Value
+
+  `{:ok, dir_cache}` where `dir_cache` is the original `dir_cache` with the new
+  entries added (and properly sorted).
+
+  `{:error, :invalid_dir_cache}` if the original `dir_cache` was invalid.
+
+  `{:error, :invalid_entries}` if one or more of the entries is invalid.
+
+  `{:error, :duplicate_entries}` if one or more of the entries in the _new_ list
+  are duplicates of other entries in the _new_ list. (As stated earlier, duplicates
+  from the original list are acceptable; in that event, the new entry will replace
+  the old one.)
+  """
+  @spec add_entries(dir_cache :: t, new_entries :: [Entry.t()]) ::
+          {:ok, t} | {:error, :invalid_entries | :duplicate_entries}
+  def add_entries(%__MODULE__{entries: existing_entries} = dir_cache, new_entries)
+      when is_list(existing_entries) and is_list(new_entries) do
+    with {:dir_cache_valid?, true} <- {:dir_cache_valid?, valid?(dir_cache)},
+         {:entries_valid?, true} <- {:entries_valid?, Enum.all?(new_entries, &Entry.valid?/1)},
+         sorted_new_entries <- Enum.sort_by(new_entries, &{&1.name, &1.stage}),
+         {:duplicates, ^sorted_new_entries} <-
+           {:duplicates, Enum.dedup_by(sorted_new_entries, &{&1.name, &1.stage})} do
+      combined_entries = combine_entries(existing_entries, sorted_new_entries)
+      {:ok, %{dir_cache | entry_count: Enum.count(combined_entries), entries: combined_entries}}
+    else
+      {:dir_cache_valid?, _} -> {:error, :invalid_dir_cache}
+      {:entries_valid?, _} -> {:error, :invalid_entries}
+      {:duplicates, _} -> {:error, :duplicate_entries}
+    end
+  end
+
+  defp combine_entries(existing_entries, sorted_new_entries)
+
+  defp combine_entries(existing_entries, []), do: existing_entries
+  defp combine_entries([], sorted_new_entries), do: sorted_new_entries
+
+  defp combine_entries(
+         [existing_head | existing_tail] = existing_entries,
+         [new_head | new_tail] = sorted_new_entries
+       ) do
+    case Entry.compare(existing_head, new_head) do
+      :lt -> [existing_head | combine_entries(existing_tail, sorted_new_entries)]
+      :eq -> [new_head | combine_entries(existing_tail, new_tail)]
+      :gt -> [new_head | combine_entries(existing_entries, new_tail)]
+    end
+  end
 end

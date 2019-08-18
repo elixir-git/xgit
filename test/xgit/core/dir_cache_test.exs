@@ -9,33 +9,33 @@ defmodule Xgit.Core.DirCacheTest do
     assert DirCache.valid?(empty)
   end
 
+  @valid_entry %Entry{
+    name: 'hello.txt',
+    stage: 0,
+    object_id: "7919e8900c3af541535472aebd56d44222b7b3a3",
+    mode: 0o100644,
+    size: 42,
+    ctime: 1_565_612_933,
+    ctime_ns: 0,
+    mtime: 1_565_612_941,
+    mtime_ns: 0,
+    dev: 0,
+    ino: 0,
+    uid: 0,
+    gid: 0,
+    assume_valid?: true,
+    extended?: false,
+    skip_worktree?: true,
+    intent_to_add?: false
+  }
+
+  @valid %DirCache{
+    version: 2,
+    entry_count: 1,
+    entries: [@valid_entry]
+  }
+
   describe "valid?/1" do
-    @valid_entry %Entry{
-      name: 'hello.txt',
-      stage: 0,
-      object_id: "7919e8900c3af541535472aebd56d44222b7b3a3",
-      mode: 0o100644,
-      size: 42,
-      ctime: 1_565_612_933,
-      ctime_ns: 0,
-      mtime: 1_565_612_941,
-      mtime_ns: 0,
-      dev: 0,
-      ino: 0,
-      uid: 0,
-      gid: 0,
-      assume_valid?: true,
-      extended?: false,
-      skip_worktree?: true,
-      intent_to_add?: false
-    }
-
-    @valid %DirCache{
-      version: 2,
-      entry_count: 1,
-      entries: [@valid_entry]
-    }
-
     test "happy path: valid entry" do
       assert DirCache.valid?(@valid)
     end
@@ -104,6 +104,104 @@ defmodule Xgit.Core.DirCacheTest do
                  Map.put(@valid_entry, :stage, 2)
                ]
              })
+    end
+  end
+
+  describe "add_entries/2" do
+    test "happy path: sorting and adding to an empty list" do
+      assert {:ok,
+              %DirCache{
+                version: 2,
+                entry_count: 2,
+                entries: [
+                  %Entry{name: 'hello.txt', stage: 0},
+                  %Entry{name: 'hello.txt', stage: 1}
+                ]
+              }} =
+               DirCache.add_entries(DirCache.empty(), [
+                 Map.put(@valid_entry, :stage, 1),
+                 @valid_entry
+               ])
+    end
+
+    test "happy path: sorting and merging into an existing list" do
+      existing = %DirCache{
+        version: 2,
+        entry_count: 1,
+        entries: [Map.put(@valid_entry, :stage, 1)]
+      }
+
+      assert DirCache.valid?(existing)
+
+      assert {:ok,
+              %DirCache{
+                version: 2,
+                entry_count: 3,
+                entries: [
+                  %Entry{name: 'hello.txt', stage: 0},
+                  %Entry{name: 'hello.txt', stage: 1},
+                  %Entry{name: 'hello.txt', stage: 2}
+                ]
+              }} =
+               DirCache.add_entries(existing, [
+                 Map.put(@valid_entry, :stage, 2),
+                 @valid_entry
+               ])
+    end
+
+    test "happy path: replacing an existing item" do
+      existing = %DirCache{
+        version: 2,
+        entry_count: 1,
+        entries: [%{@valid_entry | stage: 1, size: 43}]
+      }
+
+      assert DirCache.valid?(existing)
+
+      assert {:ok,
+              %DirCache{
+                version: 2,
+                entry_count: 2,
+                entries: [
+                  %Entry{name: 'hello.txt', stage: 0},
+                  %Entry{name: 'hello.txt', stage: 1, size: 495}
+                ]
+              }} =
+               DirCache.add_entries(existing, [
+                 %{@valid_entry | stage: 1, size: 495},
+                 @valid_entry
+               ])
+    end
+
+    test "{:error, :invalid_dir_cache}" do
+      assert {:error, :invalid_dir_cache} =
+               DirCache.add_entries(Map.put(@valid, :entry_count, 999), [@valid_entry])
+    end
+
+    test "{:error, :invalid_entries}" do
+      assert {:error, :invalid_entries} =
+               DirCache.add_entries(DirCache.empty(), [Map.put(@valid_entry, :name, '')])
+    end
+
+    test "{:error, :duplicate_entries}" do
+      assert {:error, :duplicate_entries} =
+               DirCache.add_entries(DirCache.empty(), [
+                 @valid_entry,
+                 Map.put(@valid_entry, :name, 'other'),
+                 @valid_entry
+               ])
+    end
+
+    test "FunctionClauseError: not a DirCache" do
+      assert_raise FunctionClauseError, fn ->
+        DirCache.add_entries("trust me, it's a DirCache", [@valid_entry])
+      end
+    end
+
+    test "FunctionClauseError: not a list of entries" do
+      assert_raise FunctionClauseError, fn ->
+        DirCache.add_entries(DirCache.empty(), @valid_entry)
+      end
     end
   end
 end
