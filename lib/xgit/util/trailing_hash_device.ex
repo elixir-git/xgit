@@ -1,10 +1,10 @@
-defmodule Xgit.Util.TrailingHashReadDevice do
+defmodule Xgit.Util.TrailingHashDevice do
   @moduledoc ~S"""
-  Creates an `iodevice` process that reads the file or string content except
-  for the trailing 20 bytes.
+  Creates an `iodevice` process that supports git file formats with a trailing
+  SHA-1 hash.
 
-  The trailing 20 bytes are interpreted as a SHA-1 hash of the remaining file
-  contents and can be verified using the `valid_hash?/1` function.
+  When reading, the trailing 20 bytes are interpreted as a SHA-1 hash of the
+  remaining file contents and can be verified using the `valid_hash?/1` function.
 
   This is an admittedly minimal implementation; just enough is implemented to
   allow Xgit's index file parser to do its work.
@@ -51,7 +51,7 @@ defmodule Xgit.Util.TrailingHashReadDevice do
     do: GenServer.start_link(__MODULE__, {:string, s})
 
   @doc ~S"""
-  Returns `true` if this is process is an `TrailingHashReadDevice` instance.
+  Returns `true` if this is process is an `TrailingHashDevice` instance.
 
   Note the difference between this function and `valid_hash?/1`.
   """
@@ -107,7 +107,7 @@ defmodule Xgit.Util.TrailingHashReadDevice do
   end
 
   def handle_info(message, state) do
-    Logger.warn("TrailingHashReadDevice received unexpected message #{inspect(message)}")
+    Logger.warn("TrailingHashDevice received unexpected message #{inspect(message)}")
     {:noreply, state}
   end
 
@@ -133,7 +133,7 @@ defmodule Xgit.Util.TrailingHashReadDevice do
   def handle_call(:valid_hash?, _from, state), do: {:reply, :too_soon, state}
 
   def handle_call(request, _from, state) do
-    Logger.warn("TrailingHashReadDevice received unexpected call #{inspect(request)}")
+    Logger.warn("TrailingHashDevice received unexpected call #{inspect(request)}")
     {:reply, :unknown_message, state}
   end
 
@@ -166,7 +166,7 @@ defmodule Xgit.Util.TrailingHashReadDevice do
   end
 
   defp io_request(request, state) do
-    Logger.warn("TrailingHashReadDevice received unexpected iorequest #{inspect(request)}")
+    Logger.warn("TrailingHashDevice received unexpected iorequest #{inspect(request)}")
     {{:error, :request}, state}
   end
 
@@ -180,7 +180,7 @@ defmodule Xgit.Util.TrailingHashReadDevice do
     do: {File.close(iodevice), %{state | iodevice: nil}}
 
   defp file_request(request, state) do
-    Logger.warn("TrailingHashReadDevice received unexpected file_request #{inspect(request)}")
+    Logger.warn("TrailingHashDevice received unexpected file_request #{inspect(request)}")
     {{:error, :request}, state}
   end
 end
