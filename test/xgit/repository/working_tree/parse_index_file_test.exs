@@ -3,6 +3,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFileTest do
 
   alias Xgit.Core.DirCache
   alias Xgit.Repository.WorkingTree.ParseIndexFile
+  alias Xgit.Util.TrailingHashDevice
 
   describe "from_iodevice/1" do
     test "happy path: can read from command-line git (empty index)", %{ref: ref} do
@@ -34,7 +35,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFileTest do
       assert {:ok, index_file} =
                [ref, ".git", "index"]
                |> Path.join()
-               |> File.open!()
+               |> thd_open_file!()
                |> ParseIndexFile.from_iodevice()
 
       assert index_file = %DirCache{
@@ -76,7 +77,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFileTest do
       assert {:ok, index_file} =
                [ref, ".git", "index"]
                |> Path.join()
-               |> File.open!()
+               |> thd_open_file!()
                |> ParseIndexFile.from_iodevice()
 
       assert index_file = %DirCache{
@@ -124,6 +125,11 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFileTest do
                version: 2
              }
     end
+  end
+
+  test "error: iodevice isn't a TrailingHashDevice" do
+    {:ok, pid} = GenServer.start_link(NotValid, nil)
+    assert {:error, :not_sha_hash_device} = ParseIndexFile.from_iodevice(pid)
   end
 
   test "error: file doesn't start with DIRC signature" do
@@ -212,16 +218,71 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFileTest do
              ])
   end
 
+  test "error: extensions not supported" do
+    assert {:error, :extensions_not_supported} =
+             parse_iodata_as_index_file([
+               v2_header_with_valid_entry_through_file_size(),
+               Enum.map(1..20, fn n -> n end),
+               [0, 9],
+               'hello.txt',
+               0,
+               0,
+               0,
+               0,
+               0,
+               'abcd'
+             ])
+  end
+
+  test "error: incorrect SHA-1 hash" do
+    assert {:error, :extensions_not_supported} =
+             parse_corrupt_iodata_as_index_file([
+               v2_header_with_valid_entry_through_file_size(),
+               Enum.map(1..20, fn n -> n end),
+               [0, 9],
+               'hello.txt',
+               0,
+               0,
+               0,
+               0,
+               0
+             ])
+  end
+
   defp parse_iodata_as_index_file(iodata) do
     iodata
     |> IO.iodata_to_binary()
-    |> stringio_open!()
+    |> thd_open_string!()
     |> ParseIndexFile.from_iodevice()
   end
 
-  defp stringio_open!(s) do
-    {:ok, iodevice} = StringIO.open(s)
+  defp parse_corrupt_iodata_as_index_file(iodata) do
+    iodata
+    |> IO.iodata_to_binary()
+    |> thd_open_corrupt_string!()
+    |> ParseIndexFile.from_iodevice()
+  end
+
+  defp thd_open_file!(path) do
+    {:ok, iodevice} = TrailingHashDevice.open_file(path)
     iodevice
+  end
+
+  defp thd_open_string!(s) do
+    {:ok, iodevice} = TrailingHashDevice.open_string(s <> hash_for_string(s))
+    iodevice
+  end
+
+  defp thd_open_corrupt_string!(s) do
+    {:ok, iodevice} = TrailingHashDevice.open_string(s <> "bogusbogusbogusbogus ")
+    iodevice
+  end
+
+  defp hash_for_string(s) do
+    :sha
+    |> :crypto.hash_init()
+    |> :crypto.hash_update(s)
+    |> :crypto.hash_final()
   end
 
   defp v2_header_with_n_entries(n) when n > 0 and n <= 255, do: ['DIRC', 0, 0, 0, 2, 0, 0, 0, n]
