@@ -1,7 +1,7 @@
-defmodule Xgit.Util.TrailingHashReadDeviceTest do
+defmodule Xgit.Util.TrailingHashDeviceTest do
   use ExUnit.Case, async: true
 
-  alias Xgit.Util.TrailingHashReadDevice, as: THR
+  alias Xgit.Util.TrailingHashDevice, as: THD
 
   import ExUnit.CaptureLog
 
@@ -21,12 +21,12 @@ defmodule Xgit.Util.TrailingHashReadDeviceTest do
   describe "open_file/1" do
     test "simple file" do
       assert {:ok, device} = open_file_with_trailing_hash("hello")
-      assert THR.valid?(device)
+      assert THD.valid?(device)
 
       assert "hello" = IO.binread(device, 5)
       assert :eof = IO.binread(device, 5)
 
-      assert THR.valid_hash?(device)
+      assert THD.valid_hash?(device)
 
       assert :ok = File.close(device)
     end
@@ -39,7 +39,7 @@ defmodule Xgit.Util.TrailingHashReadDeviceTest do
       assert "goodbye" = IO.binread(device, 7)
       assert :eof = IO.binread(device, 1)
 
-      assert THR.valid_hash?(device)
+      assert THD.valid_hash?(device)
     end
 
     test "immediate EOF if file is <= 20 bytes long" do
@@ -48,12 +48,12 @@ defmodule Xgit.Util.TrailingHashReadDeviceTest do
 
       File.write!(path, "hello")
 
-      assert {:ok, device} = THR.open_file(path)
+      assert {:ok, device} = THD.open_file(path)
       assert is_pid(device)
 
       assert :eof = IO.binread(device, 5)
 
-      refute THR.valid_hash?(device)
+      refute THD.valid_hash?(device)
     end
 
     test "hash is invalid" do
@@ -62,13 +62,13 @@ defmodule Xgit.Util.TrailingHashReadDeviceTest do
 
       File.write!(path, "hellobogusbogusbogusbogus")
 
-      assert {:ok, device} = THR.open_file(path)
+      assert {:ok, device} = THD.open_file(path)
       assert is_pid(device)
 
       assert "hello" = IO.binread(device, 5)
       assert :eof = IO.binread(device, 5)
 
-      refute THR.valid_hash?(device)
+      refute THD.valid_hash?(device)
     end
 
     test "Posix error" do
@@ -76,14 +76,14 @@ defmodule Xgit.Util.TrailingHashReadDeviceTest do
       path = Temp.path!()
       File.mkdir_p!(path)
 
-      assert {:error, :eisdir} = THR.open_file(path)
+      assert {:error, :eisdir} = THD.open_file(path)
     end
 
     test "error :too_soon" do
       assert {:ok, device} = open_file_with_trailing_hash("hello, goodbye")
 
       assert "hello" = IO.binread(device, 5)
-      assert THR.valid_hash?(device) == :too_soon
+      assert THD.valid_hash?(device) == :too_soon
     end
 
     test "error :already_called" do
@@ -92,8 +92,8 @@ defmodule Xgit.Util.TrailingHashReadDeviceTest do
       assert "hello" = IO.binread(device, 5)
       assert :eof = IO.binread(device, 5)
 
-      assert THR.valid_hash?(device)
-      assert THR.valid_hash?(device) == :already_called
+      assert THD.valid_hash?(device)
+      assert THD.valid_hash?(device) == :already_called
     end
 
     test "error: unexpected io request" do
@@ -102,7 +102,7 @@ defmodule Xgit.Util.TrailingHashReadDeviceTest do
       assert capture_log(fn ->
                assert {:error, :request} = IO.binwrite(device, "hello")
              end) =~
-               ~s(TrailingHashReadDevice received unexpected iorequest {:put_chars, :latin1, "hello"})
+               ~s(TrailingHashDevice received unexpected iorequest {:put_chars, :latin1, "hello"})
     end
 
     test "error: unexpected file request" do
@@ -111,7 +111,7 @@ defmodule Xgit.Util.TrailingHashReadDeviceTest do
       assert capture_log(fn ->
                assert {:error, :request} = :file.datasync(device)
              end) =~
-               "TrailingHashReadDevice received unexpected file_request :datasync"
+               "TrailingHashDevice received unexpected file_request :datasync"
     end
 
     test "warn: unexpected message" do
@@ -121,7 +121,7 @@ defmodule Xgit.Util.TrailingHashReadDeviceTest do
                send(device, :random_unknown_message)
                Process.sleep(10)
                # Give time for message to land.
-             end) =~ "TrailingHashReadDevice received unexpected message :random_unknown_message"
+             end) =~ "TrailingHashDevice received unexpected message :random_unknown_message"
     end
 
     test "warn: unexpected call" do
@@ -129,45 +129,45 @@ defmodule Xgit.Util.TrailingHashReadDeviceTest do
 
       assert capture_log(fn ->
                assert :unknown_message = GenServer.call(device, :random_unknown_call)
-             end) =~ "TrailingHashReadDevice received unexpected call :random_unknown_call"
+             end) =~ "TrailingHashDevice received unexpected call :random_unknown_call"
     end
   end
 
   describe "open_string/1" do
     test "simple file" do
       assert {:ok, device} = open_string_with_trailing_hash("hello")
-      assert THR.valid?(device)
+      assert THD.valid?(device)
 
       assert "hello" = IO.binread(device, 5)
       assert :eof = IO.binread(device, 5)
 
-      assert THR.valid_hash?(device)
+      assert THD.valid_hash?(device)
     end
 
     test "FunctionClauseError if string is <= 20 bytes long" do
       assert_raise FunctionClauseError, fn ->
-        THR.open_string("hello")
+        THD.open_string("hello")
       end
     end
 
     test "hash is invalid" do
-      assert {:ok, device} = THR.open_string("hellobogusbogusbogusbogus")
+      assert {:ok, device} = THD.open_string("hellobogusbogusbogusbogus")
 
       assert "hello" = IO.binread(device, 5)
       assert :eof = IO.binread(device, 5)
 
-      refute THR.valid_hash?(device)
+      refute THD.valid_hash?(device)
     end
   end
 
   describe "valid?/1" do
     test "other process" do
       {:ok, pid} = GenServer.start_link(NotValid, nil)
-      refute THR.valid?(pid)
+      refute THD.valid?(pid)
     end
 
     test "not a PID" do
-      refute THR.valid?("blah")
+      refute THD.valid?("blah")
     end
   end
 
@@ -177,13 +177,13 @@ defmodule Xgit.Util.TrailingHashReadDeviceTest do
 
     File.write!(path, string_with_trailing_hash(s))
 
-    THR.open_file(path)
+    THD.open_file(path)
   end
 
   defp open_string_with_trailing_hash(s) do
     s
     |> string_with_trailing_hash()
-    |> THR.open_string()
+    |> THD.open_string()
   end
 
   defp string_with_trailing_hash(s), do: s <> hash_for_string(s)
