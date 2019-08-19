@@ -72,8 +72,8 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
 
   defp read_entries(iodevice, version, entry_count) do
     entries =
-      Enum.map(1..entry_count, fn i ->
-        read_entry(iodevice, version, i == 1)
+      Enum.map(1..entry_count, fn _ ->
+        read_entry(iodevice, version)
       end)
 
     if Enum.all?(entries, &valid_entry?/1),
@@ -81,7 +81,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
       else: :invalid
   end
 
-  defp read_entry(iodevice, 2 = _version, first?) do
+  defp read_entry(iodevice, 2 = _version) do
     with ctime when is_integer(ctime) <- read_uint32(iodevice),
          ctime_ns when is_integer(ctime_ns) <- read_uint32(iodevice),
          mtime when is_integer(mtime) <- read_uint32(iodevice),
@@ -96,7 +96,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
          when is_binary(object_id) and object_id != "0000000000000000000000000000000000000000" <-
            read_object_id(iodevice),
          flags when is_integer(flags) and flags > 0 <- read_uint16(iodevice),
-         name when is_list(name) <- read_name(iodevice, flags &&& 0xFFF, first?) do
+         name when is_list(name) <- read_name(iodevice, flags &&& 0xFFF) do
       %DirCacheEntry{
         name: name,
         stage: bsr(flags &&& 0x3000, 12),
@@ -162,9 +162,8 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
     end
   end
 
-  defp read_name(iodevice, length, first?) when length < 0xFFF do
-    first_shift = if first?, do: 4, else: 0
-    bytes_to_read = length + padding(Integer.mod(length + first_shift, 8))
+  defp read_name(iodevice, length) when length < 0xFFF do
+    bytes_to_read = length + padding(Integer.mod(length + 4, 8))
 
     case IO.binread(iodevice, bytes_to_read) do
       x when is_binary(x) and byte_size(x) == bytes_to_read ->
@@ -177,7 +176,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
     end
   end
 
-  defp read_name(_iodevice, _length, _first?), do: :invalid
+  defp read_name(_iodevice, _length), do: :invalid
 
   defp padding(length_mod_8) when length_mod_8 < 6, do: 6 - length_mod_8
   defp padding(6), do: 8
