@@ -21,6 +21,7 @@ defmodule Xgit.Repository.WorkingTree do
   alias Xgit.Core.DirCache
   alias Xgit.Repository
   alias Xgit.Repository.WorkingTree.ParseIndexFile
+  alias Xgit.Util.TrailingHashDevice
 
   require Logger
 
@@ -114,7 +115,7 @@ defmodule Xgit.Repository.WorkingTree do
     index_path = Path.join([work_dir, ".git", "index"])
 
     with true <- File.exists?(index_path),
-         {:ok, iodevice} when is_pid(iodevice) <- File.open(index_path) do
+         {:ok, iodevice} when is_pid(iodevice) <- TrailingHashDevice.open_file(index_path) do
       res = ParseIndexFile.from_iodevice(iodevice)
       :ok = File.close(iodevice)
 

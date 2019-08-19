@@ -139,7 +139,33 @@ defmodule Xgit.Repository.WorkingTree.DirCacheTest do
 
     test "error: unsupported version", %{xgit: xgit} do
       assert {:error, :unsupported_version} =
-               parse_iodata_as_index_file(xgit, ['DIRC', 0, 0, 0, 1])
+               parse_iodata_as_index_file(xgit, [
+                 'DIRC',
+                 0,
+                 0,
+                 0,
+                 1,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0,
+                 0
+               ])
     end
 
     test "error: 'index' is a directory", %{xgit: xgit} do
