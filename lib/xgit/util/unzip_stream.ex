@@ -28,14 +28,7 @@ defmodule Xgit.Util.UnzipStream do
 
     case status do
       :continue ->
-        raise "HOW DID YOU GET HERE? Please comment on https://github.com/elixir-git/xgit/issues/50"
-
-      # TO DO: The `:continue` case is unreachable in code coverage by any case
-      # that I've been able to construct. Would love advice on how to reach this.
-      # https://github.com/elixir-git/xgit/issues/50
-      #
-      # I think the following code would work, but can't prove it:
-      # process_all_data([], z, [to_byte_list(iodata) | uncompressed_data_acc])
+        process_all_data([], z, [to_byte_list(iodata) | uncompressed_data_acc])
 
       :finished ->
         [to_byte_list(iodata) | uncompressed_data_acc]
