@@ -107,7 +107,7 @@ defmodule Xgit.Util.TrailingHashReadDevice do
   end
 
   @impl true
-  def handle_call(:valid_trailing_hash_read_device, _from_, state),
+  def handle_call(:valid_trailing_hash_read_device?, _from_, state),
     do: {:reply, :valid_trailing_hash_read_device, state}
 
   def handle_call(:valid_hash?, _from, %{remaining_bytes: 0, crypto: :done} = state),
