@@ -101,6 +101,11 @@ defmodule Xgit.Util.TrailingHashReadDevice do
     {:noreply, state}
   end
 
+  def handle_info({:file_request, from, reply_as, req}, state) do
+    state = file_request(from, reply_as, req, state)
+    {:noreply, state}
+  end
+
   def handle_info(message, state) do
     Logger.warn("TrailingHashReadDevice received unexpected message #{inspect(message)}")
     {:noreply, state}
@@ -122,7 +127,7 @@ defmodule Xgit.Util.TrailingHashReadDevice do
     actual_hash = :crypto.hash_final(crypto)
     hash_from_file = IO.binread(iodevice, 20)
 
-    {:reply, actual_hash == hash_from_file, %{state | iodevice: nil, crypto: :done}}
+    {:reply, actual_hash == hash_from_file, %{state | crypto: :done}}
   end
 
   def handle_call(:valid_hash?, _from, state), do: {:reply, :too_soon, state}
@@ -162,6 +167,20 @@ defmodule Xgit.Util.TrailingHashReadDevice do
 
   defp io_request(request, state) do
     Logger.warn("TrailingHashReadDevice received unexpected iorequest #{inspect(request)}")
+    {{:error, :request}, state}
+  end
+
+  defp file_request(from, reply_as, req, state) do
+    {reply, state} = file_request(req, state)
+    send(from, {:file_reply, reply_as, reply})
+    state
+  end
+
+  defp file_request(:close, %{iodevice: iodevice} = state),
+    do: {File.close(iodevice), %{state | iodevice: nil}}
+
+  defp file_request(request, state) do
+    Logger.warn("TrailingHashReadDevice received unexpected file_request #{inspect(request)}")
     {{:error, :request}, state}
   end
 end

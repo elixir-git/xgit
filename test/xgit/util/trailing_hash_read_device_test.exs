@@ -27,6 +27,8 @@ defmodule Xgit.Util.TrailingHashReadDeviceTest do
       assert :eof = IO.binread(device, 5)
 
       assert THR.valid_hash?(device)
+
+      assert :ok = File.close(device)
     end
 
     test "multiple reads" do
@@ -101,6 +103,15 @@ defmodule Xgit.Util.TrailingHashReadDeviceTest do
                assert {:error, :request} = IO.binwrite(device, "hello")
              end) =~
                ~s(TrailingHashReadDevice received unexpected iorequest {:put_chars, :latin1, "hello"})
+    end
+
+    test "error: unexpected file request" do
+      assert {:ok, device} = open_file_with_trailing_hash("hello")
+
+      assert capture_log(fn ->
+               assert {:error, :request} = :file.datasync(device)
+             end) =~
+               "TrailingHashReadDevice received unexpected file_request :datasync"
     end
 
     test "warn: unexpected message" do
