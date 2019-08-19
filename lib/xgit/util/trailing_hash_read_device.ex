@@ -51,6 +51,17 @@ defmodule Xgit.Util.TrailingHashReadDevice do
     do: GenServer.start_link(__MODULE__, {:string, s})
 
   @doc ~S"""
+  Returns `true` if this is process is an `TrailingHashReadDevice` instance.
+
+  Note the difference between this function and `valid_hash?/1`.
+  """
+  @spec valid?(v :: any) :: boolean
+  def valid?(v) when is_pid(v),
+    do: GenServer.call(v, :valid_trailing_hash_read_device?) == :valid_trailing_hash_read_device
+
+  def valid?(_), do: false
+
+  @doc ~S"""
   Returns `true` if the hash at the end of the file matches the hash
   generated while reading the file.
 
@@ -96,6 +107,9 @@ defmodule Xgit.Util.TrailingHashReadDevice do
   end
 
   @impl true
+  def handle_call(:valid_trailing_hash_read_device, _from_, state),
+    do: {:reply, :valid_trailing_hash_read_device, state}
+
   def handle_call(:valid_hash?, _from, %{remaining_bytes: 0, crypto: :done} = state),
     do: {:reply, :already_called, state}
 
