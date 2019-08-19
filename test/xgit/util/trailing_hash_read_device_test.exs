@@ -21,6 +21,7 @@ defmodule Xgit.Util.TrailingHashReadDeviceTest do
   describe "open_file/1" do
     test "simple file" do
       assert {:ok, device} = open_file_with_trailing_hash("hello")
+      assert THR.valid?(device)
 
       assert "hello" = IO.binread(device, 5)
       assert :eof = IO.binread(device, 5)
@@ -107,6 +108,8 @@ defmodule Xgit.Util.TrailingHashReadDeviceTest do
 
       assert capture_log(fn ->
                send(device, :random_unknown_message)
+               Process.sleep(10)
+               # Give time for message to land.
              end) =~ "TrailingHashReadDevice received unexpected message :random_unknown_message"
     end
 
@@ -122,6 +125,7 @@ defmodule Xgit.Util.TrailingHashReadDeviceTest do
   describe "open_string/1" do
     test "simple file" do
       assert {:ok, device} = open_string_with_trailing_hash("hello")
+      assert THR.valid?(device)
 
       assert "hello" = IO.binread(device, 5)
       assert :eof = IO.binread(device, 5)
@@ -142,6 +146,17 @@ defmodule Xgit.Util.TrailingHashReadDeviceTest do
       assert :eof = IO.binread(device, 5)
 
       refute THR.valid_hash?(device)
+    end
+  end
+
+  describe "valid?/1" do
+    test "other process" do
+      {:ok, pid} = GenServer.start_link(NotValid, nil)
+      refute THR.valid?(pid)
+    end
+
+    test "not a PID" do
+      refute THR.valid?("blah")
     end
   end
 
