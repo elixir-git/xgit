@@ -55,13 +55,6 @@ defmodule Xgit.Repository.OnDisk.PutLooseObject do
     |> Stream.run()
   end
 
-  defp deflate_and_write_bytes(file, z, bytes, flush \\ :none) do
-    compressed =
-      z
-      |> :zlib.deflate(bytes, flush)
-      |> Enum.join()
-      |> :binary.bin_to_list()
-
-    IO.write(file, compressed)
-  end
+  defp deflate_and_write_bytes(file, z, bytes, flush \\ :none),
+    do: IO.binwrite(file, :zlib.deflate(z, bytes, flush))
 end
