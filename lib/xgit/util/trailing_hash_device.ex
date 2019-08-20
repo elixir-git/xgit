@@ -33,6 +33,25 @@ defmodule Xgit.Util.TrailingHashDevice do
     do: GenServer.start_link(__MODULE__, {:file, path})
 
   @doc ~S"""
+  Creates an IO device that writes to a file with trailing hash.
+
+  Unlike `File.open/2` and `File.open/3`, no options or function are
+  accepted.
+
+  This device can be passed to `IO.binwrite/2`.
+
+  ## Return Value
+
+  `{:ok, pid}` where `pid` points to an IO device process.
+
+  `{:ok, reason}` if the file could not be opened. See `File.open/2` for
+  possible values for `reason`.
+  """
+  @spec open_file_for_write(path :: Path.t()) :: {:ok, pid} | {:error, File.posix()}
+  def open_file_for_write(path) when is_binary(path),
+    do: GenServer.start_link(__MODULE__, {:file_write, path})
+
+  @doc ~S"""
   Creates an IO device that reads a string with trailing hash.
 
   This is intended mostly for internal testing purposes.
@@ -75,6 +94,8 @@ defmodule Xgit.Util.TrailingHashDevice do
   `:too_soon` if called before the SHA-1 hash is expected.
 
   `:already_called` if called a second (or successive) time.
+
+  `:opened_for_write` if called on a device that was opened for write.
   """
   @spec valid_hash?(io_device :: pid) :: boolean
   def valid_hash?(io_device) when is_pid(io_device),
@@ -87,6 +108,16 @@ defmodule Xgit.Util.TrailingHashDevice do
       {:ok, %{iodevice: pid, remaining_bytes: size - 20, crypto: :crypto.hash_init(:sha)}}
     else
       {:error, reason} -> {:stop, reason}
+    end
+  end
+
+  def init({:file_write, path}) do
+    case File.open(path, [:write]) do
+      {:ok, pid} when is_pid(pid) ->
+        {:ok, %{iodevice: pid, remaining_bytes: :write, crypto: :crypto.hash_init(:sha)}}
+
+      {:error, reason} ->
+        {:stop, reason}
     end
   end
 
@@ -117,6 +148,9 @@ defmodule Xgit.Util.TrailingHashDevice do
 
   def handle_call(:valid_hash?, _from, %{remaining_bytes: 0, crypto: :done} = state),
     do: {:reply, :already_called, state}
+
+  def handle_call(:valid_hash?, _from, %{remaining_bytes: :write} = state),
+    do: {:reply, :opened_for_write, state}
 
   def handle_call(
         :valid_hash?,
@@ -165,6 +199,20 @@ defmodule Xgit.Util.TrailingHashDevice do
     end
   end
 
+  defp io_request(
+         {:put_chars, _encoding, data},
+         %{
+           iodevice: iodevice,
+           remaining_bytes: :write,
+           crypto: crypto
+         } = state
+       ) do
+    crypto = :crypto.hash_update(crypto, data)
+    IO.binwrite(iodevice, data)
+
+    {:ok, %{state | crypto: crypto}}
+  end
+
   defp io_request(request, state) do
     Logger.warn("TrailingHashDevice received unexpected iorequest #{inspect(request)}")
     {{:error, :request}, state}
@@ -174,6 +222,16 @@ defmodule Xgit.Util.TrailingHashDevice do
     {reply, state} = file_request(req, state)
     send(from, {:file_reply, reply_as, reply})
     state
+  end
+
+  defp file_request(
+         :close,
+         %{iodevice: iodevice, remaining_bytes: :write, crypto: crypto} = state
+       ) do
+    hash = :crypto.hash_final(crypto)
+    IO.binwrite(iodevice, hash)
+
+    {File.close(iodevice), %{state | iodevice: nil}}
   end
 
   defp file_request(:close, %{iodevice: iodevice} = state),
