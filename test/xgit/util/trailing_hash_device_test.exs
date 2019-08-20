@@ -237,7 +237,7 @@ defmodule Xgit.Util.TrailingHashDeviceTest do
     THD.open_file(path)
   end
 
-  defp open_file_for_write_with_trailing_hash() do
+  defp open_file_for_write_with_trailing_hash do
     Temp.track!()
     path = Temp.path!()
 
