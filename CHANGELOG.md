@@ -1,5 +1,14 @@
 # Changelog for v0.1.x Series
 
+## v0.1.5
+
+_19 August 2019_
+
+* **This is a bug fix and optimization release.**
+* When reading `.git/index` file, verify the trailling SHA-1 hash. (#98, #99, #100, #101, #102, #103)
+* Generate code coverage for `Xgit.Util.UnzipStream` `:continue` case. (#104)
+* Remove unnecessary data transformations in `Xgit.Repository.OnDisk.PutLooseObject`. (#105)
+
 ## v0.1.4
 
 _17 August 2019_

@@ -10,6 +10,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
   alias Xgit.Core.DirCache
   alias Xgit.Core.DirCache.Entry, as: DirCacheEntry
   alias Xgit.Util.NB
+  alias Xgit.Util.TrailingHashDevice
 
   @typedoc ~S"""
   Error codes which can be returned by `from_iodevice/1`.
@@ -20,9 +21,14 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
   Read index file from an `IO.device` (typically an opened file) and returns a
   corresponding `Xgit.Core.DirCache` struct.
 
+  _IMPORTANT:_ The `IO.device` must be created using `Xgit.Util.TrailingHashDevice`.
+
   ## Return Value
 
   `{:ok, dir_cache}` if the iodevice contains a valid index file.
+
+  `{:error, :not_sha_hash_device}` if the iodevice was not created using
+  `Xgit.Util.TrailingHashDevice`.
 
   `{:error, :invalid_format}` if the iodevice can not be parsed as an index file.
 
@@ -32,20 +38,29 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
   `{:error, :too_many_entries}` if the index files contains more than 100,000
   entries. This is an arbitrary limit to guard against malformed files and to
   prevent overconsumption of memory. With experience, it could be revisited.
+
+  `{:error, :extensions_not_supported}` if any index file extensions are present.
+  Parsing extensions is not yet supported. (See
+  [issue #67](https://github.com/elixir-git/xgit/issues/67).)
+
+  `{:error, :sha_hash_mismatch}` if the SHA-1 hash written at the end of the file
+  does not match the file contents.
   """
   @spec from_iodevice(iodevice :: IO.device()) ::
           {:ok, dir_cache :: DirCache.t()} | {:error, reason :: from_iodevice_reason}
   def from_iodevice(iodevice) do
-    with {:dirc, true} <- {:dirc, read_dirc(iodevice)},
+    with {:sha_hash_device, true} <- {:sha_hash_device, TrailingHashDevice.valid?(iodevice)},
+         {:dirc, true} <- {:dirc, read_dirc(iodevice)},
          {:version, version = 2} <- {:version, read_uint32(iodevice)},
          {:entry_count, entry_count}
          when is_integer(entry_count) and entry_count <= 100_000 <-
            {:entry_count, read_uint32(iodevice)},
          {:entries, entries} when is_list(entries) <-
-           {:entries, read_entries(iodevice, version, entry_count)} do
-      # TO DO: Parse extensions and trailing checksum.
-      # https://github.com/elixir-git/xgit/issues/67
-
+           {:entries, read_entries(iodevice, version, entry_count)},
+         {:extensions, :eof} <- {:extensions, IO.binread(iodevice, 1)},
+         # TO DO: Parse extensions. For now, error out if any are present.
+         # https://github.com/elixir-git/xgit/issues/67
+         {:sha_valid?, true} <- {:sha_valid?, TrailingHashDevice.valid_hash?(iodevice)} do
       {:ok,
        %DirCache{
          version: version,
@@ -53,11 +68,14 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
          entries: entries
        }}
     else
+      {:sha_hash_device, _} -> {:error, :not_sha_hash_device}
       {:dirc, _} -> {:error, :invalid_format}
       {:version, _} -> {:error, :unsupported_version}
       {:entry_count, :invalid} -> {:error, :invalid_format}
       {:entry_count, _} -> {:error, :too_many_entries}
       {:entries, _} -> {:error, :invalid_format}
+      {:extensions, _} -> {:error, :extensions_not_supported}
+      {:sha_valid?, _} -> {:error, :sha_hash_mismatch}
     end
   end
 
@@ -72,8 +90,8 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
 
   defp read_entries(iodevice, version, entry_count) do
     entries =
-      Enum.map(1..entry_count, fn i ->
-        read_entry(iodevice, version, i == 1)
+      Enum.map(1..entry_count, fn _ ->
+        read_entry(iodevice, version)
       end)
 
     if Enum.all?(entries, &valid_entry?/1),
@@ -81,7 +99,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
       else: :invalid
   end
 
-  defp read_entry(iodevice, 2 = _version, first?) do
+  defp read_entry(iodevice, 2 = _version) do
     with ctime when is_integer(ctime) <- read_uint32(iodevice),
          ctime_ns when is_integer(ctime_ns) <- read_uint32(iodevice),
          mtime when is_integer(mtime) <- read_uint32(iodevice),
@@ -96,7 +114,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
          when is_binary(object_id) and object_id != "0000000000000000000000000000000000000000" <-
            read_object_id(iodevice),
          flags when is_integer(flags) and flags > 0 <- read_uint16(iodevice),
-         name when is_list(name) <- read_name(iodevice, flags &&& 0xFFF, first?) do
+         name when is_list(name) <- read_name(iodevice, flags &&& 0xFFF) do
       %DirCacheEntry{
         name: name,
         stage: bsr(flags &&& 0x3000, 12),
@@ -162,9 +180,8 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
     end
   end
 
-  defp read_name(iodevice, length, first?) when length < 0xFFF do
-    first_shift = if first?, do: 4, else: 0
-    bytes_to_read = length + padding(Integer.mod(length + first_shift, 8))
+  defp read_name(iodevice, length) when length < 0xFFF do
+    bytes_to_read = length + padding(Integer.mod(length + 4, 8))
 
     case IO.binread(iodevice, bytes_to_read) do
       x when is_binary(x) and byte_size(x) == bytes_to_read ->
@@ -177,7 +194,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
     end
   end
 
-  defp read_name(_iodevice, _length, _first?), do: :invalid
+  defp read_name(_iodevice, _length), do: :invalid
 
   defp padding(length_mod_8) when length_mod_8 < 6, do: 6 - length_mod_8
   defp padding(6), do: 8
