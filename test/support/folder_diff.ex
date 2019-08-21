@@ -15,7 +15,7 @@ defmodule FolderDiff do
   defp assert_folders_are_equal(folder1, folder2, [file1 | files1], [file2 | files2]) do
     cond do
       file1 == file2 ->
-        assert_files_are_equal(folder1, folder2, file1)
+        assert_paths_are_equal(folder1, folder2, file1)
         assert_folders_are_equal(folder1, folder2, files1, files2)
 
       file1 < file2 ->
@@ -24,6 +24,8 @@ defmodule FolderDiff do
       true ->
         flunk_file_missing(folder2, folder1, file2)
     end
+
+    :ok
   end
 
   defp assert_folders_are_equal(folder1, folder2, [file1 | _], []),
@@ -34,10 +36,10 @@ defmodule FolderDiff do
 
   defp assert_folders_are_equal(_folder1, _folder2, [], []), do: :ok
 
-  defp assert_files_are_equal(_folder1, _folder2, "."), do: :ok
-  defp assert_files_are_equal(_folder1, _folder2, ".."), do: :ok
+  defp assert_paths_are_equal(_folder1, _folder2, "."), do: :ok
+  defp assert_paths_are_equal(_folder1, _folder2, ".."), do: :ok
 
-  defp assert_files_are_equal(folder1, folder2, file) do
+  defp assert_paths_are_equal(folder1, folder2, file) do
     f1 = Path.join(folder1, file)
     f2 = Path.join(folder2, file)
 
@@ -48,7 +50,7 @@ defmodule FolderDiff do
       f1_is_dir? and f2_is_dir? -> assert_folders_are_equal(f1, f2)
       f1_is_dir? -> flunk("#{f1} is a directory; #{f2} is a file")
       f2_is_dir? -> flunk("#{f1} is a file; #{f2} is a directory")
-      true -> assert_flat_files_are_equal(f1, f2)
+      true -> assert_files_are_equal(f1, f2)
     end
   end
 
@@ -56,7 +58,8 @@ defmodule FolderDiff do
     flunk("File #{file} exists in folder #{folder_present}, but is missing in #{folder_missing}")
   end
 
-  defp assert_flat_files_are_equal(f1, f2) do
+  @spec assert_files_are_equal(f1 :: Path.t(), f2 :: Path.t()) :: :ok
+  def assert_files_are_equal(f1, f2) do
     c1 = File.read!(f1)
     c2 = File.read!(f2)
 
@@ -75,6 +78,8 @@ defmodule FolderDiff do
 
       """)
     end
+
+    :ok
   end
 
   defp truncate(c) do
