@@ -102,6 +102,13 @@ defmodule Xgit.Util.NB do
   Convert a 32-bit integer to a sequence of four bytes in network byte order.
   """
   @spec encode_int32(v :: integer) :: [byte]
-  def encode_int32(v) when is_integer(v) and v >= -2_147_483_647 and v <= 4_294_967_296,
+  def encode_int32(v) when is_integer(v) and v >= -2_147_483_647 and v <= 4_294_967_295,
+    do: [v >>> 24 &&& 0xFF, v >>> 16 &&& 0xFF, v >>> 8 &&& 0xFF, v &&& 0xFF]
+
+  @doc ~S"""
+  Convert a 32-bit unsigned integer to a sequence of four bytes in network byte order.
+  """
+  @spec encode_uint32(v :: non_neg_integer) :: [byte]
+  def encode_uint32(v) when is_integer(v) and v >= 0 and v <= 4_294_967_295,
     do: [v >>> 24 &&& 0xFF, v >>> 16 &&& 0xFF, v >>> 8 &&& 0xFF, v &&& 0xFF]
 end

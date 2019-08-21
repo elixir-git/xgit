@@ -137,4 +137,13 @@ defmodule Xgit.Util.NBTest do
     assert NB.encode_int32(0xDEAC9853) == [0xDE, 0xAC, 0x98, 0x53]
     assert NB.encode_int32(-1) == [0xFF, 0xFF, 0xFF, 0xFF]
   end
+
+  test "encode_uint32/1" do
+    assert NB.encode_uint32(0) == [0, 0, 0, 0]
+    assert NB.encode_uint32(3) == [0, 0, 0, 3]
+    assert NB.encode_uint32(0xDEAC) == [0, 0, 0xDE, 0xAC]
+    assert NB.encode_uint32(0xDEAC9853) == [0xDE, 0xAC, 0x98, 0x53]
+
+    assert_raise FunctionClauseError, fn -> NB.encode_uint32(-1) end
+  end
 end
