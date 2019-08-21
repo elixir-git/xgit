@@ -15,7 +15,14 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
   @typedoc ~S"""
   Error codes which can be returned by `from_iodevice/1`.
   """
-  @type from_iodevice_reason :: :invalid_format | :unsupported_version | :too_many_entries
+  @type from_iodevice_reason ::
+          :not_sha_hash_device
+          | :invalid_format
+          | :unsupported_version
+          | :too_many_entries
+          | :extensions_not_supported
+          | :sha_hash_mismatch
+          | File.posix()
 
   @doc ~S"""
   Read index file from an `IO.device` (typically an opened file) and returns a
