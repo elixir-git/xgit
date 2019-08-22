@@ -2,6 +2,7 @@ defmodule Xgit.Repository.WorkingTree.WriteIndexFileTest do
   use Xgit.GitInitTestCase, async: true
 
   alias Xgit.Core.DirCache
+  alias Xgit.Repository.WorkingTree.ParseIndexFile
   alias Xgit.Repository.WorkingTree.WriteIndexFile
   alias Xgit.Util.TrailingHashDevice
 
@@ -132,6 +133,65 @@ defmodule Xgit.Repository.WorkingTree.WriteIndexFileTest do
       assert_files_are_equal(Path.join([ref, ".git", "index"]), index_path)
     end
 
+    test "happy path: matches --assume-unchanged flag behavior", %{xgit: xgit} do
+      dir_cache = %DirCache{
+        entries: [
+          %DirCache.Entry{
+            assume_valid?: false,
+            ctime: 0,
+            ctime_ns: 0,
+            dev: 0,
+            extended?: false,
+            gid: 0,
+            ino: 0,
+            intent_to_add?: false,
+            mode: 0o100644,
+            mtime: 0,
+            mtime_ns: 0,
+            name: 'hello.txt',
+            object_id: "18832d35117ef2f013c4009f5b2128dfaeff354f",
+            size: 0,
+            skip_worktree?: false,
+            stage: 0,
+            uid: 0
+          },
+          %DirCache.Entry{
+            assume_valid?: true,
+            ctime: 0,
+            ctime_ns: 0,
+            dev: 0,
+            extended?: false,
+            gid: 0,
+            ino: 0,
+            intent_to_add?: false,
+            mode: 0o100644,
+            mtime: 0,
+            mtime_ns: 0,
+            name: 'test_content.txt',
+            object_id: "d670460b4b4aece5915caf5c68d12f560a9fe3e4",
+            size: 0,
+            skip_worktree?: false,
+            stage: 0,
+            uid: 0
+          }
+        ],
+        entry_count: 2,
+        version: 2
+      }
+
+      git_dir = Path.join(xgit, ".git")
+      File.mkdir_p!(git_dir)
+
+      index_path = Path.join(git_dir, "index")
+      assert :ok = write_dir_cache_to_path(dir_cache, index_path)
+
+      assert {:ok, ^dir_cache} =
+               [xgit, ".git", "index"]
+               |> Path.join()
+               |> thd_open_file!()
+               |> ParseIndexFile.from_iodevice()
+    end
+
     test "error: unsupported version", %{xgit: xgit} do
       dir_cache = %DirCache{version: 3, entry_count: 0, entries: []}
 
@@ -160,5 +220,10 @@ defmodule Xgit.Repository.WorkingTree.WriteIndexFileTest do
     else
       {:error, reason} -> {:error, reason}
     end
+  end
+
+  defp thd_open_file!(path) do
+    {:ok, iodevice} = TrailingHashDevice.open_file(path)
+    iodevice
   end
 end
