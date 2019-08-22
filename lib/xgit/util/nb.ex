@@ -106,6 +106,13 @@ defmodule Xgit.Util.NB do
     do: [v >>> 24 &&& 0xFF, v >>> 16 &&& 0xFF, v >>> 8 &&& 0xFF, v &&& 0xFF]
 
   @doc ~S"""
+  Convert a 16-bit unsigned integer to a sequence of two bytes in network byte order.
+  """
+  @spec encode_uint16(v :: non_neg_integer) :: [byte]
+  def encode_uint16(v) when is_integer(v) and v >= 0 and v <= 65_535,
+    do: [v >>> 8 &&& 0xFF, v &&& 0xFF]
+
+  @doc ~S"""
   Convert a 32-bit unsigned integer to a sequence of four bytes in network byte order.
   """
   @spec encode_uint32(v :: non_neg_integer) :: [byte]
