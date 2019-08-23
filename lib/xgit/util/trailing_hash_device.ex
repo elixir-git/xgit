@@ -40,6 +40,12 @@ defmodule Xgit.Util.TrailingHashDevice do
 
   This device can be passed to `IO.binwrite/2`.
 
+  ## Options
+
+  `:max_file_size` (non-negative integer) may be passed, which will cause a
+  failure after the _n_th byte is written. This is intended for internal
+  testing purposes.
+
   ## Return Value
 
   `{:ok, pid}` where `pid` points to an IO device process.
@@ -47,9 +53,10 @@ defmodule Xgit.Util.TrailingHashDevice do
   `{:ok, reason}` if the file could not be opened. See `File.open/2` for
   possible values for `reason`.
   """
-  @spec open_file_for_write(path :: Path.t()) :: {:ok, pid} | {:error, File.posix()}
-  def open_file_for_write(path) when is_binary(path),
-    do: GenServer.start_link(__MODULE__, {:file_write, path})
+  @spec open_file_for_write(path :: Path.t(), opts :: Keyword.t()) ::
+          {:ok, pid} | {:error, File.posix()}
+  def open_file_for_write(path, opts \\ []) when is_binary(path) and is_list(opts),
+    do: GenServer.start_link(__MODULE__, {:file_write, path, opts})
 
   @doc ~S"""
   Creates an IO device that reads a string with trailing hash.
@@ -105,16 +112,23 @@ defmodule Xgit.Util.TrailingHashDevice do
   def init({:file, path}) do
     with {:ok, %{size: size}} <- File.stat(path, time: :posix),
          {:ok, pid} when is_pid(pid) <- File.open(path) do
-      {:ok, %{iodevice: pid, remaining_bytes: size - 20, crypto: :crypto.hash_init(:sha)}}
+      {:ok,
+       %{iodevice: pid, mode: :read, remaining_bytes: size - 20, crypto: :crypto.hash_init(:sha)}}
     else
       {:error, reason} -> {:stop, reason}
     end
   end
 
-  def init({:file_write, path}) do
+  def init({:file_write, path, opts}) do
     case File.open(path, [:write]) do
       {:ok, pid} when is_pid(pid) ->
-        {:ok, %{iodevice: pid, remaining_bytes: :write, crypto: :crypto.hash_init(:sha)}}
+        {:ok,
+         %{
+           iodevice: pid,
+           mode: :write,
+           remaining_bytes: Keyword.get(opts, :max_file_size, :unlimited),
+           crypto: :crypto.hash_init(:sha)
+         }}
 
       {:error, reason} ->
         {:stop, reason}
@@ -123,7 +137,14 @@ defmodule Xgit.Util.TrailingHashDevice do
 
   def init({:string, s}) do
     {:ok, pid} = StringIO.open(s)
-    {:ok, %{iodevice: pid, remaining_bytes: byte_size(s) - 20, crypto: :crypto.hash_init(:sha)}}
+
+    {:ok,
+     %{
+       iodevice: pid,
+       mode: :read,
+       remaining_bytes: byte_size(s) - 20,
+       crypto: :crypto.hash_init(:sha)
+     }}
   end
 
   @impl true
@@ -146,16 +167,17 @@ defmodule Xgit.Util.TrailingHashDevice do
   def handle_call(:valid_trailing_hash_read_device?, _from_, state),
     do: {:reply, :valid_trailing_hash_read_device, state}
 
-  def handle_call(:valid_hash?, _from, %{remaining_bytes: 0, crypto: :done} = state),
-    do: {:reply, :already_called, state}
-
-  def handle_call(:valid_hash?, _from, %{remaining_bytes: :write} = state),
+  def handle_call(:valid_hash?, _from, %{mode: :write} = state),
     do: {:reply, :opened_for_write, state}
+
+  def handle_call(:valid_hash?, _from, %{crypto: :done} = state),
+    do: {:reply, :already_called, state}
 
   def handle_call(
         :valid_hash?,
         _from,
-        %{iodevice: iodevice, remaining_bytes: remaining_bytes, crypto: crypto} = state
+        %{iodevice: iodevice, mode: :read, remaining_bytes: remaining_bytes, crypto: crypto} =
+          state
       )
       when remaining_bytes <= 0 do
     actual_hash = :crypto.hash_final(crypto)
@@ -177,16 +199,20 @@ defmodule Xgit.Util.TrailingHashDevice do
     state
   end
 
-  defp io_request({:get_chars, :"", count}, %{remaining_bytes: remaining_bytes} = state)
+  defp io_request(
+         {:get_chars, :"", count},
+         %{mode: :read, remaining_bytes: remaining_bytes} = state
+       )
        when remaining_bytes <= 0 and is_integer(count) and count >= 0 do
     {:eof, state}
   end
 
-  defp io_request({:get_chars, :"", 0}, state), do: {"", state}
+  defp io_request({:get_chars, :"", 0}, %{mode: :read} = state), do: {"", state}
 
   defp io_request(
          {:get_chars, :"", count},
-         %{iodevice: iodevice, remaining_bytes: remaining_bytes, crypto: crypto} = state
+         %{iodevice: iodevice, mode: :read, remaining_bytes: remaining_bytes, crypto: crypto} =
+           state
        )
        when is_integer(count) and count > 0 do
     data = IO.binread(iodevice, min(remaining_bytes, count))
@@ -203,7 +229,28 @@ defmodule Xgit.Util.TrailingHashDevice do
          {:put_chars, _encoding, data},
          %{
            iodevice: iodevice,
-           remaining_bytes: :write,
+           mode: :write,
+           remaining_bytes: remaining_bytes,
+           crypto: crypto
+         } = state
+       )
+       when is_integer(remaining_bytes) do
+    if byte_size(data) <= remaining_bytes do
+      crypto = :crypto.hash_update(crypto, data)
+      IO.binwrite(iodevice, data)
+
+      {:ok, %{state | remaining_bytes: remaining_bytes - byte_size(data), crypto: crypto}}
+    else
+      {{:error, :eio}, %{state | remaining_bytes: 0}}
+    end
+  end
+
+  defp io_request(
+         {:put_chars, _encoding, data},
+         %{
+           iodevice: iodevice,
+           mode: :write,
+           remaining_bytes: :unlimited,
            crypto: crypto
          } = state
        ) do
@@ -226,7 +273,7 @@ defmodule Xgit.Util.TrailingHashDevice do
 
   defp file_request(
          :close,
-         %{iodevice: iodevice, remaining_bytes: :write, crypto: crypto} = state
+         %{iodevice: iodevice, mode: :write, crypto: crypto} = state
        ) do
     hash = :crypto.hash_final(crypto)
     IO.binwrite(iodevice, hash)

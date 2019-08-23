@@ -172,6 +172,18 @@ defmodule Xgit.Util.TrailingHashDeviceTest do
       assert THD.valid_hash?(device)
     end
 
+    test "simulates error after writing _n_ bytes" do
+      assert {:ok, device, path} = open_file_for_write_with_trailing_hash(max_file_size: 15)
+      assert THD.valid?(device)
+
+      assert :ok = IO.binwrite(device, "hello, world!")
+      assert :ok = IO.binwrite(device, "x")
+      assert :ok = IO.binwrite(device, "y")
+      # 15th byte should fail
+      assert {:error, :eio} = IO.binwrite(device, "Z")
+      assert :ok = File.close(device)
+    end
+
     test "Posix error" do
       Temp.track!()
       path = Temp.path!()
@@ -237,7 +249,7 @@ defmodule Xgit.Util.TrailingHashDeviceTest do
     THD.open_file(path)
   end
 
-  defp open_file_for_write_with_trailing_hash do
+  defp open_file_for_write_with_trailing_hash(opts \\ []) do
     Temp.track!()
     path = Temp.path!()
 
@@ -245,7 +257,7 @@ defmodule Xgit.Util.TrailingHashDeviceTest do
     |> Path.dirname()
     |> File.mkdir_p!()
 
-    {:ok, device} = THD.open_file_for_write(path)
+    {:ok, device} = THD.open_file_for_write(path, opts)
 
     {:ok, device, path}
   end
