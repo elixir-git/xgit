@@ -211,6 +211,42 @@ defmodule Xgit.Repository.WorkingTree.WriteIndexFileTest do
       index_path = Path.join(git_dir, "index")
       assert {:error, :invalid_dir_cache} = write_dir_cache_to_path(dir_cache, index_path)
     end
+
+    test "error: I/O error", %{xgit: xgit} do
+      dir_cache = %DirCache{
+        entries: [
+          %DirCache.Entry{
+            assume_valid?: true,
+            ctime: 0,
+            ctime_ns: 0,
+            dev: 0,
+            extended?: false,
+            gid: 0,
+            ino: 0,
+            intent_to_add?: false,
+            mode: 0o100644,
+            mtime: 0,
+            mtime_ns: 0,
+            name: 'test_content.txt',
+            object_id: "d670460b4b4aece5915caf5c68d12f560a9fe3e4",
+            size: 0,
+            skip_worktree?: false,
+            stage: 0,
+            uid: 0
+          }
+        ],
+        entry_count: 1,
+        version: 2
+      }
+
+      git_dir = Path.join(xgit, ".git")
+      File.mkdir_p!(git_dir)
+
+      index_path = Path.join(git_dir, "index")
+
+      {:ok, iodevice} = TrailingHashDevice.open_file_for_write(index_path, max_file_size: 20)
+      assert {:error, :eio} = WriteIndexFile.to_iodevice(dir_cache, iodevice)
+    end
   end
 
   defp write_dir_cache_to_path(dir_cache, path) do
