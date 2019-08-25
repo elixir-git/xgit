@@ -277,9 +277,9 @@ defmodule Xgit.Core.DirCache do
   the old one.)
   """
   @spec add_entries(dir_cache :: t, new_entries :: [Entry.t()]) ::
-          {:ok, t} | {:error, :invalid_entries | :duplicate_entries}
+          {:ok, t} | {:error, :invalid_dir_cache | :invalid_entries | :duplicate_entries}
   def add_entries(%__MODULE__{entries: existing_entries} = dir_cache, new_entries)
-      when is_list(existing_entries) and is_list(new_entries) do
+      when is_list(new_entries) do
     with {:dir_cache_valid?, true} <- {:dir_cache_valid?, valid?(dir_cache)},
          {:entries_valid?, true} <- {:entries_valid?, Enum.all?(new_entries, &Entry.valid?/1)},
          sorted_new_entries <- Enum.sort_by(new_entries, &{&1.name, &1.stage}),
