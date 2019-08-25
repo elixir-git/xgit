@@ -56,7 +56,6 @@ defmodule Xgit.Plumbing.HashObject do
   * `Xgit.Core.ValidatePath.check_path/2`
   * `Xgit.Core.ValidatePath.check_path_segment/2`
   * `Xgit.Repository.put_loose_object/2`.
-
   """
   @spec run(content :: ContentSource.t(), type: ObjectType.t() | nil) ::
           {:ok, ObjectId.t()}
