@@ -309,4 +309,71 @@ defmodule Xgit.Core.DirCache do
       :gt -> [new_head | combine_entries(existing_entries, new_tail)]
     end
   end
+
+  @typedoc ~S"""
+  An entry for the `remove` option for `remove_entries/3`.
+  """
+  @type entry_to_remove :: {path :: [byte], stage :: 0..3 | :all}
+
+  @doc ~S"""
+  Returns a dir cache that has some directory entries removed.
+
+  ## Parameters
+
+  `entries_to_remove` is a list of `{path, stage}` tuples identifying tuples to be removed.
+
+  * `path` should be a byte list for the path.
+  * `stage` should be 0..3 or `:all`, meaning any entry that matches the path,
+    regardless of stage, should be removed.
+
+  ## Return Value
+
+  `{:ok, dir_cache}` where `dir_cache` is the original `dir_cache` with any matching
+  entries removed.
+
+  `{:error, :invalid_dir_cache}` if the original `dir_cache` was invalid.
+
+  `{:error, :invalid_entries}` if one or more of the entries is invalid.
+  """
+  @spec remove_entries(dir_cache :: t, entries_to_remove :: [entry_to_remove]) ::
+          {:ok, t} | {:error, :invalid_dir_cache | :invalid_entries}
+  def remove_entries(%__MODULE__{entries: existing_entries} = dir_cache, entries_to_remove)
+      when is_list(entries_to_remove) do
+    with {:dir_cache_valid?, true} <- {:dir_cache_valid?, valid?(dir_cache)},
+         {:entries_valid?, true} <-
+           {:entries_valid?, Enum.all?(entries_to_remove, &valid_remove_entry?/1)} do
+      updated_entries = remove_matching_entries(existing_entries, Enum.sort(entries_to_remove))
+      {:ok, %{dir_cache | entry_count: Enum.count(updated_entries), entries: updated_entries}}
+    else
+      {:dir_cache_valid?, _} -> {:error, :invalid_dir_cache}
+      {:entries_valid?, _} -> {:error, :invalid_entries}
+    end
+  end
+
+  defp valid_remove_entry?({path, :all}) when is_list(path), do: true
+
+  defp valid_remove_entry?({path, stage})
+       when is_list(path) and is_integer(stage) and stage >= 0 and stage <= 3,
+       do: true
+
+  defp valid_remove_entry?(_), do: false
+
+  defp remove_matching_entries(sorted_existing_entries, sorted_entries_to_remove)
+
+  defp remove_matching_entries([], _sorted_entries_to_remove), do: []
+  defp remove_matching_entries(sorted_existing_entries, []), do: sorted_existing_entries
+
+  defp remove_matching_entries([%__MODULE__.Entry{name: path} | existing_tail], [
+         {path, :all} | remove_tail
+       ]),
+       do:
+         remove_matching_entries(Enum.drop_while(existing_tail, &(&1.name == path)), remove_tail)
+
+  defp remove_matching_entries([%__MODULE__.Entry{name: path, stage: stage} | existing_tail], [
+         {path, stage} | remove_tail
+       ]),
+       do: remove_matching_entries(existing_tail, remove_tail)
+
+  defp remove_matching_entries([existing_head | existing_tail], sorted_entries_to_remove),
+    do: [existing_head | remove_matching_entries(existing_tail, sorted_entries_to_remove)]
 end
