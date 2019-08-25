@@ -204,4 +204,106 @@ defmodule Xgit.Core.DirCacheTest do
       end
     end
   end
+
+  describe "remove_entries/2" do
+    test "happy path: removing from an empty list" do
+      assert {:ok,
+              %DirCache{
+                version: 2,
+                entry_count: 0,
+                entries: []
+              }} = DirCache.remove_entries(DirCache.empty(), [{'hello.txt', 0}])
+    end
+
+    test "happy path: removing something that doesn't exist from a non-empty list" do
+      assert {:ok, @valid} = DirCache.remove_entries(@valid, [{'goodbye.txt', 0}])
+    end
+
+    test "happy path: ignores mismatch on stage" do
+      assert {:ok, @valid} = DirCache.remove_entries(@valid, [{'hello.txt', 1}])
+    end
+
+    test "happy path: removes only item in list" do
+      assert {:ok,
+              %DirCache{
+                version: 2,
+                entry_count: 0,
+                entries: []
+              }} = DirCache.remove_entries(@valid, [{'hello.txt', 0}])
+    end
+
+    test "happy path: removes all matching entries via stage :all" do
+      assert {:ok,
+              %DirCache{
+                version: 2,
+                entry_count: 0,
+                entries: []
+              }} =
+               DirCache.remove_entries(
+                 %DirCache{
+                   version: 2,
+                   entry_count: 3,
+                   entries: [
+                     Map.put(@valid_entry, :stage, 0),
+                     Map.put(@valid_entry, :stage, 1),
+                     Map.put(@valid_entry, :stage, 3)
+                   ]
+                 },
+                 [{'hello.txt', :all}]
+               )
+    end
+
+    test "happy path: removes only matching entries via name" do
+      assert {:ok, @valid} =
+               DirCache.remove_entries(
+                 %DirCache{
+                   version: 2,
+                   entry_count: 2,
+                   entries: [Map.put(@valid_entry, :name, 'abc.txt'), @valid_entry]
+                 },
+                 [{'abc.txt', 0}]
+               )
+    end
+
+    test "happy path: sorts list of items to remove" do
+      assert {:ok, @valid} =
+               DirCache.remove_entries(
+                 %DirCache{
+                   version: 2,
+                   entry_count: 3,
+                   entries: [
+                     @valid_entry,
+                     Map.put(@valid_entry, :name, 'other.txt'),
+                     Map.put(@valid_entry, :name, 'xgit.txt')
+                   ]
+                 },
+                 [{'xgit.txt', 0}, {'other.txt', 0}]
+               )
+    end
+
+    test "{:error, :invalid_dir_cache}" do
+      assert {:error, :invalid_dir_cache} =
+               DirCache.remove_entries(Map.put(@valid, :entry_count, 999), [
+                 {'xgit.txt', 0},
+                 {'other.txt', 0}
+               ])
+    end
+
+    test "{:error, :invalid_entries}" do
+      assert {:error, :invalid_entries} =
+               DirCache.remove_entries(DirCache.empty(), [{'hello.txt', 7}])
+    end
+
+    test "FunctionClauseError: not a DirCache" do
+      assert_raise FunctionClauseError, fn ->
+        DirCache.remove_entries("trust me, it's a DirCache", [{'hello.txt', 0}])
+      end
+    end
+
+    test "FunctionClauseError: not a list of entries" do
+      assert_raise FunctionClauseError, fn ->
+        DirCache.remove_entries(DirCache.empty(), {'hello.txt', 0})
+      end
+    end
+  end
 end
