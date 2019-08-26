@@ -252,6 +252,11 @@ defmodule Xgit.Core.DirCache do
 
   defp entries_sorted?([_]), do: true
 
+  @typedoc ~S"""
+  Error reason codes returned by `add_entries/2`.
+  """
+  @type add_entries_reason :: :invalid_dir_cache | :invalid_entries | :duplicate_entries
+
   @doc ~S"""
   Returns a dir cache that has new directory entries added in.
 
@@ -277,7 +282,7 @@ defmodule Xgit.Core.DirCache do
   the old one.)
   """
   @spec add_entries(dir_cache :: t, new_entries :: [Entry.t()]) ::
-          {:ok, t} | {:error, :invalid_dir_cache | :invalid_entries | :duplicate_entries}
+          {:ok, t} | {:error, add_entries_reason}
   def add_entries(%__MODULE__{entries: existing_entries} = dir_cache, new_entries)
       when is_list(new_entries) do
     with {:dir_cache_valid?, true} <- {:dir_cache_valid?, valid?(dir_cache)},
@@ -311,9 +316,14 @@ defmodule Xgit.Core.DirCache do
   end
 
   @typedoc ~S"""
-  An entry for the `remove` option for `remove_entries/3`.
+  An entry for the `remove` option for `remove_entries/2`.
   """
   @type entry_to_remove :: {path :: [byte], stage :: 0..3 | :all}
+
+  @typedoc ~S"""
+  Error reason codes returned by `remove_entries/2`.
+  """
+  @type remove_entries_reason :: :invalid_dir_cache | :invalid_entries
 
   @doc ~S"""
   Returns a dir cache that has some directory entries removed.
@@ -336,7 +346,7 @@ defmodule Xgit.Core.DirCache do
   `{:error, :invalid_entries}` if one or more of the entries is invalid.
   """
   @spec remove_entries(dir_cache :: t, entries_to_remove :: [entry_to_remove]) ::
-          {:ok, t} | {:error, :invalid_dir_cache | :invalid_entries}
+          {:ok, t} | {:error, remove_entries_reason}
   def remove_entries(%__MODULE__{entries: existing_entries} = dir_cache, entries_to_remove)
       when is_list(entries_to_remove) do
     with {:dir_cache_valid?, true} <- {:dir_cache_valid?, valid?(dir_cache)},
