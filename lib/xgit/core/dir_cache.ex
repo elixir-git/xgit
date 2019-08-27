@@ -23,6 +23,8 @@ defmodule Xgit.Core.DirCache do
   use Bitwise
   use Xgit.Core.FileMode
 
+  alias Xgit.Util.Comparison
+
   @typedoc ~S"""
   Version number for an index file.
   """
@@ -200,7 +202,7 @@ defmodule Xgit.Core.DirCache do
     * `:eq` if they are the same.
     * `:gt` if `entry1` sorts after `entry2`.
     """
-    @spec compare(entry1 :: t | nil, entry2 :: t) :: :lt | :eq | :gt
+    @spec compare(entry1 :: t | nil, entry2 :: t) :: Comparison.result()
     def compare(entry1, entry2)
 
     def compare(nil, _entry2), do: :lt
