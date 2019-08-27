@@ -179,7 +179,7 @@ defmodule Xgit.Repository.WorkingTree do
   @spec update_dir_cache(
           working_tree :: t,
           add :: [DirCacheEntry.t()],
-          remove :: [{String.t(), 0..3}]
+          remove :: [{[path :: byte], stage :: 0..3}]
         ) ::
           {:ok, DirCache.t()} | {:error, update_dir_cache_reason}
   def update_dir_cache(working_tree, add, remove)

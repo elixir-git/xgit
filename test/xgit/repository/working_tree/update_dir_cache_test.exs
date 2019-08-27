@@ -3,7 +3,6 @@ defmodule Xgit.Repository.WorkingTree.UpdateDirCacheTest do
 
   alias Xgit.Core.DirCache
   alias Xgit.Repository
-  # alias Xgit.Repository.InMemory
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.WorkingTree
 
