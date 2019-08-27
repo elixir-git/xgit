@@ -50,11 +50,9 @@ defmodule Xgit.Util.Paths do
   """
 
   use Bitwise
-
   use Xgit.Core.FileMode
 
-  @typedoc "Comparison result."
-  @type comparison_result :: :lt | :eq | :gt
+  alias Xgit.Util.Comparison
 
   @doc ~S"""
   Remove trailing `/` if present.
@@ -87,7 +85,7 @@ defmodule Xgit.Util.Paths do
           mode1 :: FileMode.t(),
           path2 :: charlist,
           mode2 :: FileMode.t()
-        ) :: comparison_result
+        ) :: Comparison.result()
   def compare(path1, mode1, path2, mode2)
       when is_list(path1) and is_file_mode(mode1) and is_list(path2) and is_file_mode(mode2) do
     case core_compare(path1, mode1, path2, mode2) do
@@ -127,7 +125,7 @@ defmodule Xgit.Util.Paths do
   one of the other return values.
   """
   @spec compare_same_name(path1 :: charlist, path2 :: charlist, mode2 :: FileMode.t()) ::
-          comparison_result
+          Comparison.result()
   def compare_same_name(path1, path2, mode2),
     do: core_compare(path1, FileMode.tree(), path2, mode2)
 
