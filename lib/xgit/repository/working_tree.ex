@@ -159,14 +159,14 @@ defmodule Xgit.Repository.WorkingTree do
   ## Return Values
 
   `{:ok, dir_cache}` where `dir_cache` is the original `dir_cache` with the new
-  entries added (and properly sorted).
+  entries added (and properly sorted) and targeted entries removed.
 
   `{:error, :reason}` if unable. The relevant reason codes may come from:
 
   * `Xgit.Core.DirCache.add_entries/2`
   * `Xgit.Core.DirCache.remove_entries/2`
   * `Xgit.Repository.WorkingTree.ParseIndexFile.from_iodevice/1`
-  * `Xgit.Repository.WorkingTree.WriteIndexFile.to_iodevice/1`.
+  * `Xgit.Repository.WorkingTree.WriteIndexFile.to_iodevice/2`.
 
   ## TO DO
 
