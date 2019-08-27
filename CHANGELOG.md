@@ -1,5 +1,20 @@
 # Changelog for v0.1.x Series
 
+## v0.1.6
+
+_27 August 2019_
+
+* **Implement `Xgit.Plumbing.UpdateIndex.CacheInfo`. (#125)** This is an API equivalent of `git update-index --cacheinfo`.
+* Implement `DirCache.add_entries/2`. (#97)
+* `Xgit.Util.TrailingHashDevice`: Add support for writing files. (#108)
+* `Xgit.Util.NB`: Add encode_uint32 function. (#109)
+* Fix `@type` declaration for `ParseIndexFile.from_iodevice_reason`. (#110)
+* `FolderDiff`: Expose `assert_files_are_equal/2`. (#111)
+* Implement `Xgit.Util.NB.encode_uint16/1`. (#112)
+* Implement `Xgit.Repository.WorkingTree.WriteIndexFile`. (#115)
+* Implement `Xgit.Core.DirCache.remove_entries/2`. (#119)
+* Implement `Xgit.Repository.WorkingTree.update_dir_cache/3`. (#123)
+
 ## v0.1.5
 
 _19 August 2019_
