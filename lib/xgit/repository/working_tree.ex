@@ -19,6 +19,7 @@ defmodule Xgit.Repository.WorkingTree do
   use GenServer
 
   alias Xgit.Core.DirCache
+  alias Xgit.Core.DirCache.Entry, as: DirCacheEntry
   alias Xgit.Repository
   alias Xgit.Repository.WorkingTree.ParseIndexFile
   alias Xgit.Repository.WorkingTree.WriteIndexFile
