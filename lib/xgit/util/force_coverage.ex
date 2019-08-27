@@ -17,6 +17,7 @@ defmodule Xgit.Util.ForceCoverage do
       quote do
         x = unquote(value)
 
+        # credo:disable-for-lines:5 Credo.Check.Warning.BoolOperationOnSameValues
         if is_boolean(x) do
           x or x
         else
