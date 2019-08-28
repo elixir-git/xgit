@@ -567,9 +567,6 @@ defmodule Xgit.Core.FilePath do
 
   `mode2` is the mode of the second file. Trees are sorted as though
   `List.last(path2) == ?/`, even if no such character exists.
-  Return `:lt` if no duplicate name could exist; `:eq` if the paths
-  have the same name; `:gt` if other `path2` should still be checked
-  by caller.
 
   ## Return Value
 
