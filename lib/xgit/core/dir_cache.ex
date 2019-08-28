@@ -181,8 +181,7 @@ defmodule Xgit.Core.DirCache do
                is_boolean(extended?) and
                is_boolean(skip_worktree?) and
                is_boolean(intent_to_add?) do
-      FilePath.check_path(name) == :ok && ObjectId.valid?(object_id) &&
-        object_id != ObjectId.zero()
+      FilePath.valid?(name) && ObjectId.valid?(object_id) && object_id != ObjectId.zero()
     end
 
     def valid?(_), do: false

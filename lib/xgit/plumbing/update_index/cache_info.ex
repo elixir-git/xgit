@@ -82,9 +82,8 @@ defmodule Xgit.Plumbing.UpdateIndex.CacheInfo do
   end
 
   defp valid_add?({mode, object_id, path})
-       when is_file_mode(mode) and is_binary(object_id) and is_list(path) do
-    ObjectId.valid?(object_id) and FilePath.check_path(path) == :ok
-  end
+       when is_file_mode(mode) and is_binary(object_id) and is_list(path),
+       do: ObjectId.valid?(object_id) and FilePath.valid?(path)
 
   defp valid_add?(_), do: false
 

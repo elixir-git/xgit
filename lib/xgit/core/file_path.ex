@@ -70,6 +70,27 @@ defmodule Xgit.Core.FilePath do
   """
   @type t :: [byte]
 
+  @doc ~S"""
+  Return `true` if the value is a valid file path.
+
+  This performs the same checks as `check_path/2`, but folds away all of the potential
+  error values to `false`.
+
+  ## Parameters
+
+  `path` is a UTF-8 byte list containing the path to be tested.
+
+  ## Options
+
+  * `windows?`: `true` to additionally verify that the path is permissible on Windows file systems
+  * `macosx?`: `true` to additionally verify that the path is permissible on Mac OS X file systems
+  """
+  @spec valid?(path :: any, windows?: boolean, macosx?: boolean) :: boolean
+  def valid?(path, opts \\ [])
+
+  def valid?(path, opts) when is_list(path) and is_list(opts), do: check_path(path, opts) == :ok
+  def valid?(_path, _opts), do: false
+
   @typedoc ~S"""
   Error codes which can be returned by `check_path/2`.
   """

@@ -123,6 +123,108 @@ defmodule Xgit.Core.FilePathTest do
     '~9999999'
   ]
 
+  describe "valid?/2" do
+    test "basic case: no platform checks" do
+      refute valid?('')
+      assert valid?('a')
+      assert valid?('a/b')
+      refute valid?('a//b')
+      refute valid?('/a')
+      refute valid?('a\0b')
+      assert valid?('ab/cd/ef')
+
+      refute valid?('ab/cd//ef')
+      refute valid?('a/')
+      refute valid?('ab/cd/ef/')
+    end
+
+    test "Windows variations on .git (applies to all platforms)" do
+      for name <- @windows_git_names do
+        refute valid?(name)
+        refute valid?(name, windows?: true)
+        refute valid?(name, macosx?: true)
+      end
+
+      for name <- @almost_windows_git_names do
+        assert valid?(name)
+        assert valid?(name, windows?: true)
+        assert valid?(name, macosx?: true)
+      end
+    end
+
+    test "variations on .git on Mac" do
+      for name <- @mac_hfs_git_names do
+        assert valid?(:binary.bin_to_list(name))
+        refute valid?(:binary.bin_to_list(name), macosx?: true)
+      end
+
+      for name <- @almost_mac_hfs_git_names do
+        assert valid?(:binary.bin_to_list(name))
+        assert valid?(:binary.bin_to_list(name), macosx?: true)
+      end
+    end
+
+    test "invalid Windows characters" do
+      for char <- @invalid_windows_chars do
+        assert valid?([char])
+        assert valid?([?a, char, ?b])
+        refute valid?([char], windows?: true)
+        refute valid?([?a, char, ?b], windows?: true)
+      end
+
+      for char <- 1..31 do
+        assert valid?([char])
+        assert valid?([?a, char, ?b])
+        refute valid?([char], windows?: true)
+        refute valid?([?a, char, ?b], windows?: true)
+      end
+    end
+
+    test "git special names" do
+      for name <- @git_special_names do
+        refute valid?(name)
+      end
+
+      for name <- @almost_git_special_names do
+        assert valid?(name)
+      end
+    end
+
+    test "badly-formed UTF8 on Mac" do
+      refute valid?([?a, ?b, 0xE2, 0x80], macosx?: true)
+      refute valid?([?a, ?b, 0xEF, 0x80], macosx?: true)
+      assert valid?([?a, ?b, 0xE2, 0x80, 0xAE], macosx?: true)
+
+      bad_name = '.git' ++ [0xEF]
+      assert valid?(bad_name)
+      refute valid?(bad_name, macosx?: true)
+
+      bad_name = '.git' ++ [0xE2, 0xAB]
+      assert valid?(bad_name)
+      refute valid?(bad_name, macosx?: true)
+    end
+
+    test "Windows name ending with ." do
+      assert valid?('abc.')
+      assert valid?('abc ')
+
+      refute valid?('abc.', windows?: true)
+      refute valid?('abc ', windows?: true)
+    end
+
+    test "Windows device names" do
+      for name <- @windows_device_names do
+        assert valid?(name)
+        refute valid?(name, windows?: true)
+      end
+
+      for name <- @almost_windows_device_names do
+        assert valid?(name)
+        assert valid?(name, windows?: true)
+      end
+    end
+  end
+
   describe "check_path/2" do
     test "basic case: no platform checks" do
       assert check_path('') == {:error, :empty_path}
