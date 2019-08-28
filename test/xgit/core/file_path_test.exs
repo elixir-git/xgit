@@ -3,7 +3,7 @@
 # Copyright (C) 2016, Google Inc.
 # and other copyright owners as documented in the project's IP log.
 #
-# Elixir adaptation from jgit file:
+# Elixir adaptation from jgit files:
 # org.eclipse.jgit.test/tst/org/eclipse/jgit/lib/ObjectCheckerTest.java
 # org.eclipse.jgit.test/tst/org/eclipse/jgit/util/PathsTest.java
 #
