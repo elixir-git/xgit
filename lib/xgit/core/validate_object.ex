@@ -56,10 +56,9 @@ defmodule Xgit.Core.ValidateObject do
   """
 
   alias Xgit.Core.FileMode
+  alias Xgit.Core.FilePath
   alias Xgit.Core.Object
   alias Xgit.Core.ObjectId
-  alias Xgit.Core.ValidatePath
-  alias Xgit.Util.Paths
   alias Xgit.Util.RawParseUtils
 
   import Xgit.Util.RawParseUtils, only: [after_prefix: 2]
@@ -163,14 +162,14 @@ defmodule Xgit.Core.ValidateObject do
 
   `{:error, :invalid_mode}` if the object is a tree and one of the file modes is incomplete.
 
-  See also error responses from `Xgit.Core.ValidatePath.check_path/2` and
-  `Xgit.Core.ValidatePath.check_path_segment/2`.
+  See also error responses from `Xgit.Core.FilePath.check_path/2` and
+  `Xgit.Core.FilePath.check_path_segment/2`.
   """
   @spec check(object :: Object.t(), opts :: Keyword.t()) ::
           :ok
           | {:error, reason :: check_reason}
-          | {:error, reason :: ValidatePath.check_path_reason()}
-          | {:error, reason :: ValidatePath.check_path_segment_reason()}
+          | {:error, reason :: FilePath.check_path_reason()}
+          | {:error, reason :: FilePath.check_path_segment_reason()}
   def check(object, opts \\ [])
 
   def check(%Object{type: :blob}, _opts), do: :ok
@@ -261,7 +260,7 @@ defmodule Xgit.Core.ValidateObject do
     with {:file_mode, {:ok, file_mode, data}} <- {:file_mode, check_file_mode(data, 0)},
          {:file_mode, true} <- {:file_mode, FileMode.valid?(file_mode)},
          {:path_split, {path_segment, [0 | data]}} <- {:path_split, path_and_object_id(data)},
-         {:path_valid, :ok} <- {:path_valid, ValidatePath.check_path_segment(path_segment, opts)},
+         {:path_valid, :ok} <- {:path_valid, FilePath.check_path_segment(path_segment, opts)},
          {:duplicate, false} <-
            {:duplicate, maybe_mapset_member?(maybe_normalized_paths, path_segment, opts)},
          {:duplicate, false} <- {:duplicate, duplicate_name?(path_segment, data)},
@@ -319,7 +318,7 @@ defmodule Xgit.Core.ValidateObject do
 
     data = Enum.drop(data, 1)
 
-    compare = Paths.compare_same_name(this_name, next_name, mode)
+    compare = FilePath.compare_same_name(this_name, next_name, mode)
 
     cond do
       Enum.empty?(mode_str) or Enum.empty?(next_name) -> false
@@ -339,7 +338,7 @@ defmodule Xgit.Core.ValidateObject do
   defp correctly_sorted?([], _previous_mode, _this_name, _this_mode), do: true
 
   defp correctly_sorted?(previous_name, previous_mode, this_name, this_mode),
-    do: Paths.compare(previous_name, previous_mode, this_name, this_mode) != :gt
+    do: FilePath.compare(previous_name, previous_mode, this_name, this_mode) != :gt
 
   defp maybe_put_path(nil, _path_segment, _opts), do: nil
 

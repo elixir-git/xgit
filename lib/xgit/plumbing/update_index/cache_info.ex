@@ -8,15 +8,15 @@ defmodule Xgit.Plumbing.UpdateIndex.CacheInfo do
   use Xgit.Core.FileMode
 
   alias Xgit.Core.DirCache.Entry, as: DirCacheEntry
+  alias Xgit.Core.FilePath
   alias Xgit.Core.ObjectId
-  alias Xgit.Core.ValidatePath
   alias Xgit.Repository
   alias Xgit.Repository.WorkingTree
 
   @typedoc ~S"""
   Cache info tuple `{mode, object_id, path}` to add to the index file.
   """
-  @type add_entry :: {mode :: FileMode.t(), object_id :: ObjectId.t(), path :: [byte]}
+  @type add_entry :: {mode :: FileMode.t(), object_id :: ObjectId.t(), path :: FilePath.t()}
 
   @typedoc ~S"""
   Reason codes that can be returned by `run/2`.
@@ -82,9 +82,8 @@ defmodule Xgit.Plumbing.UpdateIndex.CacheInfo do
   end
 
   defp valid_add?({mode, object_id, path})
-       when is_file_mode(mode) and is_binary(object_id) and is_list(path) do
-    ObjectId.valid?(object_id) and ValidatePath.check_path(path)
-  end
+       when is_file_mode(mode) and is_binary(object_id) and is_list(path),
+       do: ObjectId.valid?(object_id) and FilePath.valid?(path)
 
   defp valid_add?(_), do: false
 

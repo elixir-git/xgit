@@ -23,6 +23,7 @@ defmodule Xgit.Core.DirCache do
   use Bitwise
   use Xgit.Core.FileMode
 
+  alias Xgit.Core.FilePath
   alias Xgit.Util.Comparison
 
   @typedoc ~S"""
@@ -60,6 +61,8 @@ defmodule Xgit.Core.DirCache do
 
     use Xgit.Core.FileMode
 
+    alias Xgit.Core.FileMode
+    alias Xgit.Core.FilePath
     alias Xgit.Core.ObjectId
 
     @typedoc ~S"""
@@ -73,7 +76,7 @@ defmodule Xgit.Core.DirCache do
 
     ## Struct Members
 
-    * `name`: entry path name, relative to top-level directory (without leading slash)
+    * `name`: (FilePath.t) entry path name, relative to top-level directory (without leading slash)
     * `stage`: 0..3 merge status
     * `object_id`: (ObjectId.t) SHA-1 for the represented object
     * `mode`: (FileMode.t)
@@ -92,7 +95,7 @@ defmodule Xgit.Core.DirCache do
     * `intent_to_add?`: (boolean)
     """
     @type t :: %__MODULE__{
-            name: [byte],
+            name: FilePath.t(),
             stage: 0..3,
             object_id: ObjectId.t(),
             mode: FileMode.t(),
@@ -132,10 +135,6 @@ defmodule Xgit.Core.DirCache do
       skip_worktree?: false,
       intent_to_add?: false
     ]
-
-    alias Xgit.Core.FileMode
-    alias Xgit.Core.ObjectId
-    alias Xgit.Core.ValidatePath
 
     @doc ~S"""
     Return `true` if this entry struct describes a valid dir cache entry.
@@ -182,8 +181,7 @@ defmodule Xgit.Core.DirCache do
                is_boolean(extended?) and
                is_boolean(skip_worktree?) and
                is_boolean(intent_to_add?) do
-      ValidatePath.check_path(name) == :ok && ObjectId.valid?(object_id) &&
-        object_id != ObjectId.zero()
+      FilePath.valid?(name) && ObjectId.valid?(object_id) && object_id != ObjectId.zero()
     end
 
     def valid?(_), do: false
@@ -320,7 +318,7 @@ defmodule Xgit.Core.DirCache do
   @typedoc ~S"""
   An entry for the `remove` option for `remove_entries/2`.
   """
-  @type entry_to_remove :: {path :: [byte], stage :: 0..3 | :all}
+  @type entry_to_remove :: {path :: FilePath.t(), stage :: 0..3 | :all}
 
   @typedoc ~S"""
   Error reason codes returned by `remove_entries/2`.
