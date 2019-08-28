@@ -59,7 +59,6 @@ defmodule Xgit.Core.ValidateObject do
   alias Xgit.Core.FilePath
   alias Xgit.Core.Object
   alias Xgit.Core.ObjectId
-  alias Xgit.Util.Paths
   alias Xgit.Util.RawParseUtils
 
   import Xgit.Util.RawParseUtils, only: [after_prefix: 2]
@@ -319,7 +318,7 @@ defmodule Xgit.Core.ValidateObject do
 
     data = Enum.drop(data, 1)
 
-    compare = Paths.compare_same_name(this_name, next_name, mode)
+    compare = FilePath.compare_same_name(this_name, next_name, mode)
 
     cond do
       Enum.empty?(mode_str) or Enum.empty?(next_name) -> false
@@ -339,7 +338,7 @@ defmodule Xgit.Core.ValidateObject do
   defp correctly_sorted?([], _previous_mode, _this_name, _this_mode), do: true
 
   defp correctly_sorted?(previous_name, previous_mode, this_name, this_mode),
-    do: Paths.compare(previous_name, previous_mode, this_name, this_mode) != :gt
+    do: FilePath.compare(previous_name, previous_mode, this_name, this_mode) != :gt
 
   defp maybe_put_path(nil, _path_segment, _opts), do: nil
 

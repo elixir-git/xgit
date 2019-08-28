@@ -1,9 +1,11 @@
 # Copyright (C) 2008-2010, Google Inc.
 # Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+# Copyright (C) 2016, Google Inc.
 # and other copyright owners as documented in the project's IP log.
 #
 # Elixir adaptation from jgit file:
 # org.eclipse.jgit.test/tst/org/eclipse/jgit/lib/ObjectCheckerTest.java
+# org.eclipse.jgit.test/tst/org/eclipse/jgit/util/PathsTest.java
 #
 # Copyright (C) 2019, Eric Scouten <eric+xgit@scouten.com>
 #
@@ -47,6 +49,7 @@
 
 defmodule Xgit.Core.FilePathTest do
   use ExUnit.Case, async: true
+  use Xgit.Core.FileMode
 
   import Xgit.Core.FilePath
 
@@ -468,6 +471,88 @@ defmodule Xgit.Core.FilePathTest do
 
       assert gitmodules?('.GITMODULES', windows?: true)
       refute gitmodules?('.GITMODULES')
+    end
+  end
+
+  describe "strip_trailing_separator/1" do
+    test "empty list" do
+      assert strip_trailing_separator([]) == []
+    end
+
+    test "without trailing /" do
+      assert strip_trailing_separator('abc') == 'abc'
+      assert strip_trailing_separator('/abc') == '/abc'
+      assert strip_trailing_separator('foo/b') == 'foo/b'
+    end
+
+    test "with trailing /" do
+      assert strip_trailing_separator('/') == []
+      assert strip_trailing_separator('abc/') == 'abc'
+      assert strip_trailing_separator('foo/bar//') == 'foo/bar'
+    end
+  end
+
+  describe "compare/4" do
+    test "simple case (paths don't match)" do
+      assert compare('abc', FileMode.regular_file(), 'def', FileMode.regular_file()) == :lt
+      assert compare('abc', FileMode.regular_file(), 'aba', FileMode.regular_file()) == :gt
+    end
+
+    test "lengths mismatch" do
+      assert compare('abc', FileMode.regular_file(), 'ab', FileMode.regular_file()) == :gt
+      assert compare('ab', FileMode.regular_file(), 'aba', FileMode.regular_file()) == :lt
+    end
+
+    test "implied / for file tree" do
+      assert compare('ab/', FileMode.tree(), 'ab', FileMode.tree()) == :eq
+      assert compare('ab', FileMode.tree(), 'ab/', FileMode.tree()) == :eq
+    end
+
+    test "exact match" do
+      assert compare('abc', FileMode.regular_file(), 'abc', FileMode.regular_file()) == :eq
+    end
+
+    test "match except for file mode" do
+      assert compare('abc', FileMode.tree(), 'abc', FileMode.regular_file()) == :gt
+      assert compare('abc', FileMode.regular_file(), 'abc', FileMode.tree()) == :lt
+    end
+
+    test "gitlink exception" do
+      assert compare('abc', FileMode.tree(), 'abc', FileMode.gitlink()) == :eq
+      assert compare('abc', FileMode.gitlink(), 'abc', FileMode.tree()) == :eq
+    end
+  end
+
+  describe "compare_same_name/3" do
+    test "simple case (paths don't match)" do
+      assert compare_same_name('abc', 'def', FileMode.regular_file()) == :lt
+      assert compare_same_name('abc', 'aba', FileMode.regular_file()) == :gt
+    end
+
+    test "lengths mismatch" do
+      assert compare_same_name('abc', 'ab', FileMode.regular_file()) == :gt
+      assert compare_same_name('ab', 'aba', FileMode.regular_file()) == :lt
+    end
+
+    test "implied / for file tree" do
+      assert compare_same_name('ab/', 'ab', FileMode.tree()) == :eq
+      assert compare_same_name('ab', 'ab/', FileMode.tree()) == :eq
+    end
+
+    test "exact match, different type" do
+      assert compare_same_name('abc', 'abc', FileMode.regular_file()) == :eq
+    end
+
+    test "exact match, same type" do
+      assert compare_same_name('abc', 'abc', FileMode.tree()) == :eq
+    end
+
+    test "match except for file mode" do
+      assert compare_same_name('abc', 'abc', FileMode.regular_file()) == :eq
+    end
+
+    test "gitlink exception" do
+      assert compare_same_name('abc', 'abc', FileMode.gitlink()) == :eq
     end
   end
 end

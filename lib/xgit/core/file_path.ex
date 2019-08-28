@@ -1,9 +1,11 @@
 # Copyright (C) 2008-2010, Google Inc.
 # Copyright (C) 2008, Shawn O. Pearce <spearce@spearce.org>
+# Copyright (C) 2016, 2018 Google Inc.
 # and other copyright owners as documented in the project's IP log.
 #
-# Elixir adaptation from jgit file:
+# Elixir adaptation from jgit files:
 # org.eclipse.jgit/src/org/eclipse/jgit/lib/ObjectChecker.java
+# org.eclipse.jgit/src/org/eclipse/jgit/util/Paths.java
 #
 # Copyright (C) 2019, Eric Scouten <eric+xgit@scouten.com>
 #
@@ -62,6 +64,11 @@ defmodule Xgit.Core.FilePath do
   it clear that we're talking about the path to where a file is stored
   on disk.
   """
+
+  use Bitwise
+  use Xgit.Core.FileMode
+
+  alias Xgit.Util.Comparison
 
   @typedoc """
   Representation of a file's path within a git repo.
@@ -134,7 +141,7 @@ defmodule Xgit.Core.FilePath do
 
   See also: error return values from `check_path_segment/2`.
   """
-  @spec check_path(path :: [byte], windows?: boolean, macosx?: boolean) ::
+  @spec check_path(path :: t, windows?: boolean, macosx?: boolean) ::
           :ok | {:error, check_path_reason} | {:error, check_path_segment_reason}
   def check_path(path, opts \\ [])
 
@@ -186,7 +193,7 @@ defmodule Xgit.Core.FilePath do
   * `{:error, :windows_device_name}` if the name matches a Windows device name (`aux`, etc.)
     (only when `windows?: true` is selected)
   """
-  @spec check_path_segment(path :: [byte], windows?: boolean, macosx?: boolean) ::
+  @spec check_path_segment(path :: t, windows?: boolean, macosx?: boolean) ::
           :ok | {:error, check_path_segment_reason}
   def check_path_segment(path, opts \\ [])
 
@@ -377,7 +384,7 @@ defmodule Xgit.Core.FilePath do
   * `macosx?`: `true` to additionally check for any path that might be treated
     as a `.gitmodules` file on Mac OS X file systems
   """
-  @spec gitmodules?(path :: [byte], windows?: boolean, macosx?: boolean) :: boolean
+  @spec gitmodules?(path :: t, windows?: boolean, macosx?: boolean) :: boolean
   def gitmodules?(path, opts \\ [])
 
   def gitmodules?('.gitmodules', opts) when is_list(opts), do: true
@@ -508,4 +515,111 @@ defmodule Xgit.Core.FilePath do
 
   defp to_lower(b) when b >= ?A and b <= ?Z, do: b + 32
   defp to_lower(b), do: b
+
+  @doc ~S"""
+  Remove trailing `/` if present.
+  """
+  @spec strip_trailing_separator(path :: t) :: t
+  def strip_trailing_separator([]), do: []
+
+  def strip_trailing_separator(path) when is_list(path) do
+    if List.last(path) == ?/ do
+      path
+      |> Enum.reverse()
+      |> Enum.drop_while(&(&1 == ?/))
+      |> Enum.reverse()
+    else
+      path
+    end
+  end
+
+  @doc ~S"""
+  Compare two paths according to git path sort ordering rules.
+
+  ## Return Value
+
+  * `:lt` if `path1` sorts before `path2`.
+  * `:eq` if they are the same.
+  * `:gt` if `path1` sorts after `path2`.
+  """
+  @spec compare(
+          path1 :: t,
+          mode1 :: FileMode.t(),
+          path2 :: t,
+          mode2 :: FileMode.t()
+        ) :: Comparison.result()
+  def compare(path1, mode1, path2, mode2)
+      when is_list(path1) and is_file_mode(mode1) and is_list(path2) and is_file_mode(mode2) do
+    case core_compare(path1, mode1, path2, mode2) do
+      :eq -> mode_compare(mode1, mode2)
+      x -> x
+    end
+  end
+
+  @doc ~S"""
+  Compare two paths, checking for identical name.
+
+  Unlike `compare/4`, this method returns `:eq` when the paths have
+  the same characters in their names, even if the mode differs. It is
+  intended for use in validation routines detecting duplicate entries.
+
+  ## Parameters
+
+  `mode2` is the mode of the second file. Trees are sorted as though
+  `List.last(path2) == ?/`, even if no such character exists.
+  Return `:lt` if no duplicate name could exist; `:eq` if the paths
+  have the same name; `:gt` if other `path2` should still be checked
+  by caller.
+
+  ## Return Value
+
+  Returns `:eq` if the names are identical and a conflict exists
+  between `path1` and `path2`, as they share the same name.
+
+  Returns `:lt` if all possible occurrences of `path1` sort
+  before `path2` and no conflict can happen. In a properly sorted
+  tree there are no other occurrences of `path1` and therefore there
+  are no duplicate names.
+
+  Returns `:gt` when it is possible for a duplicate occurrence of
+  `path1` to appear later, after `path2`. Callers should
+  continue to examine candidates for `path2` until the method returns
+  one of the other return values.
+  """
+  @spec compare_same_name(path1 :: t, path2 :: t, mode2 :: FileMode.t()) ::
+          Comparison.result()
+  def compare_same_name(path1, path2, mode2),
+    do: core_compare(path1, FileMode.tree(), path2, mode2)
+
+  defp core_compare(path1, mode1, path2, mode2)
+
+  defp core_compare([c | rem1], mode1, [c | rem2], mode2),
+    do: core_compare(rem1, mode1, rem2, mode2)
+
+  defp core_compare([c1 | _rem1], _mode1, [c2 | _rem2], _mode2),
+    do: compare_chars(c1, c2)
+
+  defp core_compare([c1 | _rem1], _mode1, [], mode2),
+    do: compare_chars(band(c1, 0xFF), last_path_char(mode2))
+
+  defp core_compare([], mode1, [c2 | _], _mode2),
+    do: compare_chars(last_path_char(mode1), band(c2, 0xFF))
+
+  defp core_compare([], _mode1, [], _mode2), do: :eq
+
+  defp compare_chars(c, c), do: :eq
+  defp compare_chars(c1, c2) when c1 < c2, do: :lt
+  defp compare_chars(_, _), do: :gt
+
+  defp last_path_char(mode) do
+    if FileMode.tree?(mode),
+      do: ?/,
+      else: 0
+  end
+
+  defp mode_compare(mode1, mode2) do
+    if FileMode.gitlink?(mode1) or FileMode.gitlink?(mode2),
+      do: :eq,
+      else: compare_chars(last_path_char(mode1), last_path_char(mode2))
+  end
 end
