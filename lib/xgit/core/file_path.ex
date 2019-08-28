@@ -45,10 +45,30 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-defmodule Xgit.Core.ValidatePath do
+defmodule Xgit.Core.FilePath do
   @moduledoc ~S"""
-  Verifies that a path is an acceptable part of a tree structure.
+  Describes a file path as stored in a git repo.
+
+  Paths are always stored as a list of bytes. The git specification
+  does not explicitly specify an encoding, but most commonly the
+  path is interpreted as UTF-8.
+
+  We use byte lists here to avoid confusion and possible misintepretation
+  in Elixir's `String` type for non-UTF-8 paths.
+
+  Paths are alternately referred to in git as "file name," "path,"
+  "path name," and "object name." We're using the name `FilePath`
+  to avoid collision with Elixir's built-in `Path` module and to make
+  it clear that we're talking about the path to where a file is stored
+  on disk.
   """
+
+  @typedoc """
+  Representation of a file's path within a git repo.
+
+  Typically, though not necessarily, interpreted as UTF-8.
+  """
+  @type t :: [byte]
 
   @typedoc ~S"""
   Error codes which can be returned by `check_path/2`.

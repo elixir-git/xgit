@@ -45,10 +45,10 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-defmodule Xgit.Core.ValidatePathTest do
+defmodule Xgit.Core.FilePathTest do
   use ExUnit.Case, async: true
 
-  import Xgit.Core.ValidatePath
+  import Xgit.Core.FilePath
 
   @windows_git_names ['GIT~1', 'GiT~1']
   @almost_windows_git_names ['GIT~11', 'GIT~2']

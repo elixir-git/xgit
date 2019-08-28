@@ -56,9 +56,9 @@ defmodule Xgit.Core.ValidateObject do
   """
 
   alias Xgit.Core.FileMode
+  alias Xgit.Core.FilePath
   alias Xgit.Core.Object
   alias Xgit.Core.ObjectId
-  alias Xgit.Core.ValidatePath
   alias Xgit.Util.Paths
   alias Xgit.Util.RawParseUtils
 
@@ -163,14 +163,14 @@ defmodule Xgit.Core.ValidateObject do
 
   `{:error, :invalid_mode}` if the object is a tree and one of the file modes is incomplete.
 
-  See also error responses from `Xgit.Core.ValidatePath.check_path/2` and
-  `Xgit.Core.ValidatePath.check_path_segment/2`.
+  See also error responses from `Xgit.Core.FilePath.check_path/2` and
+  `Xgit.Core.FilePath.check_path_segment/2`.
   """
   @spec check(object :: Object.t(), opts :: Keyword.t()) ::
           :ok
           | {:error, reason :: check_reason}
-          | {:error, reason :: ValidatePath.check_path_reason()}
-          | {:error, reason :: ValidatePath.check_path_segment_reason()}
+          | {:error, reason :: FilePath.check_path_reason()}
+          | {:error, reason :: FilePath.check_path_segment_reason()}
   def check(object, opts \\ [])
 
   def check(%Object{type: :blob}, _opts), do: :ok
@@ -261,7 +261,7 @@ defmodule Xgit.Core.ValidateObject do
     with {:file_mode, {:ok, file_mode, data}} <- {:file_mode, check_file_mode(data, 0)},
          {:file_mode, true} <- {:file_mode, FileMode.valid?(file_mode)},
          {:path_split, {path_segment, [0 | data]}} <- {:path_split, path_and_object_id(data)},
-         {:path_valid, :ok} <- {:path_valid, ValidatePath.check_path_segment(path_segment, opts)},
+         {:path_valid, :ok} <- {:path_valid, FilePath.check_path_segment(path_segment, opts)},
          {:duplicate, false} <-
            {:duplicate, maybe_mapset_member?(maybe_normalized_paths, path_segment, opts)},
          {:duplicate, false} <- {:duplicate, duplicate_name?(path_segment, data)},
