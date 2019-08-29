@@ -20,6 +20,7 @@ defmodule Xgit.Repository.WorkingTree do
 
   alias Xgit.Core.DirCache
   alias Xgit.Core.DirCache.Entry, as: DirCacheEntry
+  alias Xgit.Core.FilePath
   alias Xgit.Repository
   alias Xgit.Repository.WorkingTree.ParseIndexFile
   alias Xgit.Repository.WorkingTree.WriteIndexFile
@@ -180,7 +181,7 @@ defmodule Xgit.Repository.WorkingTree do
   @spec update_dir_cache(
           working_tree :: t,
           add :: [DirCacheEntry.t()],
-          remove :: [{[path :: [byte]], stage :: DirCacheEntry.stage_match()}]
+          remove :: [{path :: FilePath.t(), stage :: DirCacheEntry.stage_match()}]
         ) ::
           {:ok, DirCache.t()} | {:error, update_dir_cache_reason}
   def update_dir_cache(working_tree, add, remove)
