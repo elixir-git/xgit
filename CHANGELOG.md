@@ -7,7 +7,7 @@ _28 August 2019_
 * **This is a refactoring release. It breaks API compatibility, thus the secondary version bump.**
 * Introduce a common data type for less-than / equal / greater-than comparisons. (#128)
 * [API BREAKING] Refactor file path code into new module `Xgit.Core.FilePath`. (#129)
-* Introduce `Xgit.Core.DirCach.Entry.stage` type for index file stage references. (#130)
+* Introduce `Xgit.Core.DirCache.Entry.stage` type for index file stage references. (#130)
 * [API BREAKING] Merge `Xgit.Core.ValidateObject` into `Xgit.Core.Object`. (#132)
 * Share code for finding working tree in plumbing command modules. (#134)
 * Update several dependencies. (#135, #136, #137)
