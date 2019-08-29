@@ -55,7 +55,7 @@ defmodule Xgit.Plumbing.UpdateIndex.CacheInfo do
   `{:error, :reason}` if unable. The relevant reason codes may come from
   `Xgit.Repository.WorkingTree.update_dir_cache/3`.
   """
-  @spec run(repository :: Repository.t(), add :: [add_entry], remove :: [byte]) ::
+  @spec run(repository :: Repository.t(), add :: [add_entry], remove :: [FilePath.t()]) ::
           :ok | {:error, reason()}
   def run(repository, add, remove \\ [])
       when is_pid(repository) and is_list(add) and is_list(remove) do
