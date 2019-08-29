@@ -66,6 +66,16 @@ defmodule Xgit.Core.DirCache do
     alias Xgit.Core.ObjectId
 
     @typedoc ~S"""
+    Merge status (stage).
+    """
+    @type stage :: 0..3
+
+    @typedoc ~S"""
+    Merge status (stage) for matching a remove request. (Includes `:all` to match any stage.)
+    """
+    @type stage_match :: 0..3 | :all
+
+    @typedoc ~S"""
     A single file (or stage of a file) in a directory cache.
 
     An entry represents exactly one stage of a file. If a file path is unmerged
@@ -76,10 +86,10 @@ defmodule Xgit.Core.DirCache do
 
     ## Struct Members
 
-    * `name`: (FilePath.t) entry path name, relative to top-level directory (without leading slash)
-    * `stage`: 0..3 merge status
-    * `object_id`: (ObjectId.t) SHA-1 for the represented object
-    * `mode`: (FileMode.t)
+    * `name`: (`FilePath.t`) entry path name, relative to top-level directory (without leading slash)
+    * `stage`: (`0..3`) merge status
+    * `object_id`: (`ObjectId.t`) SHA-1 for the represented object
+    * `mode`: (`FileMode.t`)
     * `size`: (integer) on-disk size, possibly truncated to 32 bits
     * `ctime`: (integer) the last time the file's metadata changed
     * `ctime_ns`: (integer) nanosecond fraction of `ctime` (if available)
@@ -96,7 +106,7 @@ defmodule Xgit.Core.DirCache do
     """
     @type t :: %__MODULE__{
             name: FilePath.t(),
-            stage: 0..3,
+            stage: stage,
             object_id: ObjectId.t(),
             mode: FileMode.t(),
             size: non_neg_integer,
@@ -318,7 +328,7 @@ defmodule Xgit.Core.DirCache do
   @typedoc ~S"""
   An entry for the `remove` option for `remove_entries/2`.
   """
-  @type entry_to_remove :: {path :: FilePath.t(), stage :: 0..3 | :all}
+  @type entry_to_remove :: {path :: FilePath.t(), stage :: Entry.stage_match()}
 
   @typedoc ~S"""
   Error reason codes returned by `remove_entries/2`.
@@ -333,7 +343,7 @@ defmodule Xgit.Core.DirCache do
   `entries_to_remove` is a list of `{path, stage}` tuples identifying tuples to be removed.
 
   * `path` should be a byte list for the path.
-  * `stage` should be 0..3 or `:all`, meaning any entry that matches the path,
+  * `stage` should be `0..3` or `:all`, meaning any entry that matches the path,
     regardless of stage, should be removed.
 
   ## Return Value

@@ -154,7 +154,7 @@ defmodule Xgit.Repository.WorkingTree do
   be replaced with the corresponding new entries.
 
   `remove`: a list of `{path, stage}` tuples to remove from the dir cache.
-  `stage` must be 0..3 to remove a specific stage entry or `:all` to match
+  `stage` must be `0..3` to remove a specific stage entry or `:all` to match
   any entry for the `path`.
 
   ## Return Values
@@ -180,7 +180,7 @@ defmodule Xgit.Repository.WorkingTree do
   @spec update_dir_cache(
           working_tree :: t,
           add :: [DirCacheEntry.t()],
-          remove :: [{[path :: [byte]], stage :: 0..3 | :all}]
+          remove :: [{[path :: [byte]], stage :: DirCacheEntry.stage_match()}]
         ) ::
           {:ok, DirCache.t()} | {:error, update_dir_cache_reason}
   def update_dir_cache(working_tree, add, remove)
