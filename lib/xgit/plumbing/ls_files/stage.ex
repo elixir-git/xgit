@@ -8,6 +8,7 @@ defmodule Xgit.Plumbing.LsFiles.Stage do
 
   alias Xgit.Core.DirCache
   alias Xgit.Core.DirCache.Entry, as: DirCacheEntry
+  alias Xgit.Plumbing.Util.WorkingTreeOpt
   alias Xgit.Repository
   alias Xgit.Repository.WorkingTree
   alias Xgit.Repository.WorkingTree.ParseIndexFile
@@ -42,16 +43,12 @@ defmodule Xgit.Plumbing.LsFiles.Stage do
           {:ok, entries :: [DirCacheEntry.t()]}
           | {:error, reason :: reason}
   def run(repository) when is_pid(repository) do
-    with {:repository_valid?, true} <- {:repository_valid?, Repository.valid?(repository)},
-         {:working_tree, working_tree} when is_pid(working_tree) <-
-           {:working_tree, Repository.default_working_tree(repository)},
-         {:dir_cache, {:ok, %DirCache{entries: entries} = _dir_cache}} <-
-           {:dir_cache, WorkingTree.dir_cache(working_tree)} do
+    with {:ok, working_tree} <- WorkingTreeOpt.get(repository),
+         {:ok, %DirCache{entries: entries} = _dir_cache} <-
+           WorkingTree.dir_cache(working_tree) do
       {:ok, entries}
     else
-      {:repository_valid?, false} -> {:error, :invalid_repository}
-      {:working_tree, nil} -> {:error, :bare}
-      {:dir_cache, {:error, reason}} -> {:error, reason}
+      {:error, reason} -> {:error, reason}
     end
   end
 end

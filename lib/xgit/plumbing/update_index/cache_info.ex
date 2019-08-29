@@ -10,6 +10,7 @@ defmodule Xgit.Plumbing.UpdateIndex.CacheInfo do
   alias Xgit.Core.DirCache.Entry, as: DirCacheEntry
   alias Xgit.Core.FilePath
   alias Xgit.Core.ObjectId
+  alias Xgit.Plumbing.Util.WorkingTreeOpt
   alias Xgit.Repository
   alias Xgit.Repository.WorkingTree
 
@@ -59,18 +60,14 @@ defmodule Xgit.Plumbing.UpdateIndex.CacheInfo do
           :ok | {:error, reason()}
   def run(repository, add, remove \\ [])
       when is_pid(repository) and is_list(add) and is_list(remove) do
-    with {:repository_valid?, true} <- {:repository_valid?, Repository.valid?(repository)},
+    with {:ok, working_tree} <- WorkingTreeOpt.get(repository),
          {:items_to_add, add} when is_list(add) <- {:items_to_add, parse_add_entries(add)},
          {:items_to_remove, remove} when is_list(remove) <-
-           {:items_to_remove, parse_remove_entries(remove)},
-         {:working_tree, working_tree} when is_pid(working_tree) <-
-           {:working_tree, Repository.default_working_tree(repository)} do
+           {:items_to_remove, parse_remove_entries(remove)} do
       WorkingTree.update_dir_cache(working_tree, add, remove)
     else
-      {:repository_valid?, false} -> {:error, :invalid_repository}
       {:items_to_add, _} -> {:error, :invalid_entry}
       {:items_to_remove, _} -> {:error, :invalid_entry}
-      {:working_tree, nil} -> {:error, :bare}
       {:error, reason} -> {:error, reason}
     end
   end
