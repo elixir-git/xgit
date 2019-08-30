@@ -19,8 +19,11 @@ defmodule Xgit.Repository.WorkingTree do
   use GenServer
 
   alias Xgit.Core.DirCache
+  alias Xgit.Core.DirCache.Entry, as: DirCacheEntry
+  alias Xgit.Core.FilePath
   alias Xgit.Repository
   alias Xgit.Repository.WorkingTree.ParseIndexFile
+  alias Xgit.Repository.WorkingTree.WriteIndexFile
   alias Xgit.Util.TrailingHashDevice
 
   require Logger
@@ -101,7 +104,7 @@ defmodule Xgit.Repository.WorkingTree do
   by `.git/config` file). [Issue #86](https://github.com/elixir-git/xgit/issues/86)
 
   Cache state of index file so we don't have to parse it for every
-  all. [Issue #87](https://github.com/elixir-git/xgit/issues/87)
+  call. [Issue #87](https://github.com/elixir-git/xgit/issues/87)
 
   Consider scalability of passing a potentially large `Xgit.Core.DirCache` structure
   across process boundaries. [Issue #88](https://github.com/elixir-git/xgit/issues/88)
@@ -112,6 +115,13 @@ defmodule Xgit.Repository.WorkingTree do
     do: GenServer.call(working_tree, :dir_cache)
 
   defp handle_dir_cache(%{work_dir: work_dir} = state) do
+    case parse_dir_cache_if_exists(work_dir) do
+      {:ok, dir_cache} -> {:reply, {:ok, dir_cache}, state}
+      {:error, reason} -> {:reply, {:error, reason}, state}
+    end
+  end
+
+  defp parse_dir_cache_if_exists(work_dir) do
     index_path = Path.join([work_dir, ".git", "index"])
 
     with true <- File.exists?(index_path),
@@ -119,14 +129,78 @@ defmodule Xgit.Repository.WorkingTree do
       res = ParseIndexFile.from_iodevice(iodevice)
       :ok = File.close(iodevice)
 
-      {:reply, res, state}
+      res
     else
-      false ->
-        dir_cache = %DirCache{version: 2, entry_count: 0, entries: []}
-        {:reply, {:ok, dir_cache}, state}
+      false -> {:ok, DirCache.empty()}
+      {:error, reason} -> {:error, reason}
+    end
+  end
 
-      {:error, reason} ->
-        {:reply, {:error, reason}, state}
+  @typedoc ~S"""
+  Error code reasons returned by `update_dir_cache/3`.
+  """
+  @type update_dir_cache_reason ::
+          DirCache.add_entries_reason()
+          | DirCache.remove_entries_reason()
+          | ParseIndexFile.from_iodevice_reason()
+          | WriteIndexFile.to_iodevice_reason()
+
+  @doc ~S"""
+  Apply updates to the dir cache and rewrite the index tree accordingly.
+
+  ## Parameters
+
+  `add`: a list of `Xgit.Core.DirCache.Entry` structs to add to the dir cache.
+  In the event of collisions with existing entries, the existing entries will
+  be replaced with the corresponding new entries.
+
+  `remove`: a list of `{path, stage}` tuples to remove from the dir cache.
+  `stage` must be `0..3` to remove a specific stage entry or `:all` to match
+  any entry for the `path`.
+
+  ## Return Values
+
+  `{:ok, dir_cache}` where `dir_cache` is the original `dir_cache` with the new
+  entries added (and properly sorted) and targeted entries removed.
+
+  `{:error, :reason}` if unable. The relevant reason codes may come from:
+
+  * `Xgit.Core.DirCache.add_entries/2`
+  * `Xgit.Core.DirCache.remove_entries/2`
+  * `Xgit.Repository.WorkingTree.ParseIndexFile.from_iodevice/1`
+  * `Xgit.Repository.WorkingTree.WriteIndexFile.to_iodevice/2`.
+
+  ## TO DO
+
+  Find index file in appropriate location (i.e. as potentially modified
+  by `.git/config` file). [Issue #86](https://github.com/elixir-git/xgit/issues/86)
+
+  Cache state of index file so we don't have to parse it for every
+  call. [Issue #87](https://github.com/elixir-git/xgit/issues/87)
+  """
+  @spec update_dir_cache(
+          working_tree :: t,
+          add :: [DirCacheEntry.t()],
+          remove :: [{path :: FilePath.t(), stage :: DirCacheEntry.stage_match()}]
+        ) ::
+          {:ok, DirCache.t()} | {:error, update_dir_cache_reason}
+  def update_dir_cache(working_tree, add, remove)
+      when is_pid(working_tree) and is_list(add) and is_list(remove),
+      do: GenServer.call(working_tree, {:update_dir_cache, add, remove})
+
+  defp handle_update_dir_cache(add, remove, %{work_dir: work_dir} = state) do
+    index_path = Path.join([work_dir, ".git", "index"])
+
+    with {:ok, dir_cache} <- parse_dir_cache_if_exists(work_dir),
+         {:ok, dir_cache} <- DirCache.add_entries(dir_cache, add),
+         {:ok, dir_cache} <- DirCache.remove_entries(dir_cache, remove),
+         {:ok, iodevice}
+         when is_pid(iodevice) <- TrailingHashDevice.open_file_for_write(index_path),
+         :ok <- WriteIndexFile.to_iodevice(dir_cache, iodevice),
+         :ok <- File.close(iodevice) do
+      {:reply, :ok, state}
+    else
+      {:error, reason} -> {:reply, {:error, reason}, state}
     end
   end
 
@@ -134,6 +208,9 @@ defmodule Xgit.Repository.WorkingTree do
   def handle_call(:valid_working_tree?, _from, state), do: {:reply, :valid_working_tree, state}
 
   def handle_call(:dir_cache, _from, state), do: handle_dir_cache(state)
+
+  def handle_call({:update_dir_cache, add, remove}, _from, state),
+    do: handle_update_dir_cache(add, remove, state)
 
   def handle_call(message, _from, state) do
     Logger.warn("WorkingTree received unrecognized call #{inspect(message)}")

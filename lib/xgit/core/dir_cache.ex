@@ -23,7 +23,8 @@ defmodule Xgit.Core.DirCache do
   use Bitwise
   use Xgit.Core.FileMode
 
-  import Xgit.Util.ForceCoverage
+  alias Xgit.Core.FilePath
+  alias Xgit.Util.Comparison
 
   @typedoc ~S"""
   Version number for an index file.
@@ -60,7 +61,19 @@ defmodule Xgit.Core.DirCache do
 
     use Xgit.Core.FileMode
 
+    alias Xgit.Core.FileMode
+    alias Xgit.Core.FilePath
     alias Xgit.Core.ObjectId
+
+    @typedoc ~S"""
+    Merge status (stage).
+    """
+    @type stage :: 0..3
+
+    @typedoc ~S"""
+    Merge status (stage) for matching a remove request. (Includes `:all` to match any stage.)
+    """
+    @type stage_match :: 0..3 | :all
 
     @typedoc ~S"""
     A single file (or stage of a file) in a directory cache.
@@ -73,10 +86,10 @@ defmodule Xgit.Core.DirCache do
 
     ## Struct Members
 
-    * `name`: entry path name, relative to top-level directory (without leading slash)
-    * `stage`: 0..3 merge status
-    * `object_id`: (ObjectId.t) SHA-1 for the represented object
-    * `mode`: (FileMode.t)
+    * `name`: (`FilePath.t`) entry path name, relative to top-level directory (without leading slash)
+    * `stage`: (`0..3`) merge status
+    * `object_id`: (`ObjectId.t`) SHA-1 for the represented object
+    * `mode`: (`FileMode.t`)
     * `size`: (integer) on-disk size, possibly truncated to 32 bits
     * `ctime`: (integer) the last time the file's metadata changed
     * `ctime_ns`: (integer) nanosecond fraction of `ctime` (if available)
@@ -92,8 +105,8 @@ defmodule Xgit.Core.DirCache do
     * `intent_to_add?`: (boolean)
     """
     @type t :: %__MODULE__{
-            name: [byte],
-            stage: 0..3,
+            name: FilePath.t(),
+            stage: stage,
             object_id: ObjectId.t(),
             mode: FileMode.t(),
             size: non_neg_integer,
@@ -132,10 +145,6 @@ defmodule Xgit.Core.DirCache do
       skip_worktree?: false,
       intent_to_add?: false
     ]
-
-    alias Xgit.Core.FileMode
-    alias Xgit.Core.ObjectId
-    alias Xgit.Core.ValidatePath
 
     @doc ~S"""
     Return `true` if this entry struct describes a valid dir cache entry.
@@ -182,11 +191,10 @@ defmodule Xgit.Core.DirCache do
                is_boolean(extended?) and
                is_boolean(skip_worktree?) and
                is_boolean(intent_to_add?) do
-      ValidatePath.check_path(name) == :ok && ObjectId.valid?(object_id) &&
-        object_id != ObjectId.zero()
+      FilePath.valid?(name) && ObjectId.valid?(object_id) && object_id != ObjectId.zero()
     end
 
-    def valid?(_), do: return(false)
+    def valid?(_), do: false
 
     @doc ~S"""
     Compare two entries according to git dir cache entry sort ordering rules.
@@ -202,21 +210,21 @@ defmodule Xgit.Core.DirCache do
     * `:eq` if they are the same.
     * `:gt` if `entry1` sorts after `entry2`.
     """
-    @spec compare(entry1 :: t | nil, entry2 :: t) :: :lt | :eq | :gt
+    @spec compare(entry1 :: t | nil, entry2 :: t) :: Comparison.result()
     def compare(entry1, entry2)
 
-    def compare(nil, _entry2), do: return(:lt)
+    def compare(nil, _entry2), do: :lt
 
     def compare(
           %{name: name1, stage: stage1} = _entry1,
           %{name: name2, stage: stage2} = _entry2
         ) do
       cond do
-        name1 < name2 -> return :lt
-        name2 < name1 -> return :gt
-        stage1 < stage2 -> return :lt
-        stage2 < stage1 -> return :gt
-        true -> return :eq
+        name1 < name2 -> :lt
+        name2 < name1 -> :gt
+        stage1 < stage2 -> :lt
+        stage2 < stage1 -> :gt
+        true -> :eq
       end
     end
   end
@@ -247,15 +255,15 @@ defmodule Xgit.Core.DirCache do
       entries_sorted?([nil | entries])
   end
 
-  def valid?(_), do: return(false)
+  def valid?(_), do: false
 
   defp entries_sorted?([entry1, entry2 | tail]),
     do: Entry.compare(entry1, entry2) == :lt && entries_sorted?([entry2 | tail])
 
-  defp entries_sorted?([_]), do: return(true)
+  defp entries_sorted?([_]), do: true
 
   @typedoc ~S"""
-  Error reason codes covered by `add_entries/2`.
+  Error reason codes returned by `add_entries/2`.
   """
   @type add_entries_reason :: :invalid_dir_cache | :invalid_entries | :duplicate_entries
 
@@ -293,39 +301,37 @@ defmodule Xgit.Core.DirCache do
          {:duplicates, ^sorted_new_entries} <-
            {:duplicates, Enum.dedup_by(sorted_new_entries, &{&1.name, &1.stage})} do
       combined_entries = combine_entries(existing_entries, sorted_new_entries)
-
-      return {:ok,
-              %{dir_cache | entry_count: Enum.count(combined_entries), entries: combined_entries}}
+      {:ok, %{dir_cache | entry_count: Enum.count(combined_entries), entries: combined_entries}}
     else
-      {:dir_cache_valid?, _} -> return {:error, :invalid_dir_cache}
-      {:entries_valid?, _} -> return {:error, :invalid_entries}
-      {:duplicates, _} -> return {:error, :duplicate_entries}
+      {:dir_cache_valid?, _} -> {:error, :invalid_dir_cache}
+      {:entries_valid?, _} -> {:error, :invalid_entries}
+      {:duplicates, _} -> {:error, :duplicate_entries}
     end
   end
 
   defp combine_entries(existing_entries, sorted_new_entries)
 
-  defp combine_entries(existing_entries, []), do: return(existing_entries)
-  defp combine_entries([], sorted_new_entries), do: return(sorted_new_entries)
+  defp combine_entries(existing_entries, []), do: existing_entries
+  defp combine_entries([], sorted_new_entries), do: sorted_new_entries
 
   defp combine_entries(
          [existing_head | existing_tail] = existing_entries,
          [new_head | new_tail] = sorted_new_entries
        ) do
     case Entry.compare(existing_head, new_head) do
-      :lt -> return [existing_head | combine_entries(existing_tail, sorted_new_entries)]
-      :eq -> return [new_head | combine_entries(existing_tail, new_tail)]
-      :gt -> return [new_head | combine_entries(existing_entries, new_tail)]
+      :lt -> [existing_head | combine_entries(existing_tail, sorted_new_entries)]
+      :eq -> [new_head | combine_entries(existing_tail, new_tail)]
+      :gt -> [new_head | combine_entries(existing_entries, new_tail)]
     end
   end
 
   @typedoc ~S"""
   An entry for the `remove` option for `remove_entries/2`.
   """
-  @type entry_to_remove :: {path :: [byte], stage :: 0..3 | :all}
+  @type entry_to_remove :: {path :: FilePath.t(), stage :: Entry.stage_match()}
 
   @typedoc ~S"""
-  Error reason codes covered by `remove_entries/2`.
+  Error reason codes returned by `remove_entries/2`.
   """
   @type remove_entries_reason :: :invalid_dir_cache | :invalid_entries
 
@@ -337,7 +343,7 @@ defmodule Xgit.Core.DirCache do
   `entries_to_remove` is a list of `{path, stage}` tuples identifying tuples to be removed.
 
   * `path` should be a byte list for the path.
-  * `stage` should be 0..3 or `:all`, meaning any entry that matches the path,
+  * `stage` should be `0..3` or `:all`, meaning any entry that matches the path,
     regardless of stage, should be removed.
 
   ## Return Value
@@ -357,27 +363,25 @@ defmodule Xgit.Core.DirCache do
          {:entries_valid?, true} <-
            {:entries_valid?, Enum.all?(entries_to_remove, &valid_remove_entry?/1)} do
       updated_entries = remove_matching_entries(existing_entries, Enum.sort(entries_to_remove))
-
-      return {:ok,
-              %{dir_cache | entry_count: Enum.count(updated_entries), entries: updated_entries}}
+      {:ok, %{dir_cache | entry_count: Enum.count(updated_entries), entries: updated_entries}}
     else
-      {:dir_cache_valid?, _} -> return {:error, :invalid_dir_cache}
-      {:entries_valid?, _} -> return {:error, :invalid_entries}
+      {:dir_cache_valid?, _} -> {:error, :invalid_dir_cache}
+      {:entries_valid?, _} -> {:error, :invalid_entries}
     end
   end
 
-  defp valid_remove_entry?({path, :all}) when is_list(path), do: return(true)
+  defp valid_remove_entry?({path, :all}) when is_list(path), do: true
 
   defp valid_remove_entry?({path, stage})
        when is_list(path) and is_integer(stage) and stage >= 0 and stage <= 3,
-       do: return(true)
+       do: true
 
-  defp valid_remove_entry?(_), do: return(false)
+  defp valid_remove_entry?(_), do: false
 
   defp remove_matching_entries(sorted_existing_entries, sorted_entries_to_remove)
 
-  defp remove_matching_entries([], _sorted_entries_to_remove), do: return([])
-  defp remove_matching_entries(sorted_existing_entries, []), do: return(sorted_existing_entries)
+  defp remove_matching_entries([], _sorted_entries_to_remove), do: []
+  defp remove_matching_entries(sorted_existing_entries, []), do: sorted_existing_entries
 
   defp remove_matching_entries([%__MODULE__.Entry{name: path} | existing_tail], [
          {path, :all} | remove_tail
@@ -391,5 +395,5 @@ defmodule Xgit.Core.DirCache do
        do: remove_matching_entries(existing_tail, remove_tail)
 
   defp remove_matching_entries([existing_head | existing_tail], sorted_entries_to_remove),
-    do: return([existing_head | remove_matching_entries(existing_tail, sorted_entries_to_remove)])
+    do: [existing_head | remove_matching_entries(existing_tail, sorted_entries_to_remove)]
 end

@@ -1,4 +1,31 @@
-# Changelog for v0.1.x Series
+# Changelog for v0.x Series
+
+## v0.2.0
+
+_28 August 2019_
+
+* **This is a refactoring release. It breaks API compatibility, thus the secondary version bump.**
+* Introduce a common data type for less-than / equal / greater-than comparisons. (#128)
+* [API BREAKING] Refactor file path code into new module `Xgit.Core.FilePath`. (#129)
+* Introduce `Xgit.Core.DirCache.Entry.stage` type for index file stage references. (#130)
+* [API BREAKING] Merge `Xgit.Core.ValidateObject` into `Xgit.Core.Object`. (#132)
+* Share code for finding working tree in plumbing command modules. (#134)
+* Update several dependencies. (#135, #136, #137)
+
+## v0.1.6
+
+_27 August 2019_
+
+* **Implement `Xgit.Plumbing.UpdateIndex.CacheInfo`. (#125)** This is an API equivalent of `git update-index --cacheinfo`.
+* Implement `DirCache.add_entries/2`. (#97)
+* `Xgit.Util.TrailingHashDevice`: Add support for writing files. (#108)
+* `Xgit.Util.NB`: Add encode_uint32 function. (#109)
+* Fix `@type` declaration for `ParseIndexFile.from_iodevice_reason`. (#110)
+* `FolderDiff`: Expose `assert_files_are_equal/2`. (#111)
+* Implement `Xgit.Util.NB.encode_uint16/1`. (#112)
+* Implement `Xgit.Repository.WorkingTree.WriteIndexFile`. (#115)
+* Implement `Xgit.Core.DirCache.remove_entries/2`. (#119)
+* Implement `Xgit.Repository.WorkingTree.update_dir_cache/3`. (#123)
 
 ## v0.1.5
 
