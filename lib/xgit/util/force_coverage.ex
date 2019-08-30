@@ -12,17 +12,27 @@ defmodule Xgit.Util.ForceCoverage do
   # Inspired by discussion at
   # https://elixirforum.com/t/functions-returning-a-literal-are-not-seen-by-code-coverage/16812.
 
+  # coveralls-ignore-start
+
   if Application.get_env(:xgit, :use_force_coverage?) do
+    defmacro cover(false = x) do
+      quote do
+        inspect(unquote(x))
+        unquote(x)
+      end
+    end
+
+    defmacro cover(nil = x) do
+      quote do
+        inspect(unquote(x))
+        unquote(x)
+      end
+    end
+
     defmacro cover(value) do
       quote do
-        x = unquote(value)
-
-        # credo:disable-for-lines:5 Credo.Check.Warning.BoolOperationOnSameValues
-        if is_boolean(x) do
-          x or x
-        else
-          false or x
-        end
+        # credo:disable-for-next-line Credo.Check.Warning.BoolOperationOnSameValues
+        false or unquote(value)
       end
     end
   else
@@ -32,4 +42,6 @@ defmodule Xgit.Util.ForceCoverage do
       end
     end
   end
+
+  # coveralls-ignore-end
 end
