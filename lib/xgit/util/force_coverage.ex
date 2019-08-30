@@ -13,7 +13,7 @@ defmodule Xgit.Util.ForceCoverage do
   # https://elixirforum.com/t/functions-returning-a-literal-are-not-seen-by-code-coverage/16812.
 
   if Application.get_env(:xgit, :use_force_coverage?) do
-    defmacro return(value) do
+    defmacro cover(value) do
       quote do
         x = unquote(value)
 
@@ -26,7 +26,7 @@ defmodule Xgit.Util.ForceCoverage do
       end
     end
   else
-    defmacro return(value) do
+    defmacro cover(value) do
       quote do
         unquote(value)
       end
