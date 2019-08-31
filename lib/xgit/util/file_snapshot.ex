@@ -198,9 +198,9 @@ defmodule Xgit.Util.FileSnapshot do
 
   defp modified_impl_race?(file_last_modified, last_read_time) do
     if not_racy_clean?(file_last_modified, last_read_time) do
-      # Our last read should have marked cannotBeRacilyClean,
-      # but this thread may not have seen the change. The read
-      # of the volatile field lastRead should have fixed that.
+      # Timestamp from last read is far enough from file modification
+      # date that we can be confident that the file has not changed
+      # by virtue of the timestamp.
       cover false
     else
       # We last read this path too close to its last observed
