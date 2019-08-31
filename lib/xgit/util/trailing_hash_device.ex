@@ -84,8 +84,11 @@ defmodule Xgit.Util.TrailingHashDevice do
   Note the difference between this function and `valid_hash?/1`.
   """
   @spec valid?(v :: any) :: boolean
-  def valid?(v) when is_pid(v),
-    do: GenServer.call(v, :valid_trailing_hash_read_device?) == :valid_trailing_hash_read_device
+  def valid?(v) when is_pid(v) do
+    GenServer.call(v, :valid_trailing_hash_read_device?) == :valid_trailing_hash_read_device
+  catch
+    :exit, {:timeout, _} -> false
+  end
 
   def valid?(_), do: cover(false)
 
