@@ -228,7 +228,11 @@ defmodule Xgit.Util.TrailingHashDevice do
       crypto = :crypto.hash_update(crypto, data)
       cover {data, %{state | remaining_bytes: remaining_bytes - byte_size(data), crypto: crypto}}
     else
+      # coveralls-ignore-start
+      # This will only occur if an I/O error occurs *mid*-file.
+      # Difficult to simulate and fairly simple code, so not generating coverage for this line.
       cover {data, state}
+      # coveralls-ignore-end
     end
   end
 
