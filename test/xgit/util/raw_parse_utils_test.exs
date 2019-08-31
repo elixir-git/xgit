@@ -152,13 +152,21 @@ defmodule Xgit.Util.RawParseUtilsTest do
     assert RPU.until_next_lf('xyz', ?y) == 'x'
   end
 
-  test "header_end/1" do
-    Enum.reduce([45, 93, 148, 619, 637], @commit, fn drop_count, remaining_commit ->
-      actual = RPU.header_end(remaining_commit)
-      expected = Enum.drop(@commit, drop_count)
-      assert actual == expected
-      Enum.drop(actual, 1)
-    end)
+  describe "header_end/1" do
+    test "finding various cases in the example commit" do
+      Enum.reduce([45, 93, 148, 619, 637], @commit, fn drop_count, remaining_commit ->
+        actual = RPU.header_end(remaining_commit)
+        expected = Enum.drop(@commit, drop_count)
+        assert actual == expected
+        Enum.drop(actual, 1)
+      end)
+    end
+
+    @partial_commit 'tree e3a1035abd2b319bb01e57d69b0ba6cab289297e'
+
+    test "find header end at EOF" do
+      assert [] = RPU.header_end(@partial_commit)
+    end
   end
 
   test "header_start/2" do
