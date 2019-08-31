@@ -6,6 +6,8 @@ defmodule Xgit.Plumbing.LsFiles.Stage do
   [`git ls-files --stage`](https://git-scm.com/docs/git-ls-files#Documentation/git-ls-files.txt---stage).
   """
 
+  import Xgit.Util.ForceCoverage
+
   alias Xgit.Core.DirCache
   alias Xgit.Core.DirCache.Entry, as: DirCacheEntry
   alias Xgit.Plumbing.Util.WorkingTreeOpt
@@ -46,9 +48,9 @@ defmodule Xgit.Plumbing.LsFiles.Stage do
     with {:ok, working_tree} <- WorkingTreeOpt.get(repository),
          {:ok, %DirCache{entries: entries} = _dir_cache} <-
            WorkingTree.dir_cache(working_tree) do
-      {:ok, entries}
+      cover {:ok, entries}
     else
-      {:error, reason} -> {:error, reason}
+      {:error, reason} -> cover {:error, reason}
     end
   end
 end

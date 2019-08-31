@@ -11,6 +11,8 @@ defmodule Xgit.Repository.OnDisk do
   """
   use Xgit.Repository
 
+  import Xgit.Util.ForceCoverage
+
   alias Xgit.Repository.WorkingTree
 
   @doc ~S"""
@@ -38,7 +40,7 @@ defmodule Xgit.Repository.OnDisk do
     with {:ok, repo} <- Repository.start_link(__MODULE__, opts, opts),
          {:ok, working_tree} <- WorkingTree.start_link(repo, Keyword.get(opts, :work_dir)),
          :ok <- Repository.set_default_working_tree(repo, working_tree) do
-      {:ok, repo}
+      cover {:ok, repo}
     else
       err -> err
     end
@@ -54,11 +56,11 @@ defmodule Xgit.Repository.OnDisk do
          {:work_dir, true} <- {:work_dir, File.dir?(work_dir)},
          git_dir <- Path.join(work_dir, ".git"),
          {:git_dir, true} <- {:git_dir, File.dir?(git_dir)} do
-      {:ok, %{work_dir: work_dir, git_dir: git_dir}}
+      cover {:ok, %{work_dir: work_dir, git_dir: git_dir}}
     else
-      {:work_dir_arg, _} -> {:stop, :missing_arguments}
-      {:work_dir, _} -> {:stop, :work_dir_doesnt_exist}
-      {:git_dir, _} -> {:stop, :git_dir_doesnt_exist}
+      {:work_dir_arg, _} -> cover {:stop, :missing_arguments}
+      {:work_dir, _} -> cover {:stop, :work_dir_doesnt_exist}
+      {:git_dir, _} -> cover {:stop, :git_dir_doesnt_exist}
     end
   end
 

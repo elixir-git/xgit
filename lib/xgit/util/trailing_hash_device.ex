@@ -11,6 +11,8 @@ defmodule Xgit.Util.TrailingHashDevice do
   """
   use GenServer
 
+  import Xgit.Util.ForceCoverage
+
   require Logger
 
   @doc ~S"""
@@ -85,7 +87,7 @@ defmodule Xgit.Util.TrailingHashDevice do
   def valid?(v) when is_pid(v),
     do: GenServer.call(v, :valid_trailing_hash_read_device?) == :valid_trailing_hash_read_device
 
-  def valid?(_), do: false
+  def valid?(_), do: cover(false)
 
   @doc ~S"""
   Returns `true` if the hash at the end of the file matches the hash
@@ -112,55 +114,60 @@ defmodule Xgit.Util.TrailingHashDevice do
   def init({:file, path}) do
     with {:ok, %{size: size}} <- File.stat(path, time: :posix),
          {:ok, pid} when is_pid(pid) <- File.open(path) do
-      {:ok,
-       %{iodevice: pid, mode: :read, remaining_bytes: size - 20, crypto: :crypto.hash_init(:sha)}}
+      cover {:ok,
+             %{
+               iodevice: pid,
+               mode: :read,
+               remaining_bytes: size - 20,
+               crypto: :crypto.hash_init(:sha)
+             }}
     else
-      {:error, reason} -> {:stop, reason}
+      {:error, reason} -> cover {:stop, reason}
     end
   end
 
   def init({:file_write, path, opts}) do
     case File.open(path, [:write]) do
       {:ok, pid} when is_pid(pid) ->
-        {:ok,
-         %{
-           iodevice: pid,
-           mode: :write,
-           remaining_bytes: Keyword.get(opts, :max_file_size, :unlimited),
-           crypto: :crypto.hash_init(:sha)
-         }}
+        cover {:ok,
+               %{
+                 iodevice: pid,
+                 mode: :write,
+                 remaining_bytes: Keyword.get(opts, :max_file_size, :unlimited),
+                 crypto: :crypto.hash_init(:sha)
+               }}
 
       {:error, reason} ->
-        {:stop, reason}
+        cover {:stop, reason}
     end
   end
 
   def init({:string, s}) do
     {:ok, pid} = StringIO.open(s)
 
-    {:ok,
-     %{
-       iodevice: pid,
-       mode: :read,
-       remaining_bytes: byte_size(s) - 20,
-       crypto: :crypto.hash_init(:sha)
-     }}
+    cover {:ok,
+           %{
+             iodevice: pid,
+             mode: :read,
+             remaining_bytes: byte_size(s) - 20,
+             crypto: :crypto.hash_init(:sha)
+           }}
   end
 
   @impl true
   def handle_info({:io_request, from, reply_as, req}, state) do
     state = io_request(from, reply_as, req, state)
-    {:noreply, state}
+    cover {:noreply, state}
   end
 
   def handle_info({:file_request, from, reply_as, req}, state) do
     state = file_request(from, reply_as, req, state)
-    {:noreply, state}
+    cover {:noreply, state}
   end
 
   def handle_info(message, state) do
     Logger.warn("TrailingHashDevice received unexpected message #{inspect(message)}")
-    {:noreply, state}
+    cover {:noreply, state}
   end
 
   @impl true
@@ -204,10 +211,10 @@ defmodule Xgit.Util.TrailingHashDevice do
          %{mode: :read, remaining_bytes: remaining_bytes} = state
        )
        when remaining_bytes <= 0 and is_integer(count) and count >= 0 do
-    {:eof, state}
+    cover {:eof, state}
   end
 
-  defp io_request({:get_chars, :"", 0}, %{mode: :read} = state), do: {"", state}
+  defp io_request({:get_chars, :"", 0}, %{mode: :read} = state), do: cover({"", state})
 
   defp io_request(
          {:get_chars, :"", count},
@@ -219,9 +226,9 @@ defmodule Xgit.Util.TrailingHashDevice do
 
     if is_binary(data) do
       crypto = :crypto.hash_update(crypto, data)
-      {data, %{state | remaining_bytes: remaining_bytes - byte_size(data), crypto: crypto}}
+      cover {data, %{state | remaining_bytes: remaining_bytes - byte_size(data), crypto: crypto}}
     else
-      {data, state}
+      cover {data, state}
     end
   end
 
@@ -239,9 +246,9 @@ defmodule Xgit.Util.TrailingHashDevice do
       crypto = :crypto.hash_update(crypto, data)
       IO.binwrite(iodevice, data)
 
-      {:ok, %{state | remaining_bytes: remaining_bytes - byte_size(data), crypto: crypto}}
+      cover {:ok, %{state | remaining_bytes: remaining_bytes - byte_size(data), crypto: crypto}}
     else
-      {{:error, :eio}, %{state | remaining_bytes: 0}}
+      cover {{:error, :eio}, %{state | remaining_bytes: 0}}
     end
   end
 
@@ -257,12 +264,12 @@ defmodule Xgit.Util.TrailingHashDevice do
     crypto = :crypto.hash_update(crypto, data)
     IO.binwrite(iodevice, data)
 
-    {:ok, %{state | crypto: crypto}}
+    cover {:ok, %{state | crypto: crypto}}
   end
 
   defp io_request(request, state) do
     Logger.warn("TrailingHashDevice received unexpected iorequest #{inspect(request)}")
-    {{:error, :request}, state}
+    cover {{:error, :request}, state}
   end
 
   defp file_request(from, reply_as, req, state) do
@@ -278,14 +285,14 @@ defmodule Xgit.Util.TrailingHashDevice do
     hash = :crypto.hash_final(crypto)
     IO.binwrite(iodevice, hash)
 
-    {File.close(iodevice), %{state | iodevice: nil}}
+    cover {File.close(iodevice), %{state | iodevice: nil}}
   end
 
   defp file_request(:close, %{iodevice: iodevice} = state),
-    do: {File.close(iodevice), %{state | iodevice: nil}}
+    do: cover({File.close(iodevice), %{state | iodevice: nil}})
 
   defp file_request(request, state) do
     Logger.warn("TrailingHashDevice received unexpected file_request #{inspect(request)}")
-    {{:error, :request}, state}
+    cover {{:error, :request}, state}
   end
 end

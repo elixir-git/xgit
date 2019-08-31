@@ -3,6 +3,8 @@ defmodule Xgit.Core.FileMode do
   Describes the file type as represented on disk.
   """
 
+  import Xgit.Util.ForceCoverage
+
   @typedoc ~S"""
   An integer describing the file type as represented on disk.
 
@@ -23,64 +25,64 @@ defmodule Xgit.Core.FileMode do
 
   @doc "Mode indicating an entry is a tree (aka directory)."
   @spec tree :: t
-  def tree, do: 0o040000
+  def tree, do: cover(0o040000)
 
   @doc "Mode indicating an entry is a symbolic link."
   @spec symlink :: t
-  def symlink, do: 0o120000
+  def symlink, do: cover(0o120000)
 
   @doc "Mode indicating an entry is a non-executable file."
   @spec regular_file :: t
-  def regular_file, do: 0o100644
+  def regular_file, do: cover(0o100644)
 
   @doc "Mode indicating an entry is an executable file."
   @spec executable_file :: t
-  def executable_file, do: 0o100755
+  def executable_file, do: cover(0o100755)
 
   @doc "Mode indicating an entry is a submodule commit in another repository."
   @spec gitlink :: t
-  def gitlink, do: 0o160000
+  def gitlink, do: cover(0o160000)
 
   @doc "Return `true` if the file mode represents a tree."
   @spec tree?(file_mode :: term) :: boolean
   def tree?(file_mode)
-  def tree?(0o040000), do: true
-  def tree?(_), do: false
+  def tree?(0o040000), do: cover(true)
+  def tree?(_), do: cover(false)
 
   @doc "Return `true` if the file mode a symbolic link."
   @spec symlink?(file_mode :: term) :: boolean
   def symlink?(file_mode)
-  def symlink?(0o120000), do: true
-  def symlink?(_), do: false
+  def symlink?(0o120000), do: cover(true)
+  def symlink?(_), do: cover(false)
 
   @doc "Return `true` if the file mode represents a regular file."
   @spec regular_file?(file_mode :: term) :: boolean
   def regular_file?(file_mode)
-  def regular_file?(0o100644), do: true
-  def regular_file?(_), do: false
+  def regular_file?(0o100644), do: cover(true)
+  def regular_file?(_), do: cover(false)
 
   @doc "Return `true` if the file mode represents an executable file."
   @spec executable_file?(file_mode :: term) :: boolean
   def executable_file?(file_mode)
-  def executable_file?(0o100755), do: true
-  def executable_file?(_), do: false
+  def executable_file?(0o100755), do: cover(true)
+  def executable_file?(_), do: cover(false)
 
   @doc "Return `true` if the file mode represents a submodule commit in another repository."
   @spec gitlink?(file_mode :: term) :: boolean
   def gitlink?(file_mode)
-  def gitlink?(0o160000), do: true
-  def gitlink?(_), do: false
+  def gitlink?(0o160000), do: cover(true)
+  def gitlink?(_), do: cover(false)
 
   @doc ~S"""
   Return `true` if the value is one of the known file mode values.
   """
   @spec valid?(term) :: boolean
-  def valid?(0o040000), do: true
-  def valid?(0o120000), do: true
-  def valid?(0o100644), do: true
-  def valid?(0o100755), do: true
-  def valid?(0o160000), do: true
-  def valid?(_), do: false
+  def valid?(0o040000), do: cover(true)
+  def valid?(0o120000), do: cover(true)
+  def valid?(0o100644), do: cover(true)
+  def valid?(0o100755), do: cover(true)
+  def valid?(0o160000), do: cover(true)
+  def valid?(_), do: cover(false)
 
   @valid_file_modes [0o100644, 0o100755, 0o120000, 0o040000, 0o160000]
 

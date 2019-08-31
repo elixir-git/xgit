@@ -2,6 +2,8 @@ defmodule Xgit.Repository.OnDisk.Create do
   @moduledoc false
   # Implements Xgit.Repository.OnDisk.create/1.
 
+  import Xgit.Util.ForceCoverage
+
   @spec create(work_dir :: String.t()) :: :ok | {:error, reason :: String.t()}
   def create(work_dir) when is_binary(work_dir) do
     work_dir
@@ -10,19 +12,21 @@ defmodule Xgit.Repository.OnDisk.Create do
   end
 
   defp assert_not_exists(path) do
-    if File.exists?(path),
-      do: {:error, :work_dir_must_not_exist},
-      else: {:ok, path}
+    if File.exists?(path) do
+      cover {:error, :work_dir_must_not_exist}
+    else
+      cover {:ok, path}
+    end
   end
 
-  defp create_empty_repo({:error, reason}), do: {:error, reason}
+  defp create_empty_repo({:error, reason}), do: cover({:error, reason})
 
   defp create_empty_repo({:ok, path}) do
     with :ok <- File.mkdir_p(path),
          :ok <- create_git_dir(Path.join(path, ".git")) do
-      :ok
+      cover :ok
     else
-      {:error, reason} -> {:error, reason}
+      {:error, reason} -> cover {:error, reason}
     end
   end
 
@@ -35,9 +39,9 @@ defmodule Xgit.Repository.OnDisk.Create do
          :ok <- create_info_dir(git_dir),
          :ok <- create_objects_dir(git_dir),
          :ok <- create_refs_dir(git_dir) do
-      :ok
+      cover :ok
     else
-      {:error, reason} -> {:error, reason}
+      {:error, reason} -> cover {:error, reason}
     end
   end
 
@@ -94,16 +98,16 @@ defmodule Xgit.Repository.OnDisk.Create do
       .DS_Store
       """)
     else
-      {:error, reason} -> {:error, reason}
+      {:error, reason} -> cover {:error, reason}
     end
   end
 
   defp create_objects_dir(git_dir) do
     with :ok <- File.mkdir_p(Path.join(git_dir, "objects/info")),
          :ok <- File.mkdir_p(Path.join(git_dir, "objects/pack")) do
-      :ok
+      cover :ok
     else
-      {:error, reason} -> {:error, reason}
+      {:error, reason} -> cover {:error, reason}
     end
   end
 
@@ -113,9 +117,9 @@ defmodule Xgit.Repository.OnDisk.Create do
     with :ok <- File.mkdir_p(refs_dir),
          :ok <- File.mkdir_p(Path.join(refs_dir, "heads")),
          :ok <- File.mkdir_p(Path.join(refs_dir, "tags")) do
-      :ok
+      cover :ok
     else
-      {:error, reason} -> {:error, reason}
+      {:error, reason} -> cover {:error, reason}
     end
   end
 end

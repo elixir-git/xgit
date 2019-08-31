@@ -7,6 +7,8 @@ defmodule Xgit.Core.ObjectId do
   """
   use Xgit.Core.ObjectType
 
+  import Xgit.Util.ForceCoverage
+
   alias Xgit.Core.ContentSource
 
   @typedoc "A string containing 40 bytes of lowercase hex digits."
@@ -16,7 +18,7 @@ defmodule Xgit.Core.ObjectId do
   Get the special all-null object ID, often used to stand-in for no object.
   """
   @spec zero :: t
-  def zero, do: "0000000000000000000000000000000000000000"
+  def zero, do: cover("0000000000000000000000000000000000000000")
 
   @doc ~S"""
   Returns `true` if the value is a valid object ID.
@@ -27,7 +29,7 @@ defmodule Xgit.Core.ObjectId do
   def valid?(id)
 
   def valid?(s) when is_binary(s), do: String.length(s) == 40 && String.match?(s, ~r/^[0-9a-f]+$/)
-  def valid?(_), do: false
+  def valid?(_), do: cover(false)
 
   @doc ~S"""
   Read an object ID from a hex string (charlist).
@@ -45,9 +47,9 @@ defmodule Xgit.Core.ObjectId do
 
     with maybe_id_string <- to_string(maybe_id),
          true <- valid?(maybe_id_string) do
-      {maybe_id_string, remainder}
+      cover {maybe_id_string, remainder}
     else
-      _ -> false
+      _ -> cover false
     end
   end
 

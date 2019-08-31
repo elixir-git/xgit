@@ -2,6 +2,8 @@ defmodule Xgit.Plumbing.Util.WorkingTreeOpt do
   @moduledoc false
   # For use by plumbing modules only.
 
+  import Xgit.Util.ForceCoverage
+
   alias Xgit.Repository
   alias Xgit.Repository.WorkingTree
 
@@ -13,10 +15,10 @@ defmodule Xgit.Plumbing.Util.WorkingTreeOpt do
     with {:repository_valid?, true} <- {:repository_valid?, Repository.valid?(repository)},
          {:working_tree, working_tree} when is_pid(working_tree) <-
            {:working_tree, working_tree_from_repo_or_opts(repository, opts)} do
-      {:ok, working_tree}
+      cover {:ok, working_tree}
     else
-      {:repository_valid?, false} -> {:error, :invalid_repository}
-      {:working_tree, nil} -> {:error, :bare}
+      {:repository_valid?, false} -> cover {:error, :invalid_repository}
+      {:working_tree, nil} -> cover {:error, :bare}
     end
   end
 

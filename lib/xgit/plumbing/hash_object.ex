@@ -5,6 +5,8 @@ defmodule Xgit.Plumbing.HashObject do
   Analogous to [`git hash-object`](https://git-scm.com/docs/git-hash-object).
   """
 
+  import Xgit.Util.ForceCoverage
+
   alias Xgit.Core.ContentSource
   alias Xgit.Core.FilePath
   alias Xgit.Core.Object
@@ -128,8 +130,8 @@ defmodule Xgit.Plumbing.HashObject do
 
   defp validate_content(%Object{content: content} = object, _validate?) when is_list(content) do
     case Object.check(object) do
-      :ok -> {:ok, object}
-      {:error, reason} -> {:error, reason}
+      :ok -> cover {:ok, object}
+      {:error, reason} -> cover {:error, reason}
     end
   end
 
@@ -143,17 +145,17 @@ defmodule Xgit.Plumbing.HashObject do
   defp assign_object_id(%Object{content: content, type: type} = object),
     do: %{object | id: ObjectId.calculate_id(content, type)}
 
-  defp maybe_write_to_repo({:ok, object}, _repo, false = _write?), do: {:ok, object}
+  defp maybe_write_to_repo({:ok, object}, _repo, false = _write?), do: cover({:ok, object})
 
   defp maybe_write_to_repo({:ok, object}, repo, true = _write?) do
     case Repository.put_loose_object(repo, object) do
-      :ok -> {:ok, object}
-      {:error, reason} -> {:error, reason}
+      :ok -> cover {:ok, object}
+      {:error, reason} -> cover {:error, reason}
     end
   end
 
-  defp maybe_write_to_repo({:error, reason}, _repo, _write?), do: {:error, reason}
+  defp maybe_write_to_repo({:error, reason}, _repo, _write?), do: cover({:error, reason})
 
-  defp result({:ok, %Object{id: id}}, _opts), do: {:ok, id}
-  defp result({:error, reason}, _opts), do: {:error, reason}
+  defp result({:ok, %Object{id: id}}, _opts), do: cover({:ok, id})
+  defp result({:error, reason}, _opts), do: cover({:error, reason})
 end

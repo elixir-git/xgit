@@ -68,6 +68,8 @@ defmodule Xgit.Core.FilePath do
   use Bitwise
   use Xgit.Core.FileMode
 
+  import Xgit.Util.ForceCoverage
+
   alias Xgit.Util.Comparison
 
   @typedoc """
@@ -96,7 +98,7 @@ defmodule Xgit.Core.FilePath do
   def valid?(path, opts \\ [])
 
   def valid?(path, opts) when is_list(path) and is_list(opts), do: check_path(path, opts) == :ok
-  def valid?(_path, _opts), do: false
+  def valid?(_path, _opts), do: cover(false)
 
   @typedoc ~S"""
   Error codes which can be returned by `check_path/2`.
@@ -145,25 +147,25 @@ defmodule Xgit.Core.FilePath do
           :ok | {:error, check_path_reason} | {:error, check_path_segment_reason}
   def check_path(path, opts \\ [])
 
-  def check_path([], opts) when is_list(opts), do: {:error, :empty_path}
-  def check_path([?/ | _], opts) when is_list(opts), do: {:error, :absolute_path}
+  def check_path([], opts) when is_list(opts), do: cover({:error, :empty_path})
+  def check_path([?/ | _], opts) when is_list(opts), do: cover({:error, :absolute_path})
 
   def check_path(path, opts) when is_list(path) and is_list(opts) do
     {first_segment, remaining_path} = Enum.split_while(path, &(&1 != ?/))
 
     case check_path_segment(first_segment, opts) do
       :ok -> check_remaining_path(remaining_path, opts)
-      {:error, reason} -> {:error, reason}
+      {:error, reason} -> cover {:error, reason}
     end
   end
 
-  defp check_remaining_path([], _opts), do: :ok
+  defp check_remaining_path([], _opts), do: cover(:ok)
 
   defp check_remaining_path([?/], _opts),
-    do: {:error, :trailing_slash}
+    do: cover({:error, :trailing_slash})
 
   defp check_remaining_path([?/, ?/ | _remainder], _opts),
-    do: {:error, :duplicate_slash}
+    do: cover({:error, :duplicate_slash})
 
   defp check_remaining_path([?/ | remainder], opts), do: check_path(remainder, opts)
 
@@ -197,7 +199,7 @@ defmodule Xgit.Core.FilePath do
           :ok | {:error, check_path_segment_reason}
   def check_path_segment(path, opts \\ [])
 
-  def check_path_segment([], opts) when is_list(opts), do: {:error, :empty_name}
+  def check_path_segment([], opts) when is_list(opts), do: cover({:error, :empty_name})
 
   def check_path_segment(path_segment, opts) when is_list(path_segment) and is_list(opts) do
     windows? = Keyword.get(opts, :windows?, false)
@@ -212,64 +214,70 @@ defmodule Xgit.Core.FilePath do
          :ok <- check_truncated_utf8_for_mac(path_segment, macosx?),
          :ok <- check_illegal_windows_name_ending(path_segment, windows?),
          :ok <- check_windows_device_name(path_segment, windows?) do
-      :ok
+      cover :ok
     else
-      {:error, reason} -> {:error, reason}
+      {:error, reason} -> cover {:error, reason}
     end
   end
 
   defp refute_has_nil_bytes(path_segment) do
-    if Enum.any?(path_segment, &(&1 == 0)),
-      do: {:error, :invalid_name},
-      else: :ok
+    if Enum.any?(path_segment, &(&1 == 0)) do
+      cover {:error, :invalid_name}
+    else
+      cover :ok
+    end
   end
 
   defp refute_has_slash(path_segment) do
-    if Enum.any?(path_segment, &(&1 == ?/)),
-      do: {:error, :invalid_name},
-      else: :ok
+    if Enum.any?(path_segment, &(&1 == ?/)) do
+      cover {:error, :invalid_name}
+    else
+      cover :ok
+    end
   end
 
   defp check_windows_git_name(path_segment) do
     with 5 <- Enum.count(path_segment),
          'git~1' <- Enum.map(path_segment, &to_lower/1) do
-      {:error, :invalid_name}
+      cover {:error, :invalid_name}
     else
-      _ -> :ok
+      _ -> cover :ok
     end
   end
 
-  defp check_windows_characters(_path_segment, false = _windows?), do: :ok
+  defp check_windows_characters(_path_segment, false = _windows?), do: cover(:ok)
 
   defp check_windows_characters(path_segment, true = _windows?) do
     case Enum.find(path_segment, &invalid_on_windows?/1) do
-      nil -> :ok
-      _ -> {:error, :invalid_name_on_windows}
+      nil -> cover :ok
+      _ -> cover {:error, :invalid_name_on_windows}
     end
   end
 
-  defp invalid_on_windows?(?"), do: true
-  defp invalid_on_windows?(?*), do: true
-  defp invalid_on_windows?(?:), do: true
-  defp invalid_on_windows?(?<), do: true
-  defp invalid_on_windows?(?>), do: true
-  defp invalid_on_windows?(??), do: true
-  defp invalid_on_windows?(?\\), do: true
-  defp invalid_on_windows?(?|), do: true
-  defp invalid_on_windows?(c) when c >= 1 and c <= 31, do: true
-  defp invalid_on_windows?(_), do: false
+  defp invalid_on_windows?(?"), do: cover(true)
+  defp invalid_on_windows?(?*), do: cover(true)
+  defp invalid_on_windows?(?:), do: cover(true)
+  defp invalid_on_windows?(?<), do: cover(true)
+  defp invalid_on_windows?(?>), do: cover(true)
+  defp invalid_on_windows?(??), do: cover(true)
+  defp invalid_on_windows?(?\\), do: cover(true)
+  defp invalid_on_windows?(?|), do: cover(true)
+  defp invalid_on_windows?(c) when c >= 1 and c <= 31, do: cover(true)
+  defp invalid_on_windows?(_), do: cover(false)
 
-  defp check_git_special_name('.'), do: {:error, :reserved_name}
-  defp check_git_special_name('..'), do: {:error, :reserved_name}
-  defp check_git_special_name('.git'), do: {:error, :reserved_name}
+  defp check_git_special_name('.'), do: cover({:error, :reserved_name})
+  defp check_git_special_name('..'), do: cover({:error, :reserved_name})
+  defp check_git_special_name('.git'), do: cover({:error, :reserved_name})
 
   defp check_git_special_name([?. | rem] = _name) do
-    if normalized_git?(rem),
-      do: {:error, :reserved_name},
-      else: :ok
+    if normalized_git?(rem) do
+      cover {:error, :reserved_name}
+    else
+      cover :ok
+    end
   end
 
-  defp check_git_special_name(_), do: :ok
+  defp check_git_special_name(_), do: cover(:ok)
 
   defp normalized_git?(name) do
     if git_name_prefix?(name) do
@@ -277,7 +285,7 @@ defmodule Xgit.Core.FilePath do
       |> Enum.drop(3)
       |> valid_git_suffix?()
     else
-      false
+      cover false
     end
   end
 
@@ -286,53 +294,59 @@ defmodule Xgit.Core.FilePath do
   # This approach is a bit more cumbersome, but more efficient.
   defp git_name_prefix?([?g | it]), do: it_name_prefix?(it)
   defp git_name_prefix?([?G | it]), do: it_name_prefix?(it)
-  defp git_name_prefix?(_), do: false
+  defp git_name_prefix?(_), do: cover(false)
 
   defp it_name_prefix?([?i | it]), do: t_name_prefix?(it)
   defp it_name_prefix?([?I | it]), do: t_name_prefix?(it)
-  defp it_name_prefix?(_), do: false
+  defp it_name_prefix?(_), do: cover(false)
 
-  defp t_name_prefix?([?t | _]), do: true
-  defp t_name_prefix?([?T | _]), do: true
-  defp t_name_prefix?(_), do: false
+  defp t_name_prefix?([?t | _]), do: cover(true)
+  defp t_name_prefix?([?T | _]), do: cover(true)
+  defp t_name_prefix?(_), do: cover(false)
 
-  defp valid_git_suffix?([]), do: true
-  defp valid_git_suffix?(' '), do: true
-  defp valid_git_suffix?('.'), do: true
-  defp valid_git_suffix?('. '), do: true
-  defp valid_git_suffix?(' .'), do: true
-  defp valid_git_suffix?(' . '), do: true
-  defp valid_git_suffix?(_), do: false
+  defp valid_git_suffix?([]), do: cover(true)
+  defp valid_git_suffix?(' '), do: cover(true)
+  defp valid_git_suffix?('.'), do: cover(true)
+  defp valid_git_suffix?('. '), do: cover(true)
+  defp valid_git_suffix?(' .'), do: cover(true)
+  defp valid_git_suffix?(' . '), do: cover(true)
+  defp valid_git_suffix?(_), do: cover(false)
 
-  defp check_git_path_with_mac_ignorables(_path_segment, false = _macosx?), do: :ok
+  defp check_git_path_with_mac_ignorables(_path_segment, false = _macosx?), do: cover(:ok)
 
   defp check_git_path_with_mac_ignorables(path_segment, true = _macosx?) do
-    if match_mac_hfs_path?(path_segment, '.git'),
-      do: {:error, :reserved_name},
-      else: :ok
+    if match_mac_hfs_path?(path_segment, '.git') do
+      cover {:error, :reserved_name}
+    else
+      cover :ok
+    end
   end
 
-  defp check_truncated_utf8_for_mac(_path_segment, false = _macosx?), do: :ok
+  defp check_truncated_utf8_for_mac(_path_segment, false = _macosx?), do: cover(:ok)
 
   defp check_truncated_utf8_for_mac(path_segment, true = _macosx?) do
     tail3 = Enum.slice(path_segment, -2, 2)
 
-    if Enum.any?(tail3, &(&1 == 0xE2 or &1 == 0xEF)),
-      do: {:error, :invalid_utf8_sequence},
-      else: :ok
+    if Enum.any?(tail3, &(&1 == 0xE2 or &1 == 0xEF)) do
+      cover {:error, :invalid_utf8_sequence}
+    else
+      cover :ok
+    end
   end
 
-  defp check_illegal_windows_name_ending(_path_segment, false = _windows?), do: :ok
+  defp check_illegal_windows_name_ending(_path_segment, false = _windows?), do: cover(:ok)
 
   defp check_illegal_windows_name_ending(path_segment, true = _windows?) do
     last_char = List.last(path_segment)
 
-    if last_char == ?\s || last_char == ?.,
-      do: {:error, :invalid_name_on_windows},
-      else: :ok
+    if last_char == ?\s || last_char == ?. do
+      cover {:error, :invalid_name_on_windows}
+    else
+      cover :ok
+    end
   end
 
-  defp check_windows_device_name(_path_segment, false = _windows?), do: :ok
+  defp check_windows_device_name(_path_segment, false = _windows?), do: cover(:ok)
 
   defp check_windows_device_name(path_segment, true = _windows?) do
     lc_name =
@@ -340,21 +354,23 @@ defmodule Xgit.Core.FilePath do
       |> Enum.map(&to_lower/1)
       |> Enum.take_while(&(&1 != ?.))
 
-    if windows_device_name?(lc_name),
-      do: {:error, :windows_device_name},
-      else: :ok
+    if windows_device_name?(lc_name) do
+      cover {:error, :windows_device_name}
+    else
+      cover :ok
+    end
   end
 
-  defp windows_device_name?('aux'), do: true
-  defp windows_device_name?('con'), do: true
+  defp windows_device_name?('aux'), do: cover(true)
+  defp windows_device_name?('con'), do: cover(true)
   defp windows_device_name?('com' ++ [d]), do: positive_digit?(d)
   defp windows_device_name?('lpt' ++ [d]), do: positive_digit?(d)
-  defp windows_device_name?('nul'), do: true
-  defp windows_device_name?('prn'), do: true
-  defp windows_device_name?(_), do: false
+  defp windows_device_name?('nul'), do: cover(true)
+  defp windows_device_name?('prn'), do: cover(true)
+  defp windows_device_name?(_), do: cover(false)
 
-  defp positive_digit?(b) when b >= ?1 and b <= ?9, do: true
-  defp positive_digit?(_), do: false
+  defp positive_digit?(b) when b >= ?1 and b <= ?9, do: cover(true)
+  defp positive_digit?(_), do: cover(false)
 
   @doc ~S"""
   Return `true` if the filename _could_ be read as a `.gitmodules` file when
@@ -387,7 +403,7 @@ defmodule Xgit.Core.FilePath do
   @spec gitmodules?(path :: t, windows?: boolean, macosx?: boolean) :: boolean
   def gitmodules?(path, opts \\ [])
 
-  def gitmodules?('.gitmodules', opts) when is_list(opts), do: true
+  def gitmodules?('.gitmodules', opts) when is_list(opts), do: cover(true)
 
   def gitmodules?(path, opts) when is_list(opts) do
     (Keyword.get(opts, :windows?, false) and ntfs_gitmodules?(path)) or
@@ -398,7 +414,7 @@ defmodule Xgit.Core.FilePath do
     case Enum.count(name) do
       8 -> ntfs_shortened_gitmodules?(Enum.map(name, &to_lower(&1)))
       11 -> Enum.map(name, &to_lower(&1)) == '.gitmodules'
-      _ -> false
+      _ -> cover false
     end
   end
 
@@ -410,17 +426,17 @@ defmodule Xgit.Core.FilePath do
   defp ntfs_shortened_gitmodules?('gi~' ++ rem), do: ntfs_numeric_suffix?(rem)
   defp ntfs_shortened_gitmodules?('g~' ++ rem), do: ntfs_numeric_suffix?(rem)
   defp ntfs_shortened_gitmodules?('~' ++ rem), do: ntfs_numeric_suffix?(rem)
-  defp ntfs_shortened_gitmodules?(_), do: false
+  defp ntfs_shortened_gitmodules?(_), do: cover(false)
 
   # The first digit of the numeric suffix must not be zero.
-  defp ntfs_numeric_suffix?([?0 | _rem]), do: false
+  defp ntfs_numeric_suffix?([?0 | _rem]), do: cover(false)
   defp ntfs_numeric_suffix?(rem), do: ntfs_numeric_suffix_zero_ok?(rem)
 
   defp ntfs_numeric_suffix_zero_ok?([c | rem]) when c >= ?0 and c <= ?9,
     do: ntfs_numeric_suffix_zero_ok?(rem)
 
-  defp ntfs_numeric_suffix_zero_ok?([]), do: true
-  defp ntfs_numeric_suffix_zero_ok?(_), do: false
+  defp ntfs_numeric_suffix_zero_ok?([]), do: cover(true)
+  defp ntfs_numeric_suffix_zero_ok?(_), do: cover(false)
 
   defp mac_hfs_gitmodules?(path), do: match_mac_hfs_path?(path, '.gitmodules')
 
@@ -463,7 +479,7 @@ defmodule Xgit.Core.FilePath do
   defp match_mac_hfs_path?([0xE2, 0x80, 0xAE | data], match, _ignorable?),
     do: match_mac_hfs_path?(data, match, true)
 
-  defp match_mac_hfs_path?([0xE2, 0x80, _ | _], _match, _ignorable?), do: false
+  defp match_mac_hfs_path?([0xE2, 0x80, _ | _], _match, _ignorable?), do: cover(false)
 
   # U+206A 0xe281aa INHIBIT SYMMETRIC SWAPPING
   defp match_mac_hfs_path?([0xE2, 0x81, 0xAA | data], match, _ignorable?),
@@ -489,38 +505,38 @@ defmodule Xgit.Core.FilePath do
   defp match_mac_hfs_path?([0xE2, 0x81, 0xAF | data], match, _ignorable?),
     do: match_mac_hfs_path?(data, match, true)
 
-  defp match_mac_hfs_path?([0xE2, 0x81, _ | _], _match, _ignorable?), do: false
+  defp match_mac_hfs_path?([0xE2, 0x81, _ | _], _match, _ignorable?), do: cover(false)
 
   defp match_mac_hfs_path?([0xEF, 0xBB, 0xBF | data], match, _ignorable?),
     do: match_mac_hfs_path?(data, match, true)
 
-  defp match_mac_hfs_path?([0xEF, _, _ | _], _match, _ignorable?), do: false
+  defp match_mac_hfs_path?([0xEF, _, _ | _], _match, _ignorable?), do: cover(false)
 
   defp match_mac_hfs_path?([c | _] = _list, _match, _ignorable?)
        when c == 0xE2 or c == 0xEF,
-       do: false
+       do: cover(false)
 
   defp match_mac_hfs_path?([c | data], [m | match], ignorable?) do
     if to_lower(c) == m,
       do: match_mac_hfs_path?(data, match, ignorable?),
-      else: false
+      else: cover(false)
   end
 
-  defp match_mac_hfs_path?([], [], _ignorable?), do: true
+  defp match_mac_hfs_path?([], [], _ignorable?), do: cover(true)
   # defp match_mac_hfs_path?([], [], ignorable?), do: ignorable?
   # TO DO: Understand what jgit was trying to accomplish with ignorable.
   # https://github.com/elixir-git/xgit/issues/34
 
-  defp match_mac_hfs_path?(_data, _match, _ignorable?), do: false
+  defp match_mac_hfs_path?(_data, _match, _ignorable?), do: cover(false)
 
-  defp to_lower(b) when b >= ?A and b <= ?Z, do: b + 32
-  defp to_lower(b), do: b
+  defp to_lower(b) when b >= ?A and b <= ?Z, do: cover(b + 32)
+  defp to_lower(b), do: cover(b)
 
   @doc ~S"""
   Remove trailing `/` if present.
   """
   @spec strip_trailing_separator(path :: t) :: t
-  def strip_trailing_separator([]), do: []
+  def strip_trailing_separator([]), do: cover([])
 
   def strip_trailing_separator(path) when is_list(path) do
     if List.last(path) == ?/ do
@@ -529,7 +545,7 @@ defmodule Xgit.Core.FilePath do
       |> Enum.drop_while(&(&1 == ?/))
       |> Enum.reverse()
     else
-      path
+      cover path
     end
   end
 
@@ -552,7 +568,7 @@ defmodule Xgit.Core.FilePath do
       when is_list(path1) and is_file_mode(mode1) and is_list(path2) and is_file_mode(mode2) do
     case core_compare(path1, mode1, path2, mode2) do
       :eq -> mode_compare(mode1, mode2)
-      x -> x
+      x -> cover x
     end
   end
 
@@ -602,21 +618,25 @@ defmodule Xgit.Core.FilePath do
   defp core_compare([], mode1, [c2 | _], _mode2),
     do: compare_chars(last_path_char(mode1), band(c2, 0xFF))
 
-  defp core_compare([], _mode1, [], _mode2), do: :eq
+  defp core_compare([], _mode1, [], _mode2), do: cover(:eq)
 
-  defp compare_chars(c, c), do: :eq
-  defp compare_chars(c1, c2) when c1 < c2, do: :lt
-  defp compare_chars(_, _), do: :gt
+  defp compare_chars(c, c), do: cover(:eq)
+  defp compare_chars(c1, c2) when c1 < c2, do: cover(:lt)
+  defp compare_chars(_, _), do: cover(:gt)
 
   defp last_path_char(mode) do
-    if FileMode.tree?(mode),
-      do: ?/,
-      else: 0
+    if FileMode.tree?(mode) do
+      cover ?/
+    else
+      cover 0
+    end
   end
 
   defp mode_compare(mode1, mode2) do
-    if FileMode.gitlink?(mode1) or FileMode.gitlink?(mode2),
-      do: :eq,
-      else: compare_chars(last_path_char(mode1), last_path_char(mode2))
+    if FileMode.gitlink?(mode1) or FileMode.gitlink?(mode2) do
+      cover :eq
+    else
+      compare_chars(last_path_char(mode1), last_path_char(mode2))
+    end
   end
 end

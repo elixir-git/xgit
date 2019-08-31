@@ -61,6 +61,8 @@ defmodule Xgit.Util.FileSnapshot do
   file is less than 3 seconds ago.
   """
 
+  import Xgit.Util.ForceCoverage
+
   @typedoc ~S"""
   Cache for when a file was last saved.
 
@@ -119,7 +121,7 @@ defmodule Xgit.Util.FileSnapshot do
     modified_impl?(curr_last_modified, last_modified, ref)
   end
 
-  def modified?(%__MODULE__{last_modified: :dirty}, _path), do: true
+  def modified?(%__MODULE__{last_modified: :dirty}, _path), do: cover(true)
   def modified?(%__MODULE__{last_modified: :missing}, path), do: File.exists?(path)
 
   defp last_modified_time(path) when is_binary(path) do
@@ -170,15 +172,17 @@ defmodule Xgit.Util.FileSnapshot do
       do: ConCache.delete(:xgit_file_snapshot, ref),
       else: record_time_for_ref(ref, not_racy_clean?(last_modified, other_last_read))
 
-    :ok
+    cover :ok
   end
 
   defp modified_impl?(file_last_modified, last_modified, ref) do
     last_read_time = ConCache.get(:xgit_file_snapshot, ref)
 
-    if last_modified == file_last_modified,
-      do: modified_impl_race?(file_last_modified, last_read_time),
-      else: true
+    if last_modified == file_last_modified do
+      modified_impl_race?(file_last_modified, last_read_time)
+    else
+      cover true
+    end
   end
 
   # There's a potential race condition in which the file was modified at roughly
@@ -189,7 +193,7 @@ defmodule Xgit.Util.FileSnapshot do
     # We have already determined the last read was far enough
     # after the last modification that any new modifications
     # are certain to change the last modified time.
-    false
+    cover false
   end
 
   defp modified_impl_race?(file_last_modified, last_read_time) do
@@ -197,12 +201,12 @@ defmodule Xgit.Util.FileSnapshot do
       # Our last read should have marked cannotBeRacilyClean,
       # but this thread may not have seen the change. The read
       # of the volatile field lastRead should have fixed that.
-      false
+      cover false
     else
       # We last read this path too close to its last observed
       # modification time. We may have missed a modification.
       # Scan again, to ensure we still see the same state.
-      true
+      cover true
     end
   end
 
@@ -220,9 +224,9 @@ defmodule Xgit.Util.FileSnapshot do
     alias Xgit.Util.FileSnapshot
 
     @impl true
-    def to_string(%FileSnapshot{last_modified: :dirty}), do: "DIRTY"
+    def to_string(%FileSnapshot{last_modified: :dirty}), do: cover("DIRTY")
 
-    def to_string(%FileSnapshot{last_modified: :missing}), do: "MISSING_FILE"
+    def to_string(%FileSnapshot{last_modified: :missing}), do: cover("MISSING_FILE")
 
     def to_string(%FileSnapshot{last_modified: last_modified, ref: ref}) do
       last_read_time = ConCache.get(:xgit_file_snapshot, ref)

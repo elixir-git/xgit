@@ -6,6 +6,8 @@ defmodule Xgit.Plumbing.CatFile do
   Analogous to the first form of [`git cat-file`](https://git-scm.com/docs/git-cat-file).
   """
 
+  import Xgit.Util.ForceCoverage
+
   alias Xgit.Core.Object
   alias Xgit.Core.ObjectId
   alias Xgit.Repository
@@ -49,8 +51,8 @@ defmodule Xgit.Plumbing.CatFile do
          {:object_id_valid?, true} <- {:object_id_valid?, ObjectId.valid?(object_id)} do
       Repository.get_object(repository, object_id)
     else
-      {:repository_valid?, false} -> {:error, :invalid_repository}
-      {:object_id_valid?, false} -> {:error, :invalid_object_id}
+      {:repository_valid?, false} -> cover {:error, :invalid_repository}
+      {:object_id_valid?, false} -> cover {:error, :invalid_object_id}
     end
   end
 end

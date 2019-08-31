@@ -51,6 +51,8 @@ defmodule Xgit.Core.PersonIdent do
   A combination of a person identity and time in git.
   """
 
+  import Xgit.Util.ForceCoverage
+
   alias Xgit.Util.RawParseUtils
 
   @typedoc "Time zone offset in minutes +/- from GMT."
@@ -107,7 +109,7 @@ defmodule Xgit.Core.PersonIdent do
         tz_offset: tz
       }
     else
-      _ -> nil
+      _ -> cover nil
     end
   end
 
@@ -121,8 +123,8 @@ defmodule Xgit.Core.PersonIdent do
     |> Enum.reverse()
   end
 
-  defp drop_first_if_space([?\s | b]), do: b
-  defp drop_first_if_space(b), do: b
+  defp drop_first_if_space([?\s | b]), do: cover(b)
+  defp drop_first_if_space(b), do: cover(b)
 
   defp parse_tz(first_email_start) do
     # Start searching from end of line, as after first name-email pair,
@@ -146,7 +148,7 @@ defmodule Xgit.Core.PersonIdent do
          tz |> RawParseUtils.parse_timezone_offset() |> elem(0)}
 
       _ ->
-        {0, 0}
+        cover {0, 0}
     end
   end
 
@@ -180,29 +182,37 @@ defmodule Xgit.Core.PersonIdent do
   @spec format_timezone(offset :: tz_offset()) :: String.t()
   def format_timezone(offset) when is_integer(offset) do
     sign =
-      if offset < 0,
-        do: "-",
-        else: "+"
+      if offset < 0 do
+        cover "-"
+      else
+        cover "+"
+      end
 
     offset =
-      if offset < 0,
-        do: -offset,
-        else: offset
+      if offset < 0 do
+        cover -offset
+      else
+        offset
+      end
 
     offset_hours = div(offset, 60)
     offset_mins = rem(offset, 60)
 
     hours_prefix =
-      if offset_hours < 10,
-        do: "0",
-        else: ""
+      if offset_hours < 10 do
+        cover "0"
+      else
+        cover ""
+      end
 
     mins_prefix =
-      if offset_mins < 10,
-        do: "0",
-        else: ""
+      if offset_mins < 10 do
+        cover "0"
+      else
+        cover ""
+      end
 
-    "#{sign}#{hours_prefix}#{offset_hours}#{mins_prefix}#{offset_mins}"
+    cover "#{sign}#{hours_prefix}#{offset_hours}#{mins_prefix}#{offset_mins}"
   end
 
   @doc ~S"""
@@ -214,9 +224,9 @@ defmodule Xgit.Core.PersonIdent do
   def valid?(%__MODULE__{name: name, email: email, when: whxn, tz_offset: tz_offset})
       when is_binary(name) and is_binary(email) and is_integer(whxn) and is_integer(tz_offset) and
              tz_offset >= -720 and tz_offset <= 840,
-      do: true
+      do: cover(true)
 
-  def valid?(_), do: false
+  def valid?(_), do: cover(false)
 
   @doc ~S"""
   Formats the person identity for git storage.
@@ -226,7 +236,9 @@ defmodule Xgit.Core.PersonIdent do
 
   def to_external_string(%__MODULE__{name: name, email: email, when: whxn, tz_offset: tz_offset})
       when is_binary(name) and is_binary(email) and is_integer(whxn) and is_integer(tz_offset) do
-    "#{sanitized(name)} <#{sanitized(email)}> #{div(whxn, 1000)} #{format_timezone(tz_offset)}"
+    cover "#{sanitized(name)} <#{sanitized(email)}> #{div(whxn, 1000)} #{
+            format_timezone(tz_offset)
+          }"
   end
 
   defimpl String.Chars do

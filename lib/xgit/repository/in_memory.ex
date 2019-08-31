@@ -8,6 +8,8 @@ defmodule Xgit.Repository.InMemory do
   """
   use Xgit.Repository
 
+  import Xgit.Util.ForceCoverage
+
   alias Xgit.Core.ContentSource
   alias Xgit.Core.Object
 
@@ -26,7 +28,7 @@ defmodule Xgit.Repository.InMemory do
   def start_link(opts \\ []), do: Repository.start_link(__MODULE__, opts, opts)
 
   @impl true
-  def init(opts) when is_list(opts), do: {:ok, %{loose_objects: %{}}}
+  def init(opts) when is_list(opts), do: cover({:ok, %{loose_objects: %{}}})
 
   @impl true
   def handle_get_object(%{loose_objects: objects} = state, object_id) do
@@ -48,7 +50,7 @@ defmodule Xgit.Repository.InMemory do
       # Convert any pending content into a byte list.
       # We don't bother with zlib compression here.
       new_objects = Map.put(loose_objects, id, maybe_read_object_content(object))
-      {:ok, %{state | loose_objects: new_objects}}
+      cover {:ok, %{state | loose_objects: new_objects}}
     end
   end
 

@@ -51,6 +51,8 @@ defmodule Xgit.Util.NB do
 
   use Bitwise
 
+  import Xgit.Util.ForceCoverage
+
   @doc ~S"""
   Parses a sequence of 4 bytes (network byte order) as a signed integer.
 
@@ -62,10 +64,10 @@ defmodule Xgit.Util.NB do
   def decode_int32(intbuf)
 
   def decode_int32([b1, b2, b3, b4 | tail]) when b1 >= 128,
-    do: {b1 * 0x1000000 + b2 * 0x10000 + b3 * 0x100 + b4 - 0x100000000, tail}
+    do: cover({b1 * 0x1000000 + b2 * 0x10000 + b3 * 0x100 + b4 - 0x100000000, tail})
 
   def decode_int32([b1, b2, b3, b4 | tail]),
-    do: {b1 * 0x1000000 + b2 * 0x10000 + b3 * 0x100 + b4, tail}
+    do: cover({b1 * 0x1000000 + b2 * 0x10000 + b3 * 0x100 + b4, tail})
 
   @doc ~S"""
   Parses a sequence of 2 bytes (network byte order) as an unsigned integer.
@@ -76,7 +78,7 @@ defmodule Xgit.Util.NB do
   """
   @spec decode_uint16(intbuf :: [byte]) :: {integer, [byte]}
   def decode_uint16(intbuf)
-  def decode_uint16([b1, b2 | tail]), do: {b1 * 0x100 + b2, tail}
+  def decode_uint16([b1, b2 | tail]), do: cover({b1 * 0x100 + b2, tail})
 
   @doc ~S"""
   Parses a sequence of 4 bytes (network byte order) as an unsigned integer.
@@ -89,33 +91,33 @@ defmodule Xgit.Util.NB do
   def decode_uint32(intbuf)
 
   def decode_uint32([b1, b2, b3, b4 | tail]),
-    do: {b1 * 0x1000000 + b2 * 0x10000 + b3 * 0x100 + b4, tail}
+    do: cover({b1 * 0x1000000 + b2 * 0x10000 + b3 * 0x100 + b4, tail})
 
   @doc ~S"""
   Convert a 16-bit integer to a sequence of two bytes in network byte order.
   """
   @spec encode_int16(v :: integer) :: [byte]
   def encode_int16(v) when is_integer(v) and v >= -32_768 and v <= 65_535,
-    do: [v >>> 8 &&& 0xFF, v &&& 0xFF]
+    do: cover([v >>> 8 &&& 0xFF, v &&& 0xFF])
 
   @doc ~S"""
   Convert a 32-bit integer to a sequence of four bytes in network byte order.
   """
   @spec encode_int32(v :: integer) :: [byte]
   def encode_int32(v) when is_integer(v) and v >= -2_147_483_647 and v <= 4_294_967_295,
-    do: [v >>> 24 &&& 0xFF, v >>> 16 &&& 0xFF, v >>> 8 &&& 0xFF, v &&& 0xFF]
+    do: cover([v >>> 24 &&& 0xFF, v >>> 16 &&& 0xFF, v >>> 8 &&& 0xFF, v &&& 0xFF])
 
   @doc ~S"""
   Convert a 16-bit unsigned integer to a sequence of two bytes in network byte order.
   """
   @spec encode_uint16(v :: non_neg_integer) :: [byte]
   def encode_uint16(v) when is_integer(v) and v >= 0 and v <= 65_535,
-    do: [v >>> 8 &&& 0xFF, v &&& 0xFF]
+    do: cover([v >>> 8 &&& 0xFF, v &&& 0xFF])
 
   @doc ~S"""
   Convert a 32-bit unsigned integer to a sequence of four bytes in network byte order.
   """
   @spec encode_uint32(v :: non_neg_integer) :: [byte]
   def encode_uint32(v) when is_integer(v) and v >= 0 and v <= 4_294_967_295,
-    do: [v >>> 24 &&& 0xFF, v >>> 16 &&& 0xFF, v >>> 8 &&& 0xFF, v &&& 0xFF]
+    do: cover([v >>> 24 &&& 0xFF, v >>> 16 &&& 0xFF, v >>> 8 &&& 0xFF, v &&& 0xFF])
 end

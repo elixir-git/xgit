@@ -18,6 +18,8 @@ defmodule Xgit.Repository.WorkingTree do
   """
   use GenServer
 
+  import Xgit.Util.ForceCoverage
+
   alias Xgit.Core.DirCache
   alias Xgit.Core.DirCache.Entry, as: DirCacheEntry
   alias Xgit.Core.FilePath
@@ -55,9 +57,11 @@ defmodule Xgit.Repository.WorkingTree do
           GenServer.on_start()
   def start_link(repository, work_dir, options \\ [])
       when is_pid(repository) and is_binary(work_dir) and is_list(options) do
-    if Repository.valid?(repository),
-      do: GenServer.start_link(__MODULE__, {repository, work_dir}, options),
-      else: {:error, :invalid_repository}
+    if Repository.valid?(repository) do
+      GenServer.start_link(__MODULE__, {repository, work_dir}, options)
+    else
+      cover {:error, :invalid_repository}
+    end
   end
 
   @impl true
@@ -66,10 +70,10 @@ defmodule Xgit.Repository.WorkingTree do
       :ok ->
         Process.monitor(repository)
         # Read index file here or maybe in a :continue handler?
-        {:ok, %{repository: repository, work_dir: work_dir}}
+        cover {:ok, %{repository: repository, work_dir: work_dir}}
 
       {:error, reason} ->
-        {:stop, {:mkdir, reason}}
+        cover {:stop, {:mkdir, reason}}
     end
   end
 
@@ -82,7 +86,7 @@ defmodule Xgit.Repository.WorkingTree do
       GenServer.call(working_tree, :valid_working_tree?) == :valid_working_tree
   end
 
-  def valid?(_), do: false
+  def valid?(_), do: cover(false)
 
   @doc ~S"""
   Returns a current snapshot of the working tree state.
@@ -131,8 +135,8 @@ defmodule Xgit.Repository.WorkingTree do
 
       res
     else
-      false -> {:ok, DirCache.empty()}
-      {:error, reason} -> {:error, reason}
+      false -> cover {:ok, DirCache.empty()}
+      {:error, reason} -> cover {:error, reason}
     end
   end
 

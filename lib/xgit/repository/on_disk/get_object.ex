@@ -2,6 +2,8 @@ defmodule Xgit.Repository.OnDisk.GetObject do
   @moduledoc false
   # Implements Xgit.Repository.OnDisk.handle_get_object/2.
 
+  import Xgit.Util.ForceCoverage
+
   alias Xgit.Core.Object
   alias Xgit.Core.ObjectId
   alias Xgit.Util.RawParseUtils
@@ -35,8 +37,8 @@ defmodule Xgit.Repository.OnDisk.GetObject do
          {:header, type, length} <- read_loose_object_prefix(loose_object_path) do
       loose_file_to_object(type, length, object_id, loose_object_path)
     else
-      {:exists?, false} -> {:error, :not_found}
-      :invalid_header -> {:error, :invalid_object}
+      {:exists?, false} -> cover {:error, :not_found}
+      :invalid_header -> cover {:error, :invalid_object}
     end
   end
 
@@ -50,7 +52,7 @@ defmodule Xgit.Repository.OnDisk.GetObject do
     |> Enum.split_while(&(&1 != ?\s))
     |> parse_prefix_and_length()
   rescue
-    ErlangError -> :invalid_header
+    ErlangError -> cover :invalid_header
   end
 
   @known_types ['blob', 'tag', 'tree', 'commit']
@@ -59,18 +61,18 @@ defmodule Xgit.Repository.OnDisk.GetObject do
   defp parse_prefix_and_length({type, length}) when type in @known_types,
     do: parse_length(@type_to_atom[type], length)
 
-  defp parse_prefix_and_length(_), do: :invalid_header
+  defp parse_prefix_and_length(_), do: cover(:invalid_header)
 
-  defp parse_length(_type, ' '), do: :invalid_header
+  defp parse_length(_type, ' '), do: cover(:invalid_header)
 
   defp parse_length(type, [?\s | length]) do
     case RawParseUtils.parse_base_10(length) do
       {length, []} when is_integer(length) and length >= 0 -> {:header, type, length}
-      _ -> :invalid_header
+      _ -> cover :invalid_header
     end
   end
 
-  defp parse_length(_type, _length), do: :invalid_header
+  defp parse_length(_type, _length), do: cover(:invalid_header)
 
   defp loose_file_to_object(type, length, object_id, path)
        when is_atom(type) and is_integer(length) do
