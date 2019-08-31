@@ -6,6 +6,20 @@ defmodule Xgit.Repository.WorkingTreeTest do
 
   import ExUnit.CaptureLog
 
+  describe "valid?/1" do
+    # Happy path covered by start_link/1 test below.
+
+    test "different process" do
+      {:ok, not_working_tree} = GenServer.start_link(NotValid, nil)
+      refute WorkingTree.valid?(not_working_tree)
+    end
+
+    test "different types" do
+      refute WorkingTree.valid?(42)
+      refute WorkingTree.valid?("so-called working tree")
+    end
+  end
+
   describe "start_link/1" do
     test "happy path: starts and is valid" do
       Temp.track!()
