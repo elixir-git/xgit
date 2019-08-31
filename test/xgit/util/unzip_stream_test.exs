@@ -25,6 +25,26 @@ defmodule Xgit.Util.UnzipStreamTest do
                |> Enum.to_list()
     end
 
+    test "happy path (zero-byte source file)" do
+      Temp.track!()
+      tmp = Temp.path!()
+
+      z = :zlib.open()
+      :ok = :zlib.deflateInit(z, 1)
+      compressed = :zlib.deflate(z, [], :finish)
+      :zlib.deflateEnd(z)
+
+      File.write!(tmp, compressed)
+
+      uncompressed =
+        tmp
+        |> File.stream!([:binary], 16_384)
+        |> UnzipStream.unzip()
+        |> Enum.to_list()
+
+      assert uncompressed == []
+    end
+
     test "happy path (extra large random file)" do
       Temp.track!()
       tmp = Temp.path!()
