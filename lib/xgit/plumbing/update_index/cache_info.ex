@@ -75,9 +75,11 @@ defmodule Xgit.Plumbing.UpdateIndex.CacheInfo do
   end
 
   defp parse_add_entries(add) do
-    if Enum.all?(add, &valid_add?/1),
-      do: Enum.map(add, &map_add_entry/1),
-      else: cover(:invalid)
+    if Enum.all?(add, &valid_add?/1) do
+      Enum.map(add, &map_add_entry/1)
+    else
+      cover(:invalid)
+    end
   end
 
   defp valid_add?({mode, object_id, path})
@@ -109,9 +111,11 @@ defmodule Xgit.Plumbing.UpdateIndex.CacheInfo do
   end
 
   defp parse_remove_entries(remove) do
-    if Enum.all?(remove, &valid_remove?/1),
-      do: Enum.map(remove, &map_remove_entry/1),
-      else: cover(:invalid)
+    if Enum.all?(remove, &valid_remove?/1) do
+      Enum.map(remove, &map_remove_entry/1)
+    else
+      cover(:invalid)
+    end
   end
 
   defp valid_remove?(name) when is_list(name), do: cover(true)

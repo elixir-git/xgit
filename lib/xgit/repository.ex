@@ -195,9 +195,11 @@ defmodule Xgit.Repository do
     do: {:reply, working_tree, state}
 
   def handle_call({:set_default_working_tree, working_tree}, _from, %{working_tree: nil} = state) do
-    if WorkingTree.valid?(working_tree),
-      do: {:reply, :ok, %{state | working_tree: working_tree}},
-      else: {:reply, :error, state}
+    if WorkingTree.valid?(working_tree) do
+      {:reply, :ok, %{state | working_tree: working_tree}}
+    else
+      {:reply, :error, state}
+    end
   end
 
   def handle_call({:set_default_working_tree, _working_tree}, _from, state),

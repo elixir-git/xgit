@@ -517,9 +517,11 @@ defmodule Xgit.Core.FilePath do
        do: cover(false)
 
   defp match_mac_hfs_path?([c | data], [m | match], ignorable?) do
-    if to_lower(c) == m,
-      do: match_mac_hfs_path?(data, match, ignorable?),
-      else: cover(false)
+    if to_lower(c) == m do
+      match_mac_hfs_path?(data, match, ignorable?)
+    else
+      cover(false)
+    end
   end
 
   defp match_mac_hfs_path?([], [], _ignorable?), do: cover(true)
