@@ -7,6 +7,8 @@ defmodule Xgit.Plumbing.UpdateIndex.CacheInfo do
   """
   use Xgit.Core.FileMode
 
+  import Xgit.Util.ForceCoverage
+
   alias Xgit.Core.DirCache.Entry, as: DirCacheEntry
   alias Xgit.Core.FilePath
   alias Xgit.Core.ObjectId
@@ -66,23 +68,23 @@ defmodule Xgit.Plumbing.UpdateIndex.CacheInfo do
            {:items_to_remove, parse_remove_entries(remove)} do
       WorkingTree.update_dir_cache(working_tree, add, remove)
     else
-      {:items_to_add, _} -> {:error, :invalid_entry}
-      {:items_to_remove, _} -> {:error, :invalid_entry}
-      {:error, reason} -> {:error, reason}
+      {:items_to_add, _} -> cover {:error, :invalid_entry}
+      {:items_to_remove, _} -> cover {:error, :invalid_entry}
+      {:error, reason} -> cover {:error, reason}
     end
   end
 
   defp parse_add_entries(add) do
     if Enum.all?(add, &valid_add?/1),
       do: Enum.map(add, &map_add_entry/1),
-      else: :invalid
+      else: cover(:invalid)
   end
 
   defp valid_add?({mode, object_id, path})
        when is_file_mode(mode) and is_binary(object_id) and is_list(path),
        do: ObjectId.valid?(object_id) and FilePath.valid?(path)
 
-  defp valid_add?(_), do: false
+  defp valid_add?(_), do: cover(false)
 
   defp map_add_entry({mode, object_id, path}) do
     %DirCacheEntry{
@@ -109,11 +111,11 @@ defmodule Xgit.Plumbing.UpdateIndex.CacheInfo do
   defp parse_remove_entries(remove) do
     if Enum.all?(remove, &valid_remove?/1),
       do: Enum.map(remove, &map_remove_entry/1),
-      else: :invalid
+      else: cover(:invalid)
   end
 
-  defp valid_remove?(name) when is_list(name), do: true
-  defp valid_remove?(_), do: false
+  defp valid_remove?(name) when is_list(name), do: cover(true)
+  defp valid_remove?(_), do: cover(false)
 
-  defp map_remove_entry(name), do: {name, :all}
+  defp map_remove_entry(name), do: cover({name, :all})
 end

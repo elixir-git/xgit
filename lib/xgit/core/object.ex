@@ -61,6 +61,7 @@ defmodule Xgit.Core.Object do
   alias Xgit.Core.ObjectId
   alias Xgit.Util.RawParseUtils
 
+  import Xgit.Util.ForceCoverage
   import Xgit.Util.RawParseUtils, only: [after_prefix: 2]
 
   @typedoc ~S"""
@@ -98,7 +99,7 @@ defmodule Xgit.Core.Object do
       when is_object_type(type) and is_integer(size) and size >= 0,
       do: ObjectId.valid?(id) && content != nil
 
-  def valid?(_), do: false
+  def valid?(_), do: cover(false)
 
   @typedoc ~S"""
   Error codes which can be returned by `check/2`.
@@ -214,11 +215,11 @@ defmodule Xgit.Core.Object do
           | {:error, reason :: FilePath.check_path_segment_reason()}
   def check(object, opts \\ [])
 
-  def check(%__MODULE__{type: :blob}, _opts), do: :ok
+  def check(%__MODULE__{type: :blob}, _opts), do: cover(:ok)
   def check(%__MODULE__{type: :commit} = object, _opts), do: check_commit(object)
   def check(%__MODULE__{type: :tag} = object, _opts), do: check_tag(object)
   def check(%__MODULE__{type: :tree} = object, opts), do: check_tree(object, opts)
-  def check(%__MODULE__{type: _type}, _opts), do: {:error, :invalid_type}
+  def check(%__MODULE__{type: _type}, _opts), do: cover({:error, :invalid_type})
 
   # -- commit specifics --
 
@@ -230,27 +231,29 @@ defmodule Xgit.Core.Object do
          {:author_id, data} when is_list(data) <- {:author_id, check_person_ident(data)},
          {:committer, data} when is_list(data) <- {:committer, after_prefix(data, 'committer ')},
          {:committer_id, data} when is_list(data) <- {:committer_id, check_person_ident(data)} do
-      :ok
+      cover :ok
     else
-      {:tree, _} -> {:error, :no_tree_header}
-      {:tree_id, _} -> {:error, :invalid_tree}
-      {:parents, _} -> {:error, :invalid_parent}
-      {:author, _} -> {:error, :no_author}
-      {:author_id, why} when is_atom(why) -> {:error, why}
-      {:committer, _} -> {:error, :no_committer}
-      {:committer_id, why} when is_atom(why) -> {:error, why}
+      {:tree, _} -> cover {:error, :no_tree_header}
+      {:tree_id, _} -> cover {:error, :invalid_tree}
+      {:parents, _} -> cover {:error, :invalid_parent}
+      {:author, _} -> cover {:error, :no_author}
+      {:author_id, why} when is_atom(why) -> cover {:error, why}
+      {:committer, _} -> cover {:error, :no_committer}
+      {:committer_id, why} when is_atom(why) -> cover {:error, why}
     end
   end
 
   defp check_commit_parents(data) do
     case after_prefix(data, 'parent ') do
       after_match when is_list(after_match) ->
-        if next_line = check_id(after_match),
-          do: check_commit_parents(next_line),
-          else: nil
+        if next_line = check_id(after_match) do
+          check_commit_parents(next_line)
+        else
+          cover nil
+        end
 
       nil ->
-        data
+        cover data
     end
   end
 
@@ -264,37 +267,41 @@ defmodule Xgit.Core.Object do
          {:tag, data} when is_list(data) <- {:tag, after_prefix(data, 'tag ')},
          data <- RawParseUtils.next_lf(data),
          {:tagger, data} when is_list(data) <- {:tagger, maybe_match_tagger(data)} do
-      :ok
+      cover :ok
     else
-      {:object, _} -> {:error, :no_object_header}
-      {:object_id, _} -> {:error, :invalid_object}
-      {:type, _} -> {:error, :no_type_header}
-      {:tag, _} -> {:error, :no_tag_header}
-      {:tagger, _} -> {:error, :invalid_tagger}
+      {:object, _} -> cover {:error, :no_object_header}
+      {:object_id, _} -> cover {:error, :invalid_object}
+      {:type, _} -> cover {:error, :no_type_header}
+      {:tag, _} -> cover {:error, :no_tag_header}
+      {:tagger, _} -> cover {:error, :invalid_tagger}
     end
   end
 
   defp maybe_match_tagger(data) do
     after_match = after_prefix(data, 'tagger ')
 
-    if is_list(after_match),
-      do: check_person_ident(after_match),
-      else: data
+    if is_list(after_match) do
+      check_person_ident(after_match)
+    else
+      cover data
+    end
   end
 
   # -- tree specifics --
 
   defp check_tree(%__MODULE__{content: data}, opts) when is_list(data) and is_list(opts) do
     maybe_normalized_paths =
-      if Keyword.get(opts, :windows?) || Keyword.get(opts, :macosx?),
-        do: MapSet.new(),
-        else: nil
+      if Keyword.get(opts, :windows?) || Keyword.get(opts, :macosx?) do
+        MapSet.new()
+      else
+        cover nil
+      end
 
     check_next_tree_entry(data, maybe_normalized_paths, [], FileMode.regular_file(), opts)
   end
 
   defp check_next_tree_entry([], _maybe_normalized_paths, _previous_name, _previous_mode, _opts),
-    do: :ok
+    do: cover(:ok)
 
   defp check_next_tree_entry(data, maybe_normalized_paths, previous_name, previous_mode, opts) do
     # Scan one entry then recurse to scan remaining entries.
@@ -319,31 +326,31 @@ defmodule Xgit.Core.Object do
         opts
       )
     else
-      {:file_mode, {:error, reason}} -> {:error, reason}
-      {:file_mode, _} -> {:error, :invalid_file_mode}
-      {:path_split, _} -> {:error, :truncated_in_name}
-      {:path_valid, {:error, reason}} -> {:error, reason}
-      {:duplicate, _} -> {:error, :duplicate_entry_names}
-      {:sorted, _} -> {:error, :incorrectly_sorted}
-      {:object_id_length, _} -> {:error, :truncated_in_object_id}
-      {:object_id_null, _} -> {:error, :null_sha1}
+      {:file_mode, {:error, reason}} -> cover {:error, reason}
+      {:file_mode, _} -> cover {:error, :invalid_file_mode}
+      {:path_split, _} -> cover {:error, :truncated_in_name}
+      {:path_valid, {:error, reason}} -> cover {:error, reason}
+      {:duplicate, _} -> cover {:error, :duplicate_entry_names}
+      {:sorted, _} -> cover {:error, :incorrectly_sorted}
+      {:object_id_length, _} -> cover {:error, :truncated_in_object_id}
+      {:object_id_null, _} -> cover {:error, :null_sha1}
     end
   end
 
-  defp check_file_mode([], _mode), do: {:error, :invalid_mode}
+  defp check_file_mode([], _mode), do: cover({:error, :invalid_mode})
 
-  defp check_file_mode([?\s | data], mode), do: {:ok, mode, data}
+  defp check_file_mode([?\s | data], mode), do: cover({:ok, mode, data})
 
-  defp check_file_mode([?0 | _data], 0), do: {:error, :invalid_mode}
+  defp check_file_mode([?0 | _data], 0), do: cover({:error, :invalid_mode})
 
   defp check_file_mode([c | data], mode) when c >= ?0 and c <= ?7,
     do: check_file_mode(data, mode * 8 + (c - ?0))
 
-  defp check_file_mode([_c | _data], _mode), do: {:error, :invalid_mode}
+  defp check_file_mode([_c | _data], _mode), do: cover({:error, :invalid_mode})
 
   defp path_and_object_id(data), do: Enum.split_while(data, &(&1 != 0))
 
-  defp maybe_mapset_member?(nil, _path_segment, _opts), do: false
+  defp maybe_mapset_member?(nil, _path_segment, _opts), do: cover(false)
 
   defp maybe_mapset_member?(mapset, path_segment, opts),
     do: MapSet.member?(mapset, normalize(path_segment, Keyword.get(opts, :macosx?, false)))
@@ -363,26 +370,26 @@ defmodule Xgit.Core.Object do
     compare = FilePath.compare_same_name(this_name, next_name, mode)
 
     cond do
-      Enum.empty?(mode_str) or Enum.empty?(next_name) -> false
-      compare == :lt -> false
-      compare == :eq -> true
+      Enum.empty?(mode_str) or Enum.empty?(next_name) -> cover false
+      compare == :lt -> cover false
+      compare == :eq -> cover true
       compare == :gt -> duplicate_name?(this_name, data)
     end
   end
 
   defp parse_octal(data) do
     case Integer.parse(to_string(data), 8) do
-      {n, _} when is_integer(n) -> n
-      :error -> 0
+      {n, _} when is_integer(n) -> cover n
+      :error -> cover 0
     end
   end
 
-  defp correctly_sorted?([], _previous_mode, _this_name, _this_mode), do: true
+  defp correctly_sorted?([], _previous_mode, _this_name, _this_mode), do: cover(true)
 
   defp correctly_sorted?(previous_name, previous_mode, this_name, this_mode),
     do: FilePath.compare(previous_name, previous_mode, this_name, this_mode) != :gt
 
-  defp maybe_put_path(nil, _path_segment, _opts), do: nil
+  defp maybe_put_path(nil, _path_segment, _opts), do: cover(nil)
 
   defp maybe_put_path(mapset, path_segment, opts),
     do: MapSet.put(mapset, normalize(path_segment, Keyword.get(opts, :macosx?, false)))
@@ -391,8 +398,8 @@ defmodule Xgit.Core.Object do
 
   defp check_id(data) do
     case ObjectId.from_hex_charlist(data) do
-      {_id, [?\n | remainder]} -> remainder
-      _ -> nil
+      {_id, [?\n | remainder]} -> cover remainder
+      _ -> cover nil
     end
   end
 
@@ -405,11 +412,11 @@ defmodule Xgit.Core.Object do
          {:bad_timezone, {_tz, [?\n | next]}} <- {:bad_timezone, RawParseUtils.parse_base_10(tz)} do
       next
     else
-      {:missing_email, _} -> :missing_email
-      {:bad_email, _} -> :bad_email
-      {:missing_space_before_date, _} -> :missing_space_before_date
-      {:bad_date, _} -> :bad_date
-      {:bad_timezone, _} -> :bad_time_zone
+      {:missing_email, _} -> cover :missing_email
+      {:bad_email, _} -> cover :bad_email
+      {:missing_space_before_date, _} -> cover :missing_space_before_date
+      {:bad_date, _} -> cover :bad_date
+      {:bad_timezone, _} -> cover :bad_time_zone
     end
   end
 
@@ -422,6 +429,6 @@ defmodule Xgit.Core.Object do
 
   defp normalize(name, _) when is_list(name), do: Enum.map(name, &to_lower/1)
 
-  defp to_lower(b) when b >= ?A and b <= ?Z, do: b + 32
-  defp to_lower(b), do: b
+  defp to_lower(b) when b >= ?A and b <= ?Z, do: cover(b + 32)
+  defp to_lower(b), do: cover(b)
 end

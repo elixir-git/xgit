@@ -2,6 +2,7 @@ defmodule Xgit.Repository.WorkingTree.WriteIndexFileTest do
   use Xgit.GitInitTestCase, async: true
 
   alias Xgit.Core.DirCache
+  alias Xgit.GitInitTestCase
   alias Xgit.Repository.WorkingTree.ParseIndexFile
   alias Xgit.Repository.WorkingTree.WriteIndexFile
   alias Xgit.Util.TrailingHashDevice
@@ -133,6 +134,72 @@ defmodule Xgit.Repository.WorkingTree.WriteIndexFileTest do
       assert_files_are_equal(Path.join([ref, ".git", "index"]), index_path)
     end
 
+    @names [
+      "a",
+      "ab",
+      "abc",
+      "abcd",
+      "abcde",
+      "abcdef",
+      "abcdefg",
+      "abcdefgh",
+      "ajaksldfjkadsfkasdfalsdjfklasdjf"
+    ]
+
+    test "happy path: can read from command-line git (varying name lengths)" do
+      Enum.each(@names, fn name ->
+        {:ok, ref: ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
+
+        {_output, 0} =
+          System.cmd(
+            "git",
+            [
+              "update-index",
+              "--add",
+              "--cacheinfo",
+              "100644",
+              "18832d35117ef2f013c4009f5b2128dfaeff354f",
+              name
+            ],
+            cd: ref
+          )
+
+        dir_cache = %DirCache{
+          entries: [
+            %DirCache.Entry{
+              assume_valid?: false,
+              ctime: 0,
+              ctime_ns: 0,
+              dev: 0,
+              extended?: false,
+              gid: 0,
+              ino: 0,
+              intent_to_add?: false,
+              mode: 0o100644,
+              mtime: 0,
+              mtime_ns: 0,
+              name: :binary.bin_to_list(name),
+              object_id: "18832d35117ef2f013c4009f5b2128dfaeff354f",
+              size: 0,
+              skip_worktree?: false,
+              stage: 0,
+              uid: 0
+            }
+          ],
+          entry_count: 1,
+          version: 2
+        }
+
+        git_dir = Path.join(xgit, ".git")
+        File.mkdir_p!(git_dir)
+
+        index_path = Path.join(git_dir, "index")
+        assert :ok = write_dir_cache_to_path(dir_cache, index_path)
+
+        assert_files_are_equal(Path.join([ref, ".git", "index"]), index_path)
+      end)
+    end
+
     test "happy path: matches --assume-unchanged flag behavior", %{xgit: xgit} do
       dir_cache = %DirCache{
         entries: [
@@ -210,6 +277,18 @@ defmodule Xgit.Repository.WorkingTree.WriteIndexFileTest do
 
       index_path = Path.join(git_dir, "index")
       assert {:error, :invalid_dir_cache} = write_dir_cache_to_path(dir_cache, index_path)
+    end
+
+    test "error: not SHA trailing hash device", %{xgit: xgit} do
+      dir_cache = %DirCache{version: 2, entry_count: 0, entries: []}
+
+      git_dir = Path.join(xgit, ".git")
+      File.mkdir_p!(git_dir)
+
+      index_path = Path.join(git_dir, "index")
+
+      iodevice = File.open!(index_path, [:write])
+      assert {:error, :not_sha_hash_device} = WriteIndexFile.to_iodevice(dir_cache, iodevice)
     end
 
     test "error: I/O error", %{xgit: xgit} do

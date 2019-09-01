@@ -77,6 +77,9 @@ defmodule Xgit.Core.FilePathTest do
 
   @almost_mac_hfs_git_names [
     ".git\u200Cx",
+    ".gi\u202Ft",
+    ".gi\u2069t",
+    ".gi\uFEC0t",
     ".kit\u200C"
   ]
 
@@ -87,6 +90,7 @@ defmodule Xgit.Core.FilePathTest do
     '.git.',
     '.git ',
     '.git. ',
+    '.git .',
     '.git . ',
     '.Git',
     '.gIt',
@@ -95,6 +99,7 @@ defmodule Xgit.Core.FilePathTest do
   ]
 
   @almost_git_special_names [
+    '.g',
     '.git..',
     '.gitfoobar',
     '.gitfoo bar',
@@ -103,7 +108,7 @@ defmodule Xgit.Core.FilePathTest do
   ]
 
   @windows_device_names ['aux', 'con', 'com1', 'com7', 'lpt1', 'lpt3', 'nul', 'prn']
-  @almost_windows_device_names ['aub', 'con1', 'com', 'lpt', 'nul3', 'prn8']
+  @almost_windows_device_names ['aub', 'con1', 'com', 'com0', 'lpt', 'nul3', 'prn8']
 
   @invalid_windows_chars [?", ?*, ?:, ?<, ?>, ??, ?\\, ?|, 1, 2, 3, 4, 7, 31]
 
@@ -139,6 +144,15 @@ defmodule Xgit.Core.FilePathTest do
       refute valid?('ab/cd//ef')
       refute valid?('a/')
       refute valid?('ab/cd/ef/')
+    end
+
+    test "rejects paths that aren't byte lists" do
+      refute valid?("a")
+      refute valid?("a/b")
+      refute valid?("ab/cd/ef")
+      refute valid?(:a)
+      refute valid?(true)
+      refute valid?(42)
     end
 
     test "Windows variations on .git (applies to all platforms)" do
@@ -471,6 +485,9 @@ defmodule Xgit.Core.FilePathTest do
 
       assert gitmodules?('.GITMODULES', windows?: true)
       refute gitmodules?('.GITMODULES')
+
+      refute gitmodules?('GI7E~012', windows?: true)
+      refute gitmodules?('GI7E~12X', windows?: true)
     end
   end
 

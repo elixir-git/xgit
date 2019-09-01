@@ -97,11 +97,9 @@ defmodule Xgit.Util.FileSnapshotTest do
 
   test "new file without significant wait", %{trash: trash} do
     f1 = create_file!(trash, "newfile")
-    wait_next_sec(f1)
+    Process.sleep(1500)
 
     save = FileSnapshot.save(f1)
-
-    Process.sleep(1500)
     assert FileSnapshot.modified?(save, f1) == true
   end
 
@@ -113,6 +111,15 @@ defmodule Xgit.Util.FileSnapshotTest do
 
     save = FileSnapshot.save(f1)
     assert FileSnapshot.modified?(save, f1) == true
+  end
+
+  test "new file and wait 3 sec", %{trash: trash} do
+    f1 = create_file!(trash, "newfile")
+
+    Process.sleep(3000)
+
+    save = FileSnapshot.save(f1)
+    assert FileSnapshot.modified?(save, f1) == false
   end
 
   test "dirty snapshot is always dirty", %{trash: trash} do

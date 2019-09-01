@@ -35,6 +35,7 @@ defmodule Xgit.Util.TrailingHashDeviceTest do
       assert {:ok, device} = open_file_for_read_with_trailing_hash("hello, goodbye")
 
       assert "hello" = IO.binread(device, 5)
+      assert "" = IO.binread(device, 0)
       assert ", " = IO.binread(device, 2)
       assert "goodbye" = IO.binread(device, 7)
       assert :eof = IO.binread(device, 1)

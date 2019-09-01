@@ -2,6 +2,8 @@ defmodule Xgit.Repository.OnDisk.PutLooseObject do
   @moduledoc false
   # Implements Xgit.Repository.OnDisk.handle_put_loose_object/2.
 
+  import Xgit.Util.ForceCoverage
+
   alias Xgit.Core.ContentSource
   alias Xgit.Core.Object
 
@@ -19,7 +21,7 @@ defmodule Xgit.Repository.OnDisk.PutLooseObject do
             File.open(path, [:write, :binary, :exclusive], fn file_pid ->
               deflate_and_write(file_pid, object)
             end)} do
-      {:ok, state}
+      cover {:ok, state}
     else
       {:mkdir, _} ->
         {:error, :cant_create_file, state}

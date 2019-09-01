@@ -6,6 +6,8 @@ defmodule Xgit.Repository.WorkingTree.WriteIndexFile do
   use Bitwise
   use Xgit.Core.FileMode
 
+  import Xgit.Util.ForceCoverage
+
   alias Xgit.Core.DirCache
   alias Xgit.Core.DirCache.Entry, as: DirCacheEntry
   alias Xgit.Util.NB
@@ -50,19 +52,19 @@ defmodule Xgit.Repository.WorkingTree.WriteIndexFile do
          :ok <- write_v2_header(iodevice, entry_count),
          :ok <- write_v2_entries(iodevice, entries) do
       # TO DO: Write extensions. https://github.com/elixir-git/xgit/issues/114
-      :ok
+      cover :ok
     else
-      {:version, _} -> {:error, :unsupported_version}
-      {:valid?, _} -> {:error, :invalid_dir_cache}
-      {:sha_hash_device, _} -> {:error, :not_sha_hash_device}
-      {:error, reason} -> {:error, reason}
+      {:version, _} -> cover {:error, :unsupported_version}
+      {:valid?, _} -> cover {:error, :invalid_dir_cache}
+      {:sha_hash_device, _} -> cover {:error, :not_sha_hash_device}
+      {:error, reason} -> cover {:error, reason}
     end
   end
 
   defp write_v2_header(iodevice, entry_count),
     do: IO.binwrite(iodevice, ['DIRC', 0, 0, 0, 2, NB.encode_uint32(entry_count)])
 
-  defp write_v2_entries(_iodevice, []), do: :ok
+  defp write_v2_entries(_iodevice, []), do: cover(:ok)
 
   defp write_v2_entries(iodevice, [entry | tail]) do
     case write_v2_entry(iodevice, entry) do
@@ -126,7 +128,7 @@ defmodule Xgit.Repository.WorkingTree.WriteIndexFile do
   end
 
   defp value_if_boolean(true, value), do: value
-  defp value_if_boolean(false, _value), do: 0
+  defp value_if_boolean(false, _value), do: cover(0)
 
   defp padding(name_length) do
     padding_size = padding_size(Integer.mod(name_length + 4, 8))
@@ -134,6 +136,6 @@ defmodule Xgit.Repository.WorkingTree.WriteIndexFile do
   end
 
   defp padding_size(length_mod_8) when length_mod_8 < 6, do: 6 - length_mod_8
-  defp padding_size(6), do: 8
-  defp padding_size(7), do: 7
+  defp padding_size(6), do: cover(8)
+  defp padding_size(7), do: cover(7)
 end

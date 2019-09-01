@@ -28,6 +28,8 @@ defmodule Xgit.Repository do
   """
   use GenServer
 
+  import Xgit.Util.ForceCoverage
+
   alias Xgit.Core.Object
   alias Xgit.Core.ObjectId
   alias Xgit.Repository.WorkingTree
@@ -65,8 +67,8 @@ defmodule Xgit.Repository do
   @impl true
   def init({mod, mod_init_arg}) do
     case mod.init(mod_init_arg) do
-      {:ok, mod_state} -> {:ok, %{mod: mod, mod_state: mod_state, working_tree: nil}}
-      {:stop, reason} -> {:stop, reason}
+      {:ok, mod_state} -> cover {:ok, %{mod: mod, mod_state: mod_state, working_tree: nil}}
+      {:stop, reason} -> cover {:stop, reason}
     end
   end
 
@@ -79,7 +81,7 @@ defmodule Xgit.Repository do
       GenServer.call(repository, :valid_repository?) == :valid_repository
   end
 
-  def valid?(_), do: false
+  def valid?(_), do: cover(false)
 
   @doc ~S"""
   Get the default working tree if one has been attached.

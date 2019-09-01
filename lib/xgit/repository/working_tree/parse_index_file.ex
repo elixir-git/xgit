@@ -7,6 +7,8 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
   use Bitwise
   use Xgit.Core.FileMode
 
+  import Xgit.Util.ForceCoverage
+
   alias Xgit.Core.DirCache
   alias Xgit.Core.DirCache.Entry, as: DirCacheEntry
   alias Xgit.Util.NB
@@ -68,32 +70,32 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
          # TO DO: Parse extensions. For now, error out if any are present.
          # https://github.com/elixir-git/xgit/issues/67
          {:sha_valid?, true} <- {:sha_valid?, TrailingHashDevice.valid_hash?(iodevice)} do
-      {:ok,
-       %DirCache{
-         version: version,
-         entry_count: entry_count,
-         entries: entries
-       }}
+      cover {:ok,
+             %DirCache{
+               version: version,
+               entry_count: entry_count,
+               entries: entries
+             }}
     else
-      {:sha_hash_device, _} -> {:error, :not_sha_hash_device}
-      {:dirc, _} -> {:error, :invalid_format}
-      {:version, _} -> {:error, :unsupported_version}
-      {:entry_count, :invalid} -> {:error, :invalid_format}
-      {:entry_count, _} -> {:error, :too_many_entries}
-      {:entries, _} -> {:error, :invalid_format}
-      {:extensions, _} -> {:error, :extensions_not_supported}
-      {:sha_valid?, _} -> {:error, :sha_hash_mismatch}
+      {:sha_hash_device, _} -> cover {:error, :not_sha_hash_device}
+      {:dirc, _} -> cover {:error, :invalid_format}
+      {:version, _} -> cover {:error, :unsupported_version}
+      {:entry_count, :invalid} -> cover {:error, :invalid_format}
+      {:entry_count, _} -> cover {:error, :too_many_entries}
+      {:entries, _} -> cover {:error, :invalid_format}
+      {:extensions, _} -> cover {:error, :extensions_not_supported}
+      {:sha_valid?, _} -> cover {:error, :sha_hash_mismatch}
     end
   end
 
   defp read_dirc(iodevice) do
     case IO.binread(iodevice, 4) do
-      "DIRC" -> true
-      _ -> false
+      "DIRC" -> cover true
+      _ -> cover false
     end
   end
 
-  defp read_entries(_iodevice, _version, 0), do: []
+  defp read_entries(_iodevice, _version, 0), do: cover([])
 
   defp read_entries(iodevice, version, entry_count) do
     entries =
@@ -101,9 +103,11 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
         read_entry(iodevice, version)
       end)
 
-    if Enum.all?(entries, &valid_entry?/1),
-      do: entries,
-      else: :invalid
+    if Enum.all?(entries, &valid_entry?/1) do
+      cover entries
+    else
+      cover :invalid
+    end
   end
 
   defp read_entry(iodevice, 2 = _version) do
@@ -142,12 +146,12 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
         intent_to_add?: false
       }
     else
-      _ -> :invalid
+      _ -> cover :invalid
     end
   end
 
-  defp valid_entry?(%DirCacheEntry{}), do: true
-  defp valid_entry?(_), do: false
+  defp valid_entry?(%DirCacheEntry{}), do: cover(true)
+  defp valid_entry?(_), do: cover(false)
 
   defp read_uint16(iodevice) do
     case IO.binread(iodevice, 2) do
@@ -158,7 +162,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
         |> elem(0)
 
       _ ->
-        :invalid
+        cover :invalid
     end
   end
 
@@ -171,7 +175,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
         |> elem(0)
 
       _ ->
-        :invalid
+        cover :invalid
     end
   end
 
@@ -183,7 +187,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
         |> String.downcase()
 
       _ ->
-        :invalid
+        cover :invalid
     end
   end
 
@@ -197,16 +201,16 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
         |> Enum.take_while(&(&1 != 0))
 
       _ ->
-        :invalid
+        cover :invalid
     end
   end
 
   defp read_name(_iodevice, _length), do: :invalid
 
   defp padding(length_mod_8) when length_mod_8 < 6, do: 6 - length_mod_8
-  defp padding(6), do: 8
-  defp padding(7), do: 7
+  defp padding(6), do: cover(8)
+  defp padding(7), do: cover(7)
 
-  defp to_boolean(0), do: false
-  defp to_boolean(_), do: true
+  defp to_boolean(0), do: cover(false)
+  defp to_boolean(_), do: cover(true)
 end

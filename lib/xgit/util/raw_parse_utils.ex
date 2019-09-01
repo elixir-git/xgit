@@ -50,6 +50,8 @@ defmodule Xgit.Util.RawParseUtils do
   Handy utility functions to parse raw object contents.
   """
 
+  import Xgit.Util.ForceCoverage
+
   @doc ~S"""
   Return the portion of the charlist `b` that starts with the prefix `prefix`.
 
@@ -63,9 +65,9 @@ defmodule Xgit.Util.RawParseUtils do
   @spec after_prefix(b :: charlist, prefix :: charlist) :: charlist | nil
   def after_prefix(b, prefix)
 
-  def after_prefix(b, []), do: b
+  def after_prefix(b, []), do: cover(b)
   def after_prefix([c | b], [c | prefix]), do: after_prefix(b, prefix)
-  def after_prefix(_, _), do: nil
+  def after_prefix(_, _), do: cover(nil)
 
   @doc ~S"""
   Parse a base-10 numeric value from a charlist of ASCII digits into a number.
@@ -87,18 +89,18 @@ defmodule Xgit.Util.RawParseUtils do
     {sign, b} = parse_sign(b)
     {n, b} = parse_digits(0, b)
 
-    {sign * n, b}
+    cover {sign * n, b}
   end
 
   defp skip_white_space([?\s | b]), do: skip_white_space(b)
   defp skip_white_space(b), do: b
 
-  defp parse_sign([?- | b]), do: {-1, b}
-  defp parse_sign([?+ | b]), do: {1, b}
-  defp parse_sign(b), do: {1, b}
+  defp parse_sign([?- | b]), do: cover({-1, b})
+  defp parse_sign([?+ | b]), do: cover({1, b})
+  defp parse_sign(b), do: cover({1, b})
 
   defp parse_digits(n, [d | b]) when d >= ?0 and d <= ?9, do: parse_digits(n * 10 + (d - ?0), b)
-  defp parse_digits(n, b), do: {n, b}
+  defp parse_digits(n, b), do: cover({n, b})
 
   @doc ~S"""
   Parse 4 hex digits from a byte list to an integer.
@@ -160,7 +162,7 @@ defmodule Xgit.Util.RawParseUtils do
   @spec parse_hex_int4(b :: charlist) :: {integer, charlist}
   def parse_hex_int4(b) when is_list(b), do: parse_hex_digits(b, 0, 1)
 
-  defp parse_hex_digits(b, n, 0), do: {n, b}
+  defp parse_hex_digits(b, n, 0), do: cover({n, b})
 
   defp parse_hex_digits([d | b], n, rem) when d >= ?0 and d <= ?9,
     do: parse_hex_digits(b, n * 16 + (d - ?0), rem - 1)
@@ -190,7 +192,7 @@ defmodule Xgit.Util.RawParseUtils do
     tz_min = rem(v, 100)
     tz_hour = div(v, 100)
 
-    {tz_hour * 60 + tz_min, b}
+    cover {tz_hour * 60 + tz_min, b}
   end
 
   @doc ~S"""
@@ -201,7 +203,7 @@ defmodule Xgit.Util.RawParseUtils do
 
   def next([char | b], char) when is_integer(char), do: b
   def next([_ | b], char) when is_integer(char), do: next(b, char)
-  def next([], char) when is_integer(char), do: []
+  def next([], char) when is_integer(char), do: cover([])
 
   @doc ~S"""
   Locate the first position after the next LF.
@@ -222,7 +224,7 @@ defmodule Xgit.Util.RawParseUtils do
   def next_lf([char | _] = b, char) when is_integer(char), do: b
   def next_lf([?\n | _] = b, char) when is_integer(char), do: b
   def next_lf([_ | b], char) when is_integer(char), do: next_lf(b, char)
-  def next_lf([], char) when is_integer(char), do: []
+  def next_lf([], char) when is_integer(char), do: cover([])
 
   @doc ~S"""
   Return the contents of the charlist up to, but not including, the next LF.
@@ -248,7 +250,7 @@ defmodule Xgit.Util.RawParseUtils do
 
   def header_end([?\n | [?\s | b]]), do: header_end(b)
   def header_end([?\n | _] = b), do: b
-  def header_end([]), do: []
+  def header_end([]), do: cover([])
   def header_end([_ | b]), do: header_end(b)
 
   @doc ~S"""
@@ -273,7 +275,7 @@ defmodule Xgit.Util.RawParseUtils do
   defp possible_header_match(_header_name, [], _match_start, [?\s | header_content]),
     do: header_content
 
-  defp possible_header_match(_header_name, _, [], _), do: nil
+  defp possible_header_match(_header_name, _, [], _), do: cover(nil)
 
   defp possible_header_match(header_name, _, [_ | b], _),
     do: possible_header_match(header_name, header_name, b, b)
@@ -329,7 +331,7 @@ defmodule Xgit.Util.RawParseUtils do
     enc = encoding(b)
 
     if enc == nil do
-      nil
+      cover nil
     else
       enc
       |> until_next_lf()
@@ -349,9 +351,9 @@ defmodule Xgit.Util.RawParseUtils do
   @spec parse_encoding(b :: charlist) :: :utf8 | :latin1
   def parse_encoding(b) when is_list(b) do
     case b |> parse_encoding_name() |> trim_if_string() do
-      nil -> :utf8
-      "UTF-8" -> :utf8
-      "ISO-8859-1" -> :latin1
+      nil -> cover :utf8
+      "UTF-8" -> cover :utf8
+      "ISO-8859-1" -> cover :latin1
       x -> raise ArgumentError, "charset #{inspect(x)} unsupported"
     end
   end
