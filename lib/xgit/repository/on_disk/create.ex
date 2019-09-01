@@ -2,6 +2,12 @@ defmodule Xgit.Repository.OnDisk.Create do
   @moduledoc false
   # Implements Xgit.Repository.OnDisk.create/1.
 
+  # Exception to the usual policy about using `cover` macro:
+  # Most of these error cases are about I/O errors that are difficult
+  # to simulate (can create parent repo dir, but then can't create
+  # a child thereof, etc.). This code is un-complicated, so we
+  # choose to leave it silently uncovered.
+
   import Xgit.Util.ForceCoverage
 
   @spec create(work_dir :: String.t()) :: :ok | {:error, reason :: String.t()}
@@ -26,7 +32,7 @@ defmodule Xgit.Repository.OnDisk.Create do
          :ok <- create_git_dir(Path.join(path, ".git")) do
       cover :ok
     else
-      {:error, reason} -> cover {:error, reason}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -41,7 +47,7 @@ defmodule Xgit.Repository.OnDisk.Create do
          :ok <- create_refs_dir(git_dir) do
       cover :ok
     else
-      {:error, reason} -> cover {:error, reason}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -98,7 +104,7 @@ defmodule Xgit.Repository.OnDisk.Create do
       .DS_Store
       """)
     else
-      {:error, reason} -> cover {:error, reason}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -107,7 +113,7 @@ defmodule Xgit.Repository.OnDisk.Create do
          :ok <- File.mkdir_p(Path.join(git_dir, "objects/pack")) do
       cover :ok
     else
-      {:error, reason} -> cover {:error, reason}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -119,7 +125,7 @@ defmodule Xgit.Repository.OnDisk.Create do
          :ok <- File.mkdir_p(Path.join(refs_dir, "tags")) do
       cover :ok
     else
-      {:error, reason} -> cover {:error, reason}
+      {:error, reason} -> {:error, reason}
     end
   end
 end
