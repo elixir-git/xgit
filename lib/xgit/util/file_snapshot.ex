@@ -168,9 +168,11 @@ defmodule Xgit.Util.FileSnapshot do
       ) do
     other_last_read = ConCache.get(:xgit_file_snapshot, other_ref)
 
-    if not_racy_clean?(last_modified, other_last_read),
-      do: ConCache.delete(:xgit_file_snapshot, ref),
-      else: record_time_for_ref(ref, not_racy_clean?(last_modified, other_last_read))
+    if not_racy_clean?(last_modified, other_last_read) do
+      ConCache.delete(:xgit_file_snapshot, ref)
+    else
+      record_time_for_ref(ref, not_racy_clean?(last_modified, other_last_read))
+    end
 
     cover :ok
   end
