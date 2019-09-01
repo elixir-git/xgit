@@ -1,5 +1,11 @@
 # Changelog for v0.x Series
 
+## v0.2.1
+
+_01 September 2019_
+
+* Force code coverage for cases where a literal value is returned. (#122)
+
 ## v0.2.0
 
 _28 August 2019_
