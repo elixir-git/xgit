@@ -67,6 +67,14 @@ defmodule Xgit.Repository.OnDisk.GetObjectTest do
       assert_zip_data_is_invalid(xgit, <<120, 1, 75, 202, 201, 79, 82, 0, 0, 5, 208, 1, 192>>)
     end
 
+    test "error: invalid object (ZIP compressed object type without length)", %{xgit: xgit} do
+      # "blob"
+      assert_zip_data_is_invalid(
+        xgit,
+        <<120, 156, 75, 202, 201, 79, 2, 0, 4, 16, 1, 160>>
+      )
+    end
+
     test "error: invalid object (ZIP compressed, but invalid object type)", %{xgit: xgit} do
       # "blog 13\0"
       assert_zip_data_is_invalid(
