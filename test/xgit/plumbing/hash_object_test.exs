@@ -138,6 +138,26 @@ defmodule Xgit.Plumbing.HashObjectTest do
       assert {:error, :no_tree_header} = HashObject.run(content, type: :commit)
     end
 
+    test "error: can't write to disk" do
+      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
+      # Only invoking GitInitTestCase manually here because other tests in this
+      # module don't need it. Setting up a repo that we don't use in the other
+      # tests would be wasteful.
+
+      Temp.track!()
+      path = Temp.path!()
+      File.write!(path, "test content\n")
+
+      assert :ok = OnDisk.create(xgit)
+      assert {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+
+      [xgit, ".git", "objects", "d6", "70460b4b4aece5915caf5c68d12f560a9fe3e4"]
+      |> Path.join()
+      |> File.mkdir_p!()
+
+      assert {:error, :object_exists} = HashObject.run("test content\n", repo: repo, write?: true)
+    end
+
     test "error: content nil" do
       assert_raise FunctionClauseError, fn ->
         HashObject.run(nil)
