@@ -264,6 +264,14 @@ defmodule Xgit.Core.DirCache do
 
   defp entries_sorted?([_]), do: cover(true)
 
+  @doc ~S"""
+  Return `true` if all of the entries in this dir cache are fully merged (stage 0).
+  """
+  @spec fully_merged?(dir_cache :: t) :: boolean
+  def fully_merged?(%__MODULE__{entries: entries} = _dir_cache) do
+    Enum.all?(entries, fn %__MODULE__.Entry{stage: stage} -> stage == 0 end)
+  end
+
   @typedoc ~S"""
   Error reason codes returned by `add_entries/2`.
   """

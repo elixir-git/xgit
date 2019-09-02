@@ -107,6 +107,27 @@ defmodule Xgit.Core.DirCacheTest do
     end
   end
 
+  describe "fully_merged?/1" do
+    test "true: empty dir cache" do
+      assert DirCache.fully_merged?(DirCache.empty())
+    end
+
+    test "true: one valid stage 0 entry" do
+      assert DirCache.fully_merged?(@valid)
+    end
+
+    test "false: stage 0 + stage 1 entries" do
+      refute DirCache.fully_merged?(%DirCache{
+               version: 2,
+               entry_count: 2,
+               entries: [
+                 @valid_entry,
+                 Map.put(@valid_entry, :stage, 1)
+               ]
+             })
+    end
+  end
+
   describe "add_entries/2" do
     test "happy path: sorting and adding to an empty list" do
       assert {:ok,
