@@ -58,7 +58,12 @@ defmodule Xgit.Plumbing.HashObject do
   * `Xgit.Core.Object.check/2`
   * `Xgit.Repository.put_loose_object/2`.
   """
-  @spec run(content :: ContentSource.t(), type: ObjectType.t() | nil) ::
+  @spec run(content :: ContentSource.t(),
+          type: ObjectType.t(),
+          validate?: boolean,
+          repo: Repository.t(),
+          write?: boolean
+        ) ::
           {:ok, ObjectId.t()}
           | {:error, reason :: Object.check_reason()}
           | {:error, reason :: FilePath.check_path_reason()}
