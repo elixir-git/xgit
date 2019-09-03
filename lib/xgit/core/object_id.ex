@@ -54,6 +54,16 @@ defmodule Xgit.Core.ObjectId do
   end
 
   @doc ~S"""
+  Convert an object ID to raw binary representation.
+
+  ## Return Value
+
+  A 20-byte binary encoding the object ID.
+  """
+  @spec to_binary_iodata(id :: t) :: binary
+  def to_binary_iodata(id), do: Base.decode16!(id, case: :lower)
+
+  @doc ~S"""
   Assign an object ID for a given data blob.
 
   No validation is performed on the content.

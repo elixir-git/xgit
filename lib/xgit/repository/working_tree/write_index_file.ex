@@ -10,6 +10,7 @@ defmodule Xgit.Repository.WorkingTree.WriteIndexFile do
 
   alias Xgit.Core.DirCache
   alias Xgit.Core.DirCache.Entry, as: DirCacheEntry
+  alias Xgit.Core.ObjectId
   alias Xgit.Util.NB
   alias Xgit.Util.TrailingHashDevice
 
@@ -108,14 +109,12 @@ defmodule Xgit.Repository.WorkingTree.WriteIndexFile do
       NB.encode_uint32(uid),
       NB.encode_uint32(gid),
       NB.encode_uint32(size),
-      encode_object_id(object_id),
+      ObjectId.to_binary_iodata(object_id),
       encode_v2_flags(stage, assume_valid?, extended?, name_length),
       name,
       padding(name_length)
     ])
   end
-
-  defp encode_object_id(object_id), do: Base.decode16!(object_id, case: :lower)
 
   defp encode_v2_flags(stage, assume_valid?, extended?, name_length) do
     value =
