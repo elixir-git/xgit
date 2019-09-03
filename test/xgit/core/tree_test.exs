@@ -19,6 +19,11 @@ defmodule Xgit.Core.TreeTest do
       assert Tree.valid?(@valid)
     end
 
+    test "not a Tree struct" do
+      refute Tree.valid?(%{})
+      refute Tree.valid?("tree")
+    end
+
     @invalid_mods [
       entries: [Map.put(@valid_entry, :name, "binary not allowed here")],
       entries: [Map.put(@valid_entry, :name, 'no/slashes')],
