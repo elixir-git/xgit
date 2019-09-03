@@ -87,6 +87,20 @@ defmodule Xgit.Core.FileMode do
   @valid_file_modes [0o100644, 0o100755, 0o120000, 0o040000, 0o160000]
 
   @doc ~S"""
+  Return a rendered version of this file mode as an octal charlist.
+
+  Optimized for the known file modes. Errors out for any other mode.
+  """
+  @spec to_octal(file_mode :: t) :: charlist
+  def to_octal(file_mode)
+
+  def to_octal(0o040000), do: cover('040000')
+  def to_octal(0o120000), do: cover('120000')
+  def to_octal(0o100644), do: cover('100644')
+  def to_octal(0o100755), do: cover('100755')
+  def to_octal(0o160000), do: cover('160000')
+
+  @doc ~S"""
   This guard requires the value to be one of the known git file mode values.
   """
   defguard is_file_mode(t) when t in @valid_file_modes
