@@ -535,6 +535,18 @@ defmodule Xgit.Core.FilePath do
   defp to_lower(b), do: cover(b)
 
   @doc ~S"""
+  Returns `true` if `path` starts with `prefix`.
+
+  Unlike `String.starts_with?/2`, only accepts a single prefix path.
+  """
+  @spec starts_with?(path :: t, prefix :: t) :: boolean
+  def starts_with?(path, prefix)
+
+  def starts_with?(_path, []), do: cover(true)
+  def starts_with?([c | path], [c | prefix]), do: starts_with?(path, prefix)
+  def starts_with?(_path, _prefix), do: cover(false)
+
+  @doc ~S"""
   Ensure that a trailing `/` is present.
 
   **Exception:** If the path is empty, it will be returned as-is.

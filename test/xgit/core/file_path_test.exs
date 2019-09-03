@@ -491,6 +491,17 @@ defmodule Xgit.Core.FilePathTest do
     end
   end
 
+  test "starts_with?/2" do
+    assert starts_with?('', '')
+    assert starts_with?('abc', '')
+    assert starts_with?('abc', 'a')
+    assert starts_with?('abc', 'abc')
+    refute starts_with?('xabc', 'abc')
+    refute starts_with?('abc', 'abd')
+    refute starts_with?('ab', 'abc')
+    refute starts_with?('', 'a')
+  end
+
   describe "ensure_trailing_separator/1" do
     test "empty list" do
       assert ensure_trailing_separator([]) == []
