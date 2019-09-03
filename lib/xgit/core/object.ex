@@ -58,7 +58,6 @@ defmodule Xgit.Core.Object do
   alias Xgit.Core.FileMode
   alias Xgit.Core.FilePath
   alias Xgit.Core.ObjectId
-  alias Xgit.Core.ObjectId
   alias Xgit.Util.RawParseUtils
 
   import Xgit.Util.ForceCoverage
