@@ -36,6 +36,12 @@ defmodule Xgit.Core.ObjectIdTest do
     assert ObjectId.from_hex_charlist('1234567890abXdef12341234567890abcdef1234') == false
   end
 
+  test "to_binary_iodata/1" do
+    assert ObjectId.to_binary_iodata("1234567890abcdef12341234567890abcdef1234") ==
+             <<18, 52, 86, 120, 144, 171, 205, 239, 18, 52, 18, 52, 86, 120, 144, 171, 205, 239,
+               18, 52>>
+  end
+
   describe "calculate_id/3" do
     test "happy path: SHA hash with string content" do
       assert ObjectId.calculate_id("test content\n", :blob) ==
