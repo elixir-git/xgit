@@ -535,6 +535,19 @@ defmodule Xgit.Core.FilePath do
   defp to_lower(b), do: cover(b)
 
   @doc ~S"""
+  Ensure that a trailing `/` is present.
+
+  **Exception:** If the path is empty, it will be returned as-is.
+  """
+  @spec ensure_trailing_separator(path :: t) :: t
+  def ensure_trailing_separator([]), do: cover([])
+
+  def ensure_trailing_separator(path) when is_list(path) do
+    # We strip trailing `/` because there might be more than one.
+    strip_trailing_separator(path) ++ '/'
+  end
+
+  @doc ~S"""
   Remove trailing `/` if present.
   """
   @spec strip_trailing_separator(path :: t) :: t

@@ -491,6 +491,24 @@ defmodule Xgit.Core.FilePathTest do
     end
   end
 
+  describe "ensure_trailing_separator/1" do
+    test "empty list" do
+      assert ensure_trailing_separator([]) == []
+    end
+
+    test "without trailing /" do
+      assert ensure_trailing_separator('abc') == 'abc/'
+      assert ensure_trailing_separator('/abc') == '/abc/'
+      assert ensure_trailing_separator('foo/b') == 'foo/b/'
+    end
+
+    test "with trailing /" do
+      assert ensure_trailing_separator('/') == '/'
+      assert ensure_trailing_separator('abc/') == 'abc/'
+      assert ensure_trailing_separator('foo/bar//') == 'foo/bar/'
+    end
+  end
+
   describe "strip_trailing_separator/1" do
     test "empty list" do
       assert strip_trailing_separator([]) == []
