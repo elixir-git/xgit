@@ -100,8 +100,8 @@ defmodule Xgit.Core.Tree do
   * The entries are properly sorted.
   * All entries are valid, as determined by `Xgit.Core.Tree.Entry.valid?/1`.
   """
-  @spec valid?(dir_cache :: any) :: boolean
-  def valid?(dir_cache)
+  @spec valid?(tree :: any) :: boolean
+  def valid?(tree)
 
   def valid?(%__MODULE__{entries: entries}) when is_list(entries) do
     Enum.all?(entries, &Entry.valid?/1) && entries_sorted?([nil | entries])
