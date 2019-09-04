@@ -2,6 +2,9 @@ defmodule Xgit.Core.Tree do
   @moduledoc ~S"""
   Represents a git `tree` object in memory.
   """
+  alias Xgit.Core.FileMode
+  alias Xgit.Core.Object
+  alias Xgit.Core.ObjectId
 
   import Xgit.Util.ForceCoverage
 
@@ -113,4 +116,28 @@ defmodule Xgit.Core.Tree do
     do: Entry.compare(entry1, entry2) == :lt && entries_sorted?([entry2 | tail])
 
   defp entries_sorted?([_]), do: cover(true)
+
+  @doc ~S"""
+  Renders this tree structure into a corresponding `Xgit.Core.Object`.
+  """
+  @spec to_object(tree :: t) :: Object.t()
+  def to_object(tree)
+
+  def to_object(%__MODULE__{entries: entries} = _tree) do
+    rendered_entries =
+      entries
+      |> Enum.map(&entry_to_iodata/1)
+      |> IO.iodata_to_binary()
+      |> :binary.bin_to_list()
+
+    %Object{
+      type: :tree,
+      content: rendered_entries,
+      size: Enum.count(rendered_entries),
+      id: ObjectId.calculate_id(rendered_entries, :tree)
+    }
+  end
+
+  defp entry_to_iodata(%__MODULE__.Entry{name: name, object_id: object_id, mode: mode}),
+    do: cover([FileMode.to_octal(mode), ?\s, name, 0, ObjectId.to_binary_iodata(object_id)])
 end
