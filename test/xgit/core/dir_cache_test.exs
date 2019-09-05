@@ -499,7 +499,105 @@ defmodule Xgit.Core.DirCacheTest do
       )
     end
 
-    # test "honors prefix"
+    test "honors prefix" do
+      assert_same_output(
+        fn git_dir ->
+          {_output, 0} =
+            System.cmd(
+              "git",
+              [
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                "100644",
+                "7fa62716fc68733db4c769fe678295cf4cf5b336",
+                "a/a/b"
+              ],
+              cd: git_dir
+            )
+
+          {_output, 0} =
+            System.cmd(
+              "git",
+              [
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                "100644",
+                "0f717230e297de82d0f8d761143dc1e1145c6bd5",
+                "a/b/c"
+              ],
+              cd: git_dir
+            )
+
+          {_output, 0} =
+            System.cmd(
+              "git",
+              [
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                "100644",
+                "ff287368514462578ba6406d366113953539cbf1",
+                "a/b/d"
+              ],
+              cd: git_dir
+            )
+
+          {_output, 0} =
+            System.cmd(
+              "git",
+              [
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                "100644",
+                "de588889c4d62aaf3ef3bd90be38fa239be2f5d1",
+                "a/c/x"
+              ],
+              cd: git_dir
+            )
+
+          {_output, 0} =
+            System.cmd(
+              "git",
+              [
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                "100755",
+                "7919e8900c3af541535472aebd56d44222b7b3a3",
+                "other.txt"
+              ],
+              cd: git_dir
+            )
+        end,
+        %DirCache{
+          version: 2,
+          entry_count: 5,
+          entries: [
+            Map.merge(@valid_entry, %{
+              name: 'a/a/b',
+              object_id: "7fa62716fc68733db4c769fe678295cf4cf5b336"
+            }),
+            Map.merge(@valid_entry, %{
+              name: 'a/b/c',
+              object_id: "0f717230e297de82d0f8d761143dc1e1145c6bd5"
+            }),
+            Map.merge(@valid_entry, %{
+              name: 'a/b/d',
+              object_id: "ff287368514462578ba6406d366113953539cbf1"
+            }),
+            Map.merge(@valid_entry, %{
+              name: 'a/c/x',
+              object_id: "de588889c4d62aaf3ef3bd90be38fa239be2f5d1"
+            }),
+            Map.merge(@valid_entry, %{name: 'other.txt', mode: 0o100755})
+          ]
+        },
+        'a/b'
+      )
+    end
 
     test "error: invalid dir cache" do
       assert {:error, :invalid} =
@@ -514,15 +612,22 @@ defmodule Xgit.Core.DirCacheTest do
                })
     end
 
-    defp assert_same_output(git_ref_fn, dir_cache) do
+    defp assert_same_output(git_ref_fn, dir_cache, prefix \\ []) do
       {:ok, ref: ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
 
       git_ref_fn.(ref)
 
-      {output, 0} = System.cmd("git", ["write-tree", "--missing-ok"], cd: ref)
+      {output, 0} =
+        if prefix == [] do
+          System.cmd("git", ["write-tree", "--missing-ok"], cd: ref)
+        else
+          IO.puts("prefix case")
+          System.cmd("git", ["write-tree", "--missing-ok", "--prefix=#{prefix}"], cd: ref)
+        end
+
       content_id = String.trim(output)
 
-      assert {:ok, tree_objects} = DirCache.to_tree_objects(dir_cache)
+      assert {:ok, tree_objects} = DirCache.to_tree_objects(dir_cache, prefix)
       last_tree_object = List.last(tree_objects)
 
       :ok = OnDisk.create(xgit)
