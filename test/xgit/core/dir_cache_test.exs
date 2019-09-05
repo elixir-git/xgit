@@ -82,6 +82,17 @@ defmodule Xgit.Core.DirCacheTest do
              })
     end
 
+    test "file and tree at same prefix" do
+      refute DirCache.valid?(%DirCache{
+               version: 2,
+               entry_count: 2,
+               entries: [
+                 Map.put(@valid_entry, :name, 'a'),
+                 Map.put(@valid_entry, :name, 'a/b')
+               ]
+             })
+    end
+
     test "not sorted (name)" do
       refute DirCache.valid?(%DirCache{
                version: 2,
