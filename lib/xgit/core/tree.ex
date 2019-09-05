@@ -139,5 +139,5 @@ defmodule Xgit.Core.Tree do
   end
 
   defp entry_to_iodata(%__MODULE__.Entry{name: name, object_id: object_id, mode: mode}),
-    do: cover([FileMode.to_octal(mode), ?\s, name, 0, ObjectId.to_binary_iodata(object_id)])
+    do: cover([FileMode.to_short_octal(mode), ?\s, name, 0, ObjectId.to_binary_iodata(object_id)])
 end

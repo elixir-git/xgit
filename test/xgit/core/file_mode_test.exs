@@ -65,15 +65,15 @@ defmodule Xgit.Core.FileModeTest do
     refute FileMode.valid?(FileMode.gitlink() + 1)
   end
 
-  test "to_octal/1" do
-    assert FileMode.to_octal(FileMode.tree()) == '040000'
-    assert FileMode.to_octal(FileMode.symlink()) == '120000'
-    assert FileMode.to_octal(FileMode.regular_file()) == '100644'
-    assert FileMode.to_octal(FileMode.executable_file()) == '100755'
-    assert FileMode.to_octal(FileMode.gitlink()) == '160000'
+  test "to_short_octal/1" do
+    assert FileMode.to_short_octal(FileMode.tree()) == '40000'
+    assert FileMode.to_short_octal(FileMode.symlink()) == '120000'
+    assert FileMode.to_short_octal(FileMode.regular_file()) == '100644'
+    assert FileMode.to_short_octal(FileMode.executable_file()) == '100755'
+    assert FileMode.to_short_octal(FileMode.gitlink()) == '160000'
 
     assert_raise FunctionClauseError, fn ->
-      FileMode.to_octal(FileMode.gitlink() + 1)
+      FileMode.to_short_octal(FileMode.gitlink() + 1)
     end
   end
 

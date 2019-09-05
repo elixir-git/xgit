@@ -89,16 +89,18 @@ defmodule Xgit.Core.FileMode do
   @doc ~S"""
   Return a rendered version of this file mode as an octal charlist.
 
+  No leading zeros are included.
+
   Optimized for the known file modes. Errors out for any other mode.
   """
-  @spec to_octal(file_mode :: t) :: charlist
-  def to_octal(file_mode)
+  @spec to_short_octal(file_mode :: t) :: charlist
+  def to_short_octal(file_mode)
 
-  def to_octal(0o040000), do: cover('040000')
-  def to_octal(0o120000), do: cover('120000')
-  def to_octal(0o100644), do: cover('100644')
-  def to_octal(0o100755), do: cover('100755')
-  def to_octal(0o160000), do: cover('160000')
+  def to_short_octal(0o040000), do: cover('40000')
+  def to_short_octal(0o120000), do: cover('120000')
+  def to_short_octal(0o100644), do: cover('100644')
+  def to_short_octal(0o100755), do: cover('100755')
+  def to_short_octal(0o160000), do: cover('160000')
 
   @doc ~S"""
   This guard requires the value to be one of the known git file mode values.
