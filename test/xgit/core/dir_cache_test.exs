@@ -3,6 +3,11 @@ defmodule Xgit.Core.DirCacheTest do
 
   alias Xgit.Core.DirCache
   alias Xgit.Core.DirCache.Entry
+  alias Xgit.GitInitTestCase
+  alias Xgit.Repository
+  alias Xgit.Repository.OnDisk
+
+  import FolderDiff
 
   describe "empty/0" do
     assert %DirCache{version: 2, entry_count: 0, entries: []} = empty = DirCache.empty()
@@ -336,6 +341,203 @@ defmodule Xgit.Core.DirCacheTest do
       assert_raise FunctionClauseError, fn ->
         DirCache.remove_entries(DirCache.empty(), {'hello.txt', 0})
       end
+    end
+  end
+
+  describe "to_tree_objects/2" do
+    test "happy path: empty dir cache" do
+      assert_same_output(fn _git_dir -> nil end, DirCache.empty())
+    end
+
+    test "happy path: one root-level entry in dir cache" do
+      assert_same_output(
+        fn git_dir ->
+          {_output, 0} =
+            System.cmd(
+              "git",
+              [
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                "100644",
+                "7919e8900c3af541535472aebd56d44222b7b3a3",
+                "hello.txt"
+              ],
+              cd: git_dir
+            )
+        end,
+        @valid
+      )
+    end
+
+    test "happy path: one blob nested one level" do
+      assert_same_output(
+        fn git_dir ->
+          {_output, 0} =
+            System.cmd(
+              "git",
+              [
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                "100644",
+                "7fa62716fc68733db4c769fe678295cf4cf5b336",
+                "a/b"
+              ],
+              cd: git_dir
+            )
+        end,
+        %DirCache{
+          version: 2,
+          entry_count: 1,
+          entries: [
+            Map.merge(@valid_entry, %{
+              name: 'a/b',
+              object_id: "7fa62716fc68733db4c769fe678295cf4cf5b336"
+            })
+          ]
+        }
+      )
+    end
+
+    test "happy path: deeply nested dir cache" do
+      assert_same_output(
+        fn git_dir ->
+          {_output, 0} =
+            System.cmd(
+              "git",
+              [
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                "100644",
+                "7fa62716fc68733db4c769fe678295cf4cf5b336",
+                "a/a/b"
+              ],
+              cd: git_dir
+            )
+
+          {_output, 0} =
+            System.cmd(
+              "git",
+              [
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                "100644",
+                "0f717230e297de82d0f8d761143dc1e1145c6bd5",
+                "a/b/c"
+              ],
+              cd: git_dir
+            )
+
+          {_output, 0} =
+            System.cmd(
+              "git",
+              [
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                "100644",
+                "ff287368514462578ba6406d366113953539cbf1",
+                "a/b/d"
+              ],
+              cd: git_dir
+            )
+
+          {_output, 0} =
+            System.cmd(
+              "git",
+              [
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                "100644",
+                "de588889c4d62aaf3ef3bd90be38fa239be2f5d1",
+                "a/c/x"
+              ],
+              cd: git_dir
+            )
+
+          {_output, 0} =
+            System.cmd(
+              "git",
+              [
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                "100755",
+                "7919e8900c3af541535472aebd56d44222b7b3a3",
+                "other.txt"
+              ],
+              cd: git_dir
+            )
+        end,
+        %DirCache{
+          version: 2,
+          entry_count: 5,
+          entries: [
+            Map.merge(@valid_entry, %{
+              name: 'a/a/b',
+              object_id: "7fa62716fc68733db4c769fe678295cf4cf5b336"
+            }),
+            Map.merge(@valid_entry, %{
+              name: 'a/b/c',
+              object_id: "0f717230e297de82d0f8d761143dc1e1145c6bd5"
+            }),
+            Map.merge(@valid_entry, %{
+              name: 'a/b/d',
+              object_id: "ff287368514462578ba6406d366113953539cbf1"
+            }),
+            Map.merge(@valid_entry, %{
+              name: 'a/c/x',
+              object_id: "de588889c4d62aaf3ef3bd90be38fa239be2f5d1"
+            }),
+            Map.merge(@valid_entry, %{name: 'other.txt', mode: 0o100755})
+          ]
+        }
+      )
+    end
+
+    # test "honors prefix"
+
+    test "error: invalid dir cache" do
+      assert {:error, :invalid} =
+               DirCache.to_tree_objects(%DirCache{
+                 version: 2,
+                 entry_count: 3,
+                 entries: [
+                   Map.put(@valid_entry, :name, 'abc'),
+                   Map.put(@valid_entry, :name, 'abf'),
+                   Map.put(@valid_entry, :name, 'abe')
+                 ]
+               })
+    end
+
+    defp assert_same_output(git_ref_fn, dir_cache) do
+      {:ok, ref: ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
+
+      git_ref_fn.(ref)
+
+      {output, 0} = System.cmd("git", ["write-tree", "--missing-ok"], cd: ref)
+      content_id = String.trim(output)
+
+      assert {:ok, tree_objects} = DirCache.to_tree_objects(dir_cache)
+      last_tree_object = List.last(tree_objects)
+
+      :ok = OnDisk.create(xgit)
+      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+
+      Enum.each(tree_objects, fn tree_object ->
+        :ok = Repository.put_loose_object(repo, tree_object)
+      end)
+
+      assert_folders_are_equal(
+        Path.join([ref, ".git", "objects"]),
+        Path.join([xgit, ".git", "objects"])
+      )
+
+      assert content_id == last_tree_object.id
     end
   end
 end

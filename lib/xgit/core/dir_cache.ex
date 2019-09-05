@@ -26,6 +26,7 @@ defmodule Xgit.Core.DirCache do
   import Xgit.Util.ForceCoverage
 
   alias Xgit.Core.FilePath
+  alias Xgit.Core.Tree
   alias Xgit.Util.Comparison
 
   @typedoc ~S"""
@@ -414,4 +415,106 @@ defmodule Xgit.Core.DirCache do
 
   defp remove_matching_entries([existing_head | existing_tail], sorted_entries_to_remove),
     do: cover([existing_head | remove_matching_entries(existing_tail, sorted_entries_to_remove)])
+
+  @doc ~S"""
+  Convert this dir cache to one or more `tree` objects.
+
+  ## Parameters
+
+  `prefix` (`FilePath.t`) if present, only includes entries that have this prefix
+
+  ## Return Value
+
+  `{:ok, objects}` where `objects` is a list of `Xgit.Core.Object` structs of type
+  `tree`. The _last_ entry in the list will be the top-level tree. All others must be
+  written or must be present in the object database for the top-level tree to be valid.
+
+  `{:error, :invalid}` if the dir_cache is not valid.
+  """
+  @spec to_tree_objects(dir_cache :: t, prefix :: Xgit.Core.FilePath.t()) ::
+          {:ok, [Xgit.Core.Object.t()]} | {:error, :invalid}
+  def to_tree_objects(dir_cache, prefix \\ [])
+
+  def to_tree_objects(%__MODULE__{entries: entries} = dir_cache, prefix)
+      when is_list(entries) and is_list(prefix) do
+    if valid?(dir_cache) do
+      prefix = FilePath.ensure_trailing_separator(prefix)
+
+      entries =
+        Enum.drop_while(entries, fn %__MODULE__.Entry{name: name} ->
+          not FilePath.starts_with?(name, prefix)
+        end)
+
+      {_entries, objects} = to_tree_objects_inner(entries, prefix, [], [])
+      {:ok, Enum.reverse(objects)}
+    else
+      cover {:error, :invalid}
+    end
+  end
+
+  defp to_tree_objects_inner(entries, prefix, objects_acc, tree_entries_acc)
+
+  defp to_tree_objects_inner([], _prefix, objects_acc, tree_entries_acc),
+    do: make_tree_and_continue([], objects_acc, tree_entries_acc)
+
+  defp to_tree_objects_inner(
+         [%__MODULE__.Entry{name: name, object_id: object_id, mode: mode} | tail] = entries,
+         prefix,
+         objects_acc,
+         tree_entries_acc
+       ) do
+    name_after_prefix = Enum.drop(name, Enum.count(prefix))
+
+    # refactor me
+
+    cond do
+      not FilePath.starts_with?(name, prefix) ->
+        make_tree_and_continue(entries, objects_acc, tree_entries_acc)
+
+      Enum.any?(name_after_prefix, &(&1 == ?/)) ->
+        {entries, new_tree_entry, objects_acc} =
+          make_subtree(entries, prefix, objects_acc, tree_entries_acc)
+
+        to_tree_objects_inner(entries, prefix, objects_acc, [new_tree_entry | tree_entries_acc])
+
+      true ->
+        new_tree_entry = %Tree.Entry{name: name_after_prefix, object_id: object_id, mode: mode}
+        to_tree_objects_inner(tail, prefix, objects_acc, [new_tree_entry | tree_entries_acc])
+    end
+  end
+
+  defp make_tree_and_continue(entries, objects_acc, tree_entries_acc) do
+    tree_object = Tree.to_object(%Tree{entries: Enum.reverse(tree_entries_acc)})
+    {entries, [tree_object | objects_acc]}
+  end
+
+  defp make_subtree(
+         [%__MODULE__.Entry{name: name} | _tail] = entries,
+         existing_prefix,
+         objects_acc,
+         _tree_entries_acc
+       ) do
+    first_segment_after_prefix =
+      name
+      |> Enum.drop(Enum.count(existing_prefix))
+      |> Enum.drop_while(&(&1 == ?/))
+      |> Enum.take_while(&(&1 != ?/))
+
+    tree_name =
+      cover '#{FilePath.ensure_trailing_separator(existing_prefix)}#{first_segment_after_prefix}'
+
+    new_prefix = cover '#{tree_name}/'
+
+    {entries, objects_acc} = to_tree_objects_inner(entries, new_prefix, objects_acc, [])
+
+    tree_object = List.first(objects_acc)
+
+    new_tree_entry = %Tree.Entry{
+      name: first_segment_after_prefix,
+      object_id: tree_object.id,
+      mode: FileMode.tree()
+    }
+
+    cover {entries, new_tree_entry, objects_acc}
+  end
 end
