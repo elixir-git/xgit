@@ -259,8 +259,12 @@ defmodule Xgit.Core.DirCache do
 
   def valid?(_), do: cover(false)
 
-  defp entries_sorted?([entry1, entry2 | tail]),
-    do: Entry.compare(entry1, entry2) == :lt && entries_sorted?([entry2 | tail])
+  defp entries_sorted?([entry1, entry2 | tail]) do
+    Entry.compare(entry1, entry2) == :lt &&
+      (entry1 == nil ||
+         not FilePath.starts_with?(entry2.name, FilePath.ensure_trailing_separator(entry1.name))) &&
+      entries_sorted?([entry2 | tail])
+  end
 
   defp entries_sorted?([_]), do: cover(true)
 
