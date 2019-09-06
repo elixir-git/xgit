@@ -31,6 +31,12 @@ defmodule Xgit.Repository.InMemory do
   def init(opts) when is_list(opts), do: cover({:ok, %{loose_objects: %{}}})
 
   @impl true
+  def handle_has_all_object_ids?(%{loose_objects: objects} = state, object_ids) do
+    has_all_objects? = Enum.all?(object_ids, fn object_id -> Map.has_key?(objects, object_id) end)
+    cover {:ok, has_all_objects?, state}
+  end
+
+  @impl true
   def handle_get_object(%{loose_objects: objects} = state, object_id) do
     # Currently only checks for loose objects.
     # TO DO: Look for object in packs.

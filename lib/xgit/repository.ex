@@ -111,6 +111,29 @@ defmodule Xgit.Repository do
       when is_pid(repository) and is_pid(working_tree),
       do: GenServer.call(repository, {:set_default_working_tree, working_tree})
 
+  @doc ~S"""
+  Returns `true` if all objects in the list are present in the object dictionary.
+
+  This limit is not enforced, but it's recommended to query for no more than ~100 object
+  IDs at a time.
+  """
+  @spec has_all_object_ids?(repository :: t, object_ids :: [ObjectId.t()]) :: boolean
+  def has_all_object_ids?(repository, object_ids) when is_pid(repository) and is_list(object_ids),
+    do: GenServer.call(repository, {:has_all_object_ids?, object_ids})
+
+  @doc ~S"""
+  Checks for presence of multiple object Ids.
+
+  Called when `has_all_object_ids?/2` is called.
+
+  ## Return Value
+
+  Should return `{:ok, has_all_object_ids?, state}` where `has_all_object_ids?` is `true`
+  if all object IDs can be found in the object dictionary; `false` otherwise.
+  """
+  @callback handle_has_all_object_ids?(state :: any, object_ids :: [ObjectId.t()]) ::
+              {:ok, has_all_object_ids? :: boolean, state :: any}
+
   @typedoc ~S"""
   Error codes that can be returned by `get_object/2`.
   """
@@ -205,6 +228,9 @@ defmodule Xgit.Repository do
   def handle_call({:set_default_working_tree, _working_tree}, _from, state),
     do: {:reply, :error, state}
 
+  def handle_call({:has_all_object_ids?, object_ids}, _from, state),
+    do: delegate_boolean_call_to(state, :handle_has_all_object_ids?, [object_ids])
+
   def handle_call({:get_object, object_id}, _from, state),
     do: delegate_call_to(state, :handle_get_object, [object_id])
 
@@ -222,6 +248,11 @@ defmodule Xgit.Repository do
       {:ok, response, mod_state} -> {:reply, {:ok, response}, %{state | mod_state: mod_state}}
       {:error, reason, mod_state} -> {:reply, {:error, reason}, %{state | mod_state: mod_state}}
     end
+  end
+
+  defp delegate_boolean_call_to(state, function, args) do
+    {:reply, {:ok, response}, state} = delegate_call_to(state, function, args)
+    cover {:reply, response, state}
   end
 
   defmacro __using__(opts) do
