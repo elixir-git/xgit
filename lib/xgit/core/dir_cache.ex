@@ -26,6 +26,7 @@ defmodule Xgit.Core.DirCache do
   import Xgit.Util.ForceCoverage
 
   alias Xgit.Core.FilePath
+  alias Xgit.Core.Tree
   alias Xgit.Util.Comparison
 
   @typedoc ~S"""
@@ -414,4 +415,115 @@ defmodule Xgit.Core.DirCache do
 
   defp remove_matching_entries([existing_head | existing_tail], sorted_entries_to_remove),
     do: cover([existing_head | remove_matching_entries(existing_tail, sorted_entries_to_remove)])
+
+  @typedoc ~S"""
+  Error reason codes returned by `to_tree_objects/2`.
+  """
+  @type to_tree_objects_reason :: :invalid_dir_cache | :prefix_not_found
+
+  @doc ~S"""
+  Convert this `DirCache` to one or more `tree` objects.
+
+  ## Parameters
+
+  `prefix`: (`Xgit.Core.FilePath`) if present, return the object ID for the tree
+  pointed to by `prefix`. All tree objects will be generated, regardless of `prefix`.
+
+  ## Return Value
+
+  `{:ok, objects, prefix_tree}` where `objects` is a list of `Xgit.Core.Object`
+  structs of type `tree`. All others must be written or must be present in the
+  object database for the top-level tree to be valid. `prefix_tree` is the
+  tree for the subtree specified by `prefix` or the top-level tree if no prefix
+  was specified.
+
+  `{:error, :invalid_dir_cache}` if the `DirCache` is not valid.
+
+  `{:error, :prefix_not_found}` if no tree matching `prefix` exists.
+  """
+  @spec to_tree_objects(dir_cache :: t, prefix :: Xgit.Core.FilePath.t()) ::
+          {:ok, [Xgit.Core.Object.t()], Xgit.Core.Object.t()} | {:error, to_tree_objects_reason}
+  def to_tree_objects(dir_cache, prefix \\ [])
+
+  def to_tree_objects(%__MODULE__{entries: entries} = dir_cache, prefix)
+      when is_list(entries) and is_list(prefix) do
+    with {:valid?, true} <- {:valid?, valid?(dir_cache)},
+         {_entries, tree_for_prefix, _this_tree} <- to_tree_objects_inner(entries, [], %{}, []),
+         {:prefix, prefix_tree} when prefix_tree != nil <-
+           {:prefix, Map.get(tree_for_prefix, FilePath.ensure_trailing_separator(prefix))} do
+      objects =
+        tree_for_prefix
+        |> Enum.sort()
+        |> Enum.map(fn {_prefix, object} -> object end)
+
+      cover {:ok, objects, prefix_tree}
+    else
+      {:valid?, _} -> cover {:error, :invalid_dir_cache}
+      {:prefix, _} -> cover {:error, :prefix_not_found}
+    end
+  end
+
+  defp to_tree_objects_inner(entries, prefix, tree_for_prefix, tree_entries_acc)
+
+  defp to_tree_objects_inner([], prefix, tree_for_prefix, tree_entries_acc),
+    do: make_tree_and_continue([], prefix, tree_for_prefix, tree_entries_acc)
+
+  defp to_tree_objects_inner(
+         [%__MODULE__.Entry{name: name, object_id: object_id, mode: mode} | tail] = entries,
+         prefix,
+         tree_for_prefix,
+         tree_entries_acc
+       ) do
+    if FilePath.starts_with?(name, prefix) do
+      name_after_prefix = Enum.drop(name, Enum.count(prefix))
+
+      {next_entries, new_tree_entry, tree_for_prefix} =
+        if Enum.any?(name_after_prefix, &(&1 == ?/)) do
+          make_subtree(entries, prefix, tree_for_prefix, tree_entries_acc)
+        else
+          cover {tail, %Tree.Entry{name: name_after_prefix, object_id: object_id, mode: mode},
+                 tree_for_prefix}
+        end
+
+      to_tree_objects_inner(next_entries, prefix, tree_for_prefix, [
+        new_tree_entry | tree_entries_acc
+      ])
+    else
+      make_tree_and_continue(entries, prefix, tree_for_prefix, tree_entries_acc)
+    end
+  end
+
+  defp make_tree_and_continue(entries, prefix, tree_for_prefix, tree_entries_acc) do
+    tree_object = Tree.to_object(%Tree{entries: Enum.reverse(tree_entries_acc)})
+    {entries, Map.put(tree_for_prefix, prefix, tree_object), tree_object}
+  end
+
+  defp make_subtree(
+         [%__MODULE__.Entry{name: name} | _tail] = entries,
+         existing_prefix,
+         tree_for_prefix,
+         _tree_entries_acc
+       ) do
+    first_segment_after_prefix =
+      name
+      |> Enum.drop(Enum.count(existing_prefix))
+      |> Enum.drop_while(&(&1 == ?/))
+      |> Enum.take_while(&(&1 != ?/))
+
+    tree_name =
+      cover '#{FilePath.ensure_trailing_separator(existing_prefix)}#{first_segment_after_prefix}'
+
+    new_prefix = cover '#{tree_name}/'
+
+    {entries, tree_for_prefix, tree_object} =
+      to_tree_objects_inner(entries, new_prefix, tree_for_prefix, [])
+
+    new_tree_entry = %Tree.Entry{
+      name: first_segment_after_prefix,
+      object_id: tree_object.id,
+      mode: FileMode.tree()
+    }
+
+    cover {entries, new_tree_entry, tree_for_prefix}
+  end
 end
