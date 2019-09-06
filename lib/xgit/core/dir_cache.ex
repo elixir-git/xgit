@@ -427,7 +427,7 @@ defmodule Xgit.Core.DirCache do
   ## Parameters
 
   `prefix`: (`Xgit.Core.FilePath`) if present, return the object ID for the tree
-  pointed to by `prefix`.
+  pointed to by `prefix`. All tree objects will be generated, regardless of `prefix`.
 
   ## Return Value
 
