@@ -599,8 +599,36 @@ defmodule Xgit.Core.DirCacheTest do
       )
     end
 
+    test "prefix doesn't exist" do
+      dir_cache = %DirCache{
+        version: 2,
+        entry_count: 5,
+        entries: [
+          Map.merge(@valid_entry, %{
+            name: 'a/a/b',
+            object_id: "7fa62716fc68733db4c769fe678295cf4cf5b336"
+          }),
+          Map.merge(@valid_entry, %{
+            name: 'a/b/c',
+            object_id: "0f717230e297de82d0f8d761143dc1e1145c6bd5"
+          }),
+          Map.merge(@valid_entry, %{
+            name: 'a/b/d',
+            object_id: "ff287368514462578ba6406d366113953539cbf1"
+          }),
+          Map.merge(@valid_entry, %{
+            name: 'a/c/x',
+            object_id: "de588889c4d62aaf3ef3bd90be38fa239be2f5d1"
+          }),
+          Map.merge(@valid_entry, %{name: 'other.txt', mode: 0o100755})
+        ]
+      }
+
+      assert {:error, :prefix_not_found} = DirCache.to_tree_objects(dir_cache, 'no/such/prefix')
+    end
+
     test "error: invalid dir cache" do
-      assert {:error, :invalid} =
+      assert {:error, :invalid_dir_cache} =
                DirCache.to_tree_objects(%DirCache{
                  version: 2,
                  entry_count: 3,
@@ -621,14 +649,12 @@ defmodule Xgit.Core.DirCacheTest do
         if prefix == [] do
           System.cmd("git", ["write-tree", "--missing-ok"], cd: ref)
         else
-          IO.puts("prefix case")
           System.cmd("git", ["write-tree", "--missing-ok", "--prefix=#{prefix}"], cd: ref)
         end
 
       content_id = String.trim(output)
 
-      assert {:ok, tree_objects} = DirCache.to_tree_objects(dir_cache, prefix)
-      last_tree_object = List.last(tree_objects)
+      assert {:ok, tree_objects, root_tree_object} = DirCache.to_tree_objects(dir_cache, prefix)
 
       :ok = OnDisk.create(xgit)
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
@@ -642,7 +668,7 @@ defmodule Xgit.Core.DirCacheTest do
         Path.join([xgit, ".git", "objects"])
       )
 
-      assert content_id == last_tree_object.id
+      assert content_id == root_tree_object.id
     end
   end
 end
