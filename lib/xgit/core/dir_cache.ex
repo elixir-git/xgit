@@ -474,25 +474,22 @@ defmodule Xgit.Core.DirCache do
          tree_for_prefix,
          tree_entries_acc
        ) do
-    name_after_prefix = Enum.drop(name, Enum.count(prefix))
+    if FilePath.starts_with?(name, prefix) do
+      name_after_prefix = Enum.drop(name, Enum.count(prefix))
 
-    # refactor me
-
-    cond do
-      not FilePath.starts_with?(name, prefix) ->
-        make_tree_and_continue(entries, prefix, tree_for_prefix, tree_entries_acc)
-
-      Enum.any?(name_after_prefix, &(&1 == ?/)) ->
-        {entries, new_tree_entry, tree_for_prefix} =
+      {next_entries, new_tree_entry, tree_for_prefix} =
+        if Enum.any?(name_after_prefix, &(&1 == ?/)) do
           make_subtree(entries, prefix, tree_for_prefix, tree_entries_acc)
+        else
+          cover {tail, %Tree.Entry{name: name_after_prefix, object_id: object_id, mode: mode},
+                 tree_for_prefix}
+        end
 
-        to_tree_objects_inner(entries, prefix, tree_for_prefix, [
-          new_tree_entry | tree_entries_acc
-        ])
-
-      true ->
-        new_tree_entry = %Tree.Entry{name: name_after_prefix, object_id: object_id, mode: mode}
-        to_tree_objects_inner(tail, prefix, tree_for_prefix, [new_tree_entry | tree_entries_acc])
+      to_tree_objects_inner(next_entries, prefix, tree_for_prefix, [
+        new_tree_entry | tree_entries_acc
+      ])
+    else
+      make_tree_and_continue(entries, prefix, tree_for_prefix, tree_entries_acc)
     end
   end
 
