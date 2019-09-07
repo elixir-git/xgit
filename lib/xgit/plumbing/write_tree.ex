@@ -30,7 +30,8 @@ defmodule Xgit.Plumbing.WriteTree do
           | Repository.put_loose_object_reason()
 
   @doc ~S"""
-  Retrieves information about files in the working tree as described by the index file.
+  Translates the current working tree, as reflected in its index file, to one or more
+  tree objects.
 
   The working tree must be in a fully-merged state.
 
@@ -44,7 +45,7 @@ defmodule Xgit.Plumbing.WriteTree do
   file that are not present in the object database. Normally this would be an error.
 
   `:prefix`: (`Xgit.Core.FilePath`) if present, returns the `object_id` for the tree at
-  the given subdirectory.  If not present, writes a tree corresponding to the root.
+  the given subdirectory. If not present, writes a tree corresponding to the root.
   (The entire tree is written in either case.)
 
   ## Return Value
