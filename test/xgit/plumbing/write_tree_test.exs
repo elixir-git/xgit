@@ -42,6 +42,23 @@ defmodule Xgit.Plumbing.WriteTreeTest do
       )
     end
 
+    test "can ignore existing tree objects" do
+      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
+
+      :ok = OnDisk.create(xgit)
+      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+
+      assert :ok =
+               CacheInfo.run(
+                 repo,
+                 [{0o100644, "7919e8900c3af541535472aebd56d44222b7b3a3", 'hello.txt'}]
+               )
+
+      assert {:ok, xgit_object_id} = WriteTree.run(repo, missing_ok?: true)
+
+      assert {:ok, ^xgit_object_id} = WriteTree.run(repo, missing_ok?: true)
+    end
+
     test "happy path: one blob nested one level" do
       assert_same_output(
         fn git_dir ->
@@ -378,6 +395,32 @@ defmodule Xgit.Plumbing.WriteTreeTest do
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       assert {:error, :invalid_format} = WriteTree.run(repo, missing_ok?: true)
+    end
+
+    test "error: :missing_ok? invalid" do
+      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
+
+      :ok = OnDisk.create(xgit)
+      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+
+      assert_raise ArgumentError,
+                   ~s(Xgit.Plumbing.WriteTree.run/2: missing_ok? "sure" is invalid),
+                   fn ->
+                     WriteTree.run(repo, missing_ok?: "sure")
+                   end
+    end
+
+    test "error: :prefix invalid" do
+      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
+
+      :ok = OnDisk.create(xgit)
+      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+
+      assert_raise ArgumentError,
+                   ~s[Xgit.Plumbing.WriteTree.run/2: prefix "a/b/c" is invalid (should be a charlist, not a String)],
+                   fn ->
+                     WriteTree.run(repo, prefix: "a/b/c")
+                   end
     end
 
     defp assert_same_output(git_ref_fn, xgit_fn, opts \\ []) do
