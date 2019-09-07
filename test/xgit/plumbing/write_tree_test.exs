@@ -1,11 +1,15 @@
 defmodule Xgit.Plumbing.WriteTreeTest do
   use Xgit.GitInitTestCase, async: true
 
+  alias Xgit.Core.DirCache
+  alias Xgit.Core.DirCache.Entry
   alias Xgit.GitInitTestCase
   alias Xgit.Plumbing.HashObject
   alias Xgit.Plumbing.UpdateIndex.CacheInfo
   alias Xgit.Plumbing.WriteTree
+  alias Xgit.Repository
   alias Xgit.Repository.OnDisk
+  alias Xgit.Repository.WorkingTree
 
   import FolderDiff
 
@@ -408,6 +412,44 @@ defmodule Xgit.Plumbing.WriteTreeTest do
                    fn ->
                      WriteTree.run(repo, missing_ok?: "sure")
                    end
+    end
+
+    @valid_entry %Entry{
+      name: 'hello.txt',
+      stage: 0,
+      object_id: "7919e8900c3af541535472aebd56d44222b7b3a3",
+      mode: 0o100644,
+      size: 42,
+      ctime: 1_565_612_933,
+      ctime_ns: 0,
+      mtime: 1_565_612_941,
+      mtime_ns: 0,
+      dev: 0,
+      ino: 0,
+      uid: 0,
+      gid: 0,
+      assume_valid?: true,
+      extended?: false,
+      skip_worktree?: false,
+      intent_to_add?: false
+    }
+
+    test "error: incomplete merge" do
+      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
+
+      :ok = OnDisk.create(xgit)
+      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+
+      working_tree = Repository.default_working_tree(repo)
+
+      :ok =
+        WorkingTree.update_dir_cache(
+          working_tree,
+          [@valid_entry, Map.put(@valid_entry, :stage, 1)],
+          []
+        )
+
+      assert {:error, :incomplete_merge} = WriteTree.run(repo, missing_ok?: true)
     end
 
     test "error: :prefix invalid" do
