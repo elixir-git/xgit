@@ -69,7 +69,7 @@ defmodule Xgit.Plumbing.WriteTree do
   * `Xgit.Repository.put_loose_object/2`
   * `Xgit.Repository.WorkingTree.ParseIndexFile.from_iodevice/1`
   """
-  @spec run(repository :: Repository.t()) ::
+  @spec run(repository :: Repository.t(), missing_ok?: boolean, prefix: FilePath.t()) ::
           {:ok, object_id :: ObjectId.t()}
           | {:error, reason :: reason}
   def run(repository, opts \\ []) when is_pid(repository) do

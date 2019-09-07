@@ -1,12 +1,10 @@
 defmodule Xgit.Plumbing.WriteTreeTest do
   use Xgit.GitInitTestCase, async: true
 
-  # alias Xgit.Core.DirCache
-  # alias Xgit.Core.DirCache.Entry
   alias Xgit.GitInitTestCase
+  alias Xgit.Plumbing.HashObject
   alias Xgit.Plumbing.UpdateIndex.CacheInfo
   alias Xgit.Plumbing.WriteTree
-  # alias Xgit.Repository
   alias Xgit.Repository.OnDisk
 
   import FolderDiff
@@ -289,12 +287,48 @@ defmodule Xgit.Plumbing.WriteTreeTest do
       )
     end
 
-    # test "missing_ok?: false happy path"
+    test "missing_ok?: false happy path" do
+      Temp.track!()
+      path = Temp.path!()
+      File.write!(path, "test content\n")
 
-    # test "missing_ok? error"
+      assert_same_output(
+        fn git_dir ->
+          {output, 0} = System.cmd("git", ["hash-object", "-w", path], cd: git_dir)
+          object_id = String.trim(output)
+
+          {_output, 0} =
+            System.cmd(
+              "git",
+              ["update-index", "--add", "--cacheinfo", "100644", object_id, "a/b"],
+              cd: git_dir
+            )
+        end,
+        fn xgit_repo ->
+          {:ok, object_id} = HashObject.run("test content\n", repo: xgit_repo, write?: true)
+          :ok = CacheInfo.run(xgit_repo, [{0o100644, object_id, 'a/b'}])
+        end
+      )
+    end
+
+    test "missing_ok? error" do
+      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
+
+      :ok = OnDisk.create(xgit)
+      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+
+      :ok
+
+      CacheInfo.run(
+        repo,
+        [{0o100644, "7919e8900c3af541535472aebd56d44222b7b3a3", 'hello.txt'}]
+      )
+
+      assert {:error, :objects_missing} = WriteTree.run(repo)
+    end
 
     test "prefix doesn't exist" do
-      {:ok, xgit: xgit} = GitInitTestCase.setup_git_repo()
+      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
 
       :ok = OnDisk.create(xgit)
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
@@ -333,18 +367,18 @@ defmodule Xgit.Plumbing.WriteTreeTest do
                WriteTree.run(repo, missing_ok?: true, prefix: 'no/such/prefix')
     end
 
-    # test "error: invalid dir cache" do
-    #   assert {:error, :invalid_dir_cache} =
-    #            DirCache.to_tree_objects(%DirCache{
-    #              version: 2,
-    #              entry_count: 3,
-    #              entries: [
-    #                Map.put(@valid_entry, :name, 'abc'),
-    #                Map.put(@valid_entry, :name, 'abf'),
-    #                Map.put(@valid_entry, :name, 'abe')
-    #              ]
-    #            })
-    # end
+    test "error: invalid dir cache" do
+      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
+
+      :ok = OnDisk.create(xgit)
+
+      index_path = Path.join([xgit, ".git", "index"])
+      File.write!(index_path, "not a valid index file")
+
+      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+
+      assert {:error, :invalid_format} = WriteTree.run(repo, missing_ok?: true)
+    end
 
     defp assert_same_output(git_ref_fn, xgit_fn, opts \\ []) do
       {:ok, ref: ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
