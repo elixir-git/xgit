@@ -1,5 +1,27 @@
 # Changelog for v0.x Series
 
+## v0.2.2
+
+_07 September 2019_
+
+* **Implement ``Xgit.Plumbing.WriteTree``.** This is an API equivalent to `git write-tree`. (#158)
+
+* Fix `@spec` for `Xgit.Plumbing.HashObject.run/2`. (#142)
+* Implement `Xgit.Core.DirCache.fully_merged?/1`. (#143)
+* Remove redundant alias in `Xgit.Core.Object`. (#144)
+* Implement `Xgit.Core.FilePath.ensure_trailing_separator/1`. (#145)
+* Implement `Xgit.Core.FilePath.starts_with?/2`. (#146)
+* Implement `Xgit.Core.Tree` struct. (#147)
+* Implement `Xgit.Core.FileMode.to_octal/1`. (#149)
+* Implement `Xgit.Core.ObjectId.to_binary_iodata/1`. (#150)
+* Bump ex_doc from 0.21.1 to 0.21.2 (#151)
+* Bump credo from 1.1.3 to 1.1.4 (#152)
+* Implement `Xgit.Core.Tree.to_object/1`. (#153)
+* `Xgit.Core.FileMode`: Replace `to_octal/1` with `to_short_octal/1`. (#154)
+* `DirCache.valid?/1` should not allow a file and directory to exist at the same prefix. (#155)
+* Implement `Xgit.Core.DirCache/to_tree_objects/2`. (#156)
+* Implement `Xgit.Repository.has_all_object_ids?/2`. (#157)
+
 ## v0.2.1
 
 _01 September 2019_
