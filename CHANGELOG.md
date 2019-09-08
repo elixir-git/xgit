@@ -4,8 +4,7 @@
 
 _07 September 2019_
 
-* **Implement ``Xgit.Plumbing.WriteTree``.** This is an API equivalent to `git write-tree`. (#158)
-
+* **Implement `Xgit.Plumbing.WriteTree`.** This is an API equivalent to `git write-tree`. (#158)
 * Fix `@spec` for `Xgit.Plumbing.HashObject.run/2`. (#142)
 * Implement `Xgit.Core.DirCache.fully_merged?/1`. (#143)
 * Remove redundant alias in `Xgit.Core.Object`. (#144)
