@@ -27,6 +27,7 @@ defmodule Xgit.Repository.OnDisk.GetObjectTest do
         |> Enum.to_list()
 
       assert rendered_content == 'test content\n'
+      assert ContentSource.length(test_content) == 13
     end
 
     test "happy path: can read from command-line git (large file)", %{ref: ref} do
