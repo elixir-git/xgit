@@ -68,6 +68,105 @@ defmodule Xgit.Core.TreeTest do
     end
   end
 
+  describe "from_object/1" do
+    setup do
+      Temp.track!()
+      repo = Temp.mkdir!()
+
+      {_output, 0} = System.cmd("git", ["init"], cd: repo)
+      objects_dir = Path.join([repo, ".git", "objects"])
+
+      {:ok, xgit} = OnDisk.start_link(work_dir: repo)
+
+      {:ok, repo: repo, objects_dir: objects_dir, xgit: xgit}
+    end
+
+    def write_git_tree_and_read_xgit_tree_entries(repo, xgit) do
+      {output, 0} = System.cmd("git", ["write-tree", "--missing-ok"], cd: repo)
+      tree_id = String.trim(output)
+
+      assert {:ok, %Object{} = object} = Repository.get_object(xgit, tree_id)
+      assert {:ok, %Tree{entries: entries} = _tree} = Tree.from_object(object)
+
+      entries
+    end
+
+    test "empty tree", %{repo: repo, xgit: xgit} do
+      assert write_git_tree_and_read_xgit_tree_entries(repo, xgit) == []
+    end
+
+    test "tree with one entry", %{repo: repo, xgit: xgit} do
+      {_output, 0} =
+        System.cmd(
+          "git",
+          [
+            "update-index",
+            "--add",
+            "--cacheinfo",
+            "100644",
+            "18832d35117ef2f013c4009f5b2128dfaeff354f",
+            "hello.txt"
+          ],
+          cd: repo
+        )
+
+      assert write_git_tree_and_read_xgit_tree_entries(repo, xgit) == [
+               %Entry{
+                 name: 'hello.txt',
+                 object_id: "18832d35117ef2f013c4009f5b2128dfaeff354f",
+                 mode: 0o100644
+               }
+             ]
+    end
+
+    test "tree with multiple entries", %{repo: repo, xgit: xgit} do
+      {_output, 0} =
+        System.cmd(
+          "git",
+          [
+            "update-index",
+            "--add",
+            "--cacheinfo",
+            "100644",
+            "18832d35117ef2f013c4009f5b2128dfaeff354f",
+            "hello.txt"
+          ],
+          cd: repo
+        )
+
+      {_output, 0} =
+        System.cmd(
+          "git",
+          [
+            "update-index",
+            "--add",
+            "--cacheinfo",
+            "100755",
+            "d670460b4b4aece5915caf5c68d12f560a9fe3e4",
+            "test_content.txt"
+          ],
+          cd: repo
+        )
+
+      assert write_git_tree_and_read_xgit_tree_entries(repo, xgit) == [
+               %Entry{
+                 name: 'hello.txt',
+                 object_id: "18832d35117ef2f013c4009f5b2128dfaeff354f",
+                 mode: 0o100644
+               },
+               %Entry{
+                 name: 'test_content.txt',
+                 object_id: "d670460b4b4aece5915caf5c68d12f560a9fe3e4",
+                 mode: 0o100755
+               }
+             ]
+    end
+
+    # test "no such object"
+
+    # test "object is not a tree"
+  end
+
   describe "to_object/1" do
     test "empty tree" do
       assert_same_output(

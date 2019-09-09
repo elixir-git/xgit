@@ -2,7 +2,9 @@ defmodule Xgit.Core.Tree do
   @moduledoc ~S"""
   Represents a git `tree` object in memory.
   """
+  alias Xgit.Core.ContentSource
   alias Xgit.Core.FileMode
+  alias Xgit.Core.FilePath
   alias Xgit.Core.Object
   alias Xgit.Core.ObjectId
 
@@ -116,6 +118,83 @@ defmodule Xgit.Core.Tree do
     do: Entry.compare(entry1, entry2) == :lt && entries_sorted?([entry2 | tail])
 
   defp entries_sorted?([_]), do: cover(true)
+
+  @typedoc ~S"""
+  Error response codes returned by `from_object/1`.
+  """
+  @type from_object_reason :: :not_a_tree | :invalid_format | :invalid_tree
+
+  @doc ~S"""
+  Renders a tree structure from an `Xgit.Core.Object`.
+
+  ## Return Values
+
+  `{:ok, tree}` if the object contains a valid `tree` object.
+
+  `{:error, :not_a_tree}` if the object contains an object of a different type.
+
+  `{:error, :invalid_format}` if the object says that is of type `tree`, but
+  can not be parsed as such.
+
+  `{:error, :invalid_tree}` if the object can be parsed as a tree, but the
+  entries are not well formed or not properly sorted.
+  """
+  @spec from_object(object :: Object.t()) :: {:ok, tree :: t} | {:error, from_object_reason}
+  def from_object(object)
+
+  def from_object(%Object{type: :tree, content: content} = _object) do
+    content
+    |> ContentSource.stream()
+    |> Enum.to_list()
+    |> from_object_internal([])
+  end
+
+  def from_object(%Object{} = _object), do: cover({:error, :not_a_tree})
+
+  defp from_object_internal(data, entries_acc)
+
+  defp from_object_internal([], entries_acc) do
+    tree = %__MODULE__{entries: Enum.reverse(entries_acc)}
+
+    if valid?(tree) do
+      cover {:ok, tree}
+    else
+      cover {:error, :invalid_tree}
+    end
+  end
+
+  defp from_object_internal(data, entries_acc) do
+    with {:ok, file_mode, data} <- parse_file_mode(data, 0),
+         true <- FileMode.valid?(file_mode),
+         {name, [0 | data]} <- path_and_object_id(data),
+         :ok <- FilePath.check_path_segment(name),
+         {raw_object_id, data} <- Enum.split(data, 20),
+         20 <- Enum.count(raw_object_id),
+         false <- Enum.all?(raw_object_id, &(&1 == 0)) do
+      this_entry = %__MODULE__.Entry{
+        name: name,
+        mode: file_mode,
+        object_id: ObjectId.from_binary_iodata(raw_object_id)
+      }
+
+      from_object_internal(data, [this_entry | entries_acc])
+    else
+      _ -> cover {:error, :invalid_format}
+    end
+  end
+
+  defp parse_file_mode([], _mode), do: cover({:error, :invalid_mode})
+
+  defp parse_file_mode([?\s | data], mode), do: cover({:ok, mode, data})
+
+  defp parse_file_mode([?0 | _data], 0), do: cover({:error, :invalid_mode})
+
+  defp parse_file_mode([c | data], mode) when c >= ?0 and c <= ?7,
+    do: parse_file_mode(data, mode * 8 + (c - ?0))
+
+  defp parse_file_mode([_c | _data], _mode), do: cover({:error, :invalid_mode})
+
+  defp path_and_object_id(data), do: Enum.split_while(data, &(&1 != 0))
 
   @doc ~S"""
   Renders this tree structure into a corresponding `Xgit.Core.Object`.
