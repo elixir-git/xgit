@@ -50,6 +50,8 @@ defmodule Xgit.Repository.InMemory.PutLooseObjectTest do
                 size: ^content_size,
                 id: ^content_id
               }} = Repository.get_object(repo, content_id)
+
+      assert Object.valid?(object)
     end
 
     test "error: object exists already" do
@@ -61,6 +63,7 @@ defmodule Xgit.Repository.InMemory.PutLooseObjectTest do
       assert {:error, :object_exists} = Repository.put_loose_object(repo, object)
 
       assert {:ok, ^object} = Repository.get_object(repo, @test_content_id)
+      assert Object.valid?(object)
     end
   end
 end

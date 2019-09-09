@@ -9,6 +9,33 @@ defmodule Xgit.Repository.OnDisk.GetObject do
   alias Xgit.Util.RawParseUtils
   alias Xgit.Util.UnzipStream
 
+  defmodule LooseObjectContentSource do
+    @moduledoc false
+    # Implements `Xgit.Core.ContentSource` to read content from a loose object.
+
+    import Xgit.Util.ForceCoverage
+
+    @type t :: %__MODULE__{path: Path.t(), size: non_neg_integer}
+
+    @enforce_keys [:path, :size]
+    defstruct [:path, :size]
+
+    defimpl Xgit.Core.ContentSource do
+      alias Xgit.Repository.OnDisk.GetObject.LooseObjectContentSource, as: LCS
+      @impl true
+      def length(%LCS{size: size}), do: cover(size)
+
+      @impl true
+      def stream(%LCS{path: path}) do
+        path
+        |> File.stream!([:binary])
+        |> UnzipStream.unzip()
+        |> Stream.drop_while(&(&1 != 0))
+        |> Stream.drop(1)
+      end
+    end
+  end
+
   @spec handle_get_object(state :: any, object_id :: ObjectId.t()) ::
           {:ok, object :: Object.t(), state :: any}
           | {:error, :not_found | :invalid_object, state :: any}
@@ -80,12 +107,7 @@ defmodule Xgit.Repository.OnDisk.GetObject do
       type: type,
       size: length,
       id: object_id,
-      content:
-        path
-        |> File.stream!([:binary])
-        |> UnzipStream.unzip()
-        |> Stream.drop_while(&(&1 != 0))
-        |> Stream.drop(1)
+      content: %__MODULE__.LooseObjectContentSource{size: length, path: path}
     }
   end
 end

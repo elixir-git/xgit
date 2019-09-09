@@ -1,6 +1,7 @@
 defmodule Xgit.Repository.OnDisk.GetObjectTest do
   use Xgit.GitInitTestCase, async: true
 
+  alias Xgit.Core.ContentSource
   alias Xgit.Core.Object
   alias Xgit.Repository
   alias Xgit.Repository.OnDisk
@@ -20,7 +21,12 @@ defmodule Xgit.Repository.OnDisk.GetObjectTest do
               %Object{type: :blob, content: test_content, size: 13, id: ^test_content_id} = object} =
                Repository.get_object(repo, test_content_id)
 
-      assert Enum.to_list(test_content) == 'test content\n'
+      rendered_content =
+        test_content
+        |> ContentSource.stream()
+        |> Enum.to_list()
+
+      assert rendered_content == 'test content\n'
     end
 
     test "happy path: can read from command-line git (large file)", %{ref: ref} do
@@ -43,8 +49,11 @@ defmodule Xgit.Repository.OnDisk.GetObjectTest do
               %Object{type: :blob, content: test_content, size: 6000, id: ^content_id} = object} =
                Repository.get_object(repo, content_id)
 
+      assert Object.valid?(object)
+
       test_content_str =
         test_content
+        |> ContentSource.stream()
         |> Enum.to_list()
         |> to_string()
 

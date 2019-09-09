@@ -1,6 +1,7 @@
 defmodule Xgit.Plumbing.CatFileTest do
   use Xgit.GitInitTestCase, async: true
 
+  alias Xgit.Core.ContentSource
   alias Xgit.Plumbing.CatFile
   alias Xgit.Plumbing.HashObject
   alias Xgit.Repository.OnDisk
@@ -19,7 +20,12 @@ defmodule Xgit.Plumbing.CatFileTest do
       assert {:ok, %{type: :blob, size: 13, content: test_content} = object} =
                CatFile.run(repo, test_content_id)
 
-      assert Enum.to_list(test_content) == 'test content\n'
+      rendered_content =
+        test_content
+        |> ContentSource.stream()
+        |> Enum.to_list()
+
+      assert rendered_content == 'test content\n'
     end
 
     test "happy path: can read back from Xgit-written loose object", %{xgit: xgit} do
@@ -31,7 +37,12 @@ defmodule Xgit.Plumbing.CatFileTest do
       assert {:ok, %{type: :blob, size: 13, content: test_content} = object} =
                CatFile.run(repo, test_content_id)
 
-      assert Enum.to_list(test_content) == 'test content\n'
+      rendered_content =
+        test_content
+        |> ContentSource.stream()
+        |> Enum.to_list()
+
+      assert rendered_content == 'test content\n'
     end
 
     test "error: not_found", %{xgit: xgit} do
