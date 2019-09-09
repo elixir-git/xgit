@@ -22,6 +22,62 @@ defmodule Xgit.Core.ObjectIdTest do
     refute ObjectId.valid?(nil)
   end
 
+  test "from_binary_iodata/1" do
+    assert ObjectId.from_binary_iodata(
+             <<18, 52, 86, 120, 144, 171, 205, 239, 18, 52, 18, 52, 86, 120, 144, 171, 205, 239,
+               18, 52>>
+           ) == "1234567890abcdef12341234567890abcdef1234"
+
+    assert ObjectId.from_binary_iodata([
+             18,
+             52,
+             86,
+             120,
+             144,
+             171,
+             205,
+             239,
+             18,
+             52,
+             18,
+             52,
+             86,
+             120,
+             144,
+             171,
+             205,
+             239,
+             18,
+             52
+           ]) == "1234567890abcdef12341234567890abcdef1234"
+
+    assert_raise FunctionClauseError, fn ->
+      ObjectId.from_binary_iodata([
+        52,
+        86,
+        120,
+        144,
+        171,
+        205,
+        239,
+        18,
+        52,
+        18,
+        52,
+        86,
+        120,
+        144,
+        171,
+        205,
+        239,
+        18,
+        52
+      ])
+
+      # 19 bytes, not 20
+    end
+  end
+
   test "from_hex_charlist/1" do
     assert ObjectId.from_hex_charlist('1234567890abcdef12341234567890abcdef1234') ==
              {"1234567890abcdef12341234567890abcdef1234", []}

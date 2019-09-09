@@ -32,6 +32,28 @@ defmodule Xgit.Core.ObjectId do
   def valid?(_), do: cover(false)
 
   @doc ~S"""
+  Read an object ID from raw binary or bytelist.
+
+  ## Parameters
+
+  `raw_object_id` should be either a binary or list containing a raw object ID (not
+  hex-encoded). It should be exactly 20 bytes.
+
+  ## Return Value
+
+  The object ID rendered as lowercase hex. (See `Xgit.Core.ObjectId`.)
+  """
+  @spec from_binary_iodata(b :: iodata) :: t
+  def from_binary_iodata(b) when is_list(b) do
+    b
+    |> IO.iodata_to_binary()
+    |> from_binary_iodata()
+  end
+
+  def from_binary_iodata(b) when is_binary(b) and byte_size(b) == 20,
+    do: Base.encode16(b, case: :lower)
+
+  @doc ~S"""
   Read an object ID from a hex string (charlist).
 
   ## Return Value
@@ -90,8 +112,7 @@ defmodule Xgit.Core.ObjectId do
     |> :crypto.hash_update([0])
     |> hash_update(ContentSource.stream(data))
     |> :crypto.hash_final()
-    |> Base.encode16()
-    |> String.downcase()
+    |> from_binary_iodata()
   end
 
   defp hash_update(crypto_state, data) when is_list(data),

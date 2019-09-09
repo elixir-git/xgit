@@ -11,6 +11,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
 
   alias Xgit.Core.DirCache
   alias Xgit.Core.DirCache.Entry, as: DirCacheEntry
+  alias Xgit.Core.ObjectId
   alias Xgit.Util.NB
   alias Xgit.Util.TrailingHashDevice
 
@@ -181,13 +182,8 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
 
   defp read_object_id(iodevice) do
     case IO.binread(iodevice, 20) do
-      x when is_binary(x) and byte_size(x) == 20 ->
-        x
-        |> Base.encode16()
-        |> String.downcase()
-
-      _ ->
-        cover :invalid
+      x when is_binary(x) and byte_size(x) == 20 -> ObjectId.from_binary_iodata(x)
+      _ -> cover :invalid
     end
   end
 
