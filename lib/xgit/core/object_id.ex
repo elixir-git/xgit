@@ -38,15 +38,19 @@ defmodule Xgit.Core.ObjectId do
 
   `raw_object_id` should be either a binary or list containing a raw object ID (not
   hex-encoded). It should be exactly 20 bytes.
+
+  ## Return Value
+
+  The object ID rendered as lowercase hex. (See `Xgit.Core.ObjectId`.)
   """
-  @spec from_raw_object_id(b :: [byte] | binary) :: t
-  def from_raw_object_id(b) when is_list(b) do
+  @spec from_binary_iodata(b :: iodata) :: t
+  def from_binary_iodata(b) when is_list(b) do
     b
-    |> :binary.list_to_bin()
-    |> from_raw_object_id()
+    |> IO.iodata_to_binary()
+    |> from_binary_iodata()
   end
 
-  def from_raw_object_id(b) when is_binary(b) and byte_size(b) == 20,
+  def from_binary_iodata(b) when is_binary(b) and byte_size(b) == 20,
     do: Base.encode16(b, case: :lower)
 
   @doc ~S"""
@@ -108,7 +112,7 @@ defmodule Xgit.Core.ObjectId do
     |> :crypto.hash_update([0])
     |> hash_update(ContentSource.stream(data))
     |> :crypto.hash_final()
-    |> from_raw_object_id()
+    |> from_binary_iodata()
   end
 
   defp hash_update(crypto_state, data) when is_list(data),

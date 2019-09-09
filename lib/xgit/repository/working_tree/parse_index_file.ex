@@ -182,7 +182,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
 
   defp read_object_id(iodevice) do
     case IO.binread(iodevice, 20) do
-      x when is_binary(x) and byte_size(x) == 20 -> ObjectId.from_raw_object_id(x)
+      x when is_binary(x) and byte_size(x) == 20 -> ObjectId.from_binary_iodata(x)
       _ -> cover :invalid
     end
   end
