@@ -48,6 +48,7 @@
 defmodule Xgit.Core.ObjectTest do
   use ExUnit.Case, async: true
 
+  alias Xgit.Core.FileContentSource
   alias Xgit.Core.Object
 
   import Xgit.Core.Object, only: [check: 1, check: 2]
@@ -112,6 +113,31 @@ defmodule Xgit.Core.ObjectTest do
       for id <- @invalid_object_ids do
         refute Object.valid?(%Object{type: :blob, content: [], size: 0, id: id})
       end
+    end
+
+    test "accepts content with a FileContentSource" do
+      Temp.track!()
+      t = Temp.mkdir!()
+      path = Path.join(t, "example")
+      File.write!(path, "example")
+
+      fcs = FileContentSource.new(path)
+
+      assert Object.valid?(%Object{
+               type: :blob,
+               content: fcs,
+               size: 0,
+               id: "cfe0d2db02d583680f90301ff76e0791d9353335"
+             })
+    end
+
+    test "rejects content that isn't a ContentSource" do
+      refute Object.valid?(%Object{
+               type: :blob,
+               content: 42,
+               size: 0,
+               id: "cfe0d2db02d583680f90301ff76e0791d9353335"
+             })
     end
   end
 
