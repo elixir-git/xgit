@@ -96,7 +96,7 @@ defmodule Xgit.Core.Object do
 
   def valid?(%__MODULE__{type: type, content: content, size: size, id: id})
       when is_object_type(type) and is_integer(size) and size >= 0,
-      do: ObjectId.valid?(id) && content != nil
+      do: ObjectId.valid?(id) && content != nil && ContentSource.impl_for(content) != nil
 
   def valid?(_), do: cover(false)
 
