@@ -28,6 +28,19 @@ defmodule Xgit.Repository.OnDisk.PutLooseObjectTest do
       assert :ok = Repository.put_loose_object(repo, object)
 
       assert_folders_are_equal(ref, xgit)
+
+      assert {:ok,
+              %Object{type: :blob, content: content_read_back, size: 13, id: @test_content_id} =
+                object2} = Repository.get_object(repo, @test_content_id)
+
+      assert Object.valid?(object2)
+
+      content2 =
+        content_read_back
+        |> ContentSource.stream()
+        |> Enum.to_list()
+
+      assert content2 == @test_content
     end
 
     test "happy path matches command-line git (large file)", %{ref: ref, xgit: xgit} do
