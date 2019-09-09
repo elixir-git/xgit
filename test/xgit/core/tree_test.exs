@@ -81,7 +81,7 @@ defmodule Xgit.Core.TreeTest do
       {:ok, repo: repo, objects_dir: objects_dir, xgit: xgit}
     end
 
-    def write_git_tree_and_read_xgit_tree_entries(repo, xgit) do
+    defp write_git_tree_and_read_xgit_tree_entries(repo, xgit) do
       {output, 0} = System.cmd("git", ["write-tree", "--missing-ok"], cd: repo)
       tree_id = String.trim(output)
 
