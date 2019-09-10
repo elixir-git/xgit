@@ -162,9 +162,16 @@ defmodule Xgit.Core.TreeTest do
              ]
     end
 
-    # test "no such object"
+    test "object is not a tree" do
+      object = %Object{
+        type: :blob,
+        content: 'test content\n',
+        size: 13,
+        id: "d670460b4b4aece5915caf5c68d12f560a9fe3e4"
+      }
 
-    # test "object is not a tree"
+      assert {:error, :not_a_tree} = Tree.from_object(object)
+    end
   end
 
   describe "to_object/1" do
