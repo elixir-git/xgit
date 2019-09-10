@@ -172,6 +172,30 @@ defmodule Xgit.Core.TreeTest do
 
       assert {:error, :not_a_tree} = Tree.from_object(object)
     end
+
+    test "object is an invalid tree (not properly sorted)" do
+      object = %Object{
+        type: :tree,
+        size: 42,
+        id: "d670460b4b4aece5915caf5c68d12f560a9fe3e4",
+        content:
+          '100644 B' ++
+            Enum.map(0..19, fn x -> x end) ++ '100644 A' ++ Enum.map(0..19, fn x -> x end)
+      }
+
+      assert {:error, :invalid_format} = Tree.from_object(object)
+    end
+
+    test "object is a badly-formatted tree" do
+      object = %Object{
+        type: :tree,
+        size: 42,
+        id: "d670460b4b4aece5915caf5c68d12f560a9fe3e4",
+        content: '100644 A' ++ Enum.map(0..20, fn _ -> 0 end)
+      }
+
+      assert {:error, :invalid_format} = Tree.from_object(object)
+    end
   end
 
   describe "to_object/1" do
