@@ -202,10 +202,10 @@ defmodule Xgit.Core.TreeTest do
         id: "d670460b4b4aece5915caf5c68d12f560a9fe3e4",
         content:
           '100644 B' ++
-            Enum.map(0..19, fn x -> x end) ++ '100644 A' ++ Enum.map(0..19, fn x -> x end)
+            Enum.map(0..20, fn x -> x end) ++ '100644 A' ++ Enum.map(0..20, fn x -> x end)
       }
 
-      assert {:error, :invalid_format} = Tree.from_object(object)
+      assert {:error, :invalid_tree} = Tree.from_object(object)
     end
 
     test "object is a badly-formatted tree" do
