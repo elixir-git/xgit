@@ -173,6 +173,17 @@ defmodule Xgit.Core.TreeTest do
       assert {:error, :not_a_tree} = Tree.from_object(object)
     end
 
+    test "object is an invalid tree (ends after file mode)" do
+      object = %Object{
+        type: :tree,
+        size: 42,
+        id: "d670460b4b4aece5915caf5c68d12f560a9fe3e4",
+        content: '100644'
+      }
+
+      assert {:error, :invalid_format} = Tree.from_object(object)
+    end
+
     test "object is an invalid tree (invalid file mode)" do
       object = %Object{
         type: :tree,
