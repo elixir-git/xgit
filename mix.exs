@@ -25,12 +25,13 @@ defmodule Xgit.MixProject do
 
   defp deps do
     [
+      {:benchee, "~> 1.0", only: :dev},
       {:con_cache, "~> 0.13"},
       {:credo, "~> 1.1", only: [:dev, :test]},
       {:dialyxir, "~> 1.0.0-rc.6", only: :dev, runtime: false},
       {:excoveralls, "~> 0.11", only: :test},
       {:ex_doc, "~> 0.21", only: :dev},
-      {:temp, "~> 0.4", only: :test}
+      {:temp, "~> 0.4", only: [:dev, :test]}
     ]
   end
 
