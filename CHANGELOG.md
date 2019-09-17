@@ -1,5 +1,15 @@
 # Changelog for v0.x Series
 
+## v0.2.3
+
+_16 September 2019_
+
+* **Implement `Xgit.Plumbing.CatFile.Tree`.** This is an API equivalent to `git cat-file -p` when the target object is of type `tree`. (#165)
+* `Object.valid?/1`: Require that content has an implementation for `ContentSource` protocol. (#161)
+* [BUG FIX] `OnDisk`'s implementation of `get_object/2` didn't contain a valid `ContentSource`. (#162)
+* Implement `Xgit.Core.ObjectId.from_raw_object_id/1`. (#163)
+* Implement `Xgit.Core.Tree.from_object/1`. (#164)
+
 ## v0.2.2
 
 _07 September 2019_
