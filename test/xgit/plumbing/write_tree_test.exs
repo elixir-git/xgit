@@ -12,7 +12,7 @@ defmodule Xgit.Plumbing.WriteTreeTest do
 
   import FolderDiff
 
-  describe "to_tree_objects/2" do
+  describe "run/2" do
     test "happy path: empty dir cache" do
       assert_same_output(fn _git_dir -> nil end, fn _xgit_repo -> nil end)
     end
