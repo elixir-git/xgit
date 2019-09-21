@@ -10,7 +10,6 @@ defmodule Xgit.Plumbing.WriteTree do
 
   alias Xgit.Core.DirCache
   alias Xgit.Core.FilePath
-  alias Xgit.Core.Object
   alias Xgit.Core.ObjectId
   alias Xgit.Plumbing.Util.WorkingTreeOpt
   alias Xgit.Repository
@@ -23,8 +22,7 @@ defmodule Xgit.Plumbing.WriteTree do
   @type reason ::
           :invalid_repository
           | :bare
-          | :incomplete_merge
-          | :objects_missing
+          | WorkingTree.write_tree_reason()
           | DirCache.to_tree_objects_reason()
           | ParseIndexFile.from_iodevice_reason()
           | Repository.put_loose_object_reason()
@@ -58,16 +56,11 @@ defmodule Xgit.Plumbing.WriteTree do
 
   `{:error, :bare}` if `repository` doesn't have a working tree.
 
-  `{:error, :incomplete_merge}` if any entry in the index file is not fully merged.
-
-  `{:error, :objects_missing}` if any of the objects referenced by the index
-  are not present in the object store. (Exception: If `missing_ok?` is `true`,
-  then this condition will be ignored.)
-
   Reason codes may also come from the following functions:
 
   * `Xgit.Core.DirCache.to_tree_objects/2`
   * `Xgit.Repository.put_loose_object/2`
+  * `Xgit.Repository.WorkingTree.write_tree/2`
   * `Xgit.Repository.WorkingTree.ParseIndexFile.from_iodevice/1`
   """
   @spec run(repository :: Repository.t(), missing_ok?: boolean, prefix: FilePath.t()) ::
@@ -75,18 +68,10 @@ defmodule Xgit.Plumbing.WriteTree do
           | {:error, reason :: reason}
   def run(repository, opts \\ []) when is_pid(repository) do
     with {:ok, working_tree} <- WorkingTreeOpt.get(repository),
-         {missing_ok?, prefix} <- validate_options(opts),
-         {:ok, %DirCache{entries: entries} = dir_cache} <- WorkingTree.dir_cache(working_tree),
-         {:merged?, true} <- {:merged?, DirCache.fully_merged?(dir_cache)},
-         {:has_all_objects?, true} <-
-           {:has_all_objects?, has_all_objects?(repository, entries, missing_ok?)},
-         {:ok, objects, %Object{id: object_id}} <- DirCache.to_tree_objects(dir_cache, prefix),
-         :ok <- write_all_objects(repository, objects) do
-      cover {:ok, object_id}
+         _ <- validate_options(opts) do
+      cover WorkingTree.write_tree(working_tree, opts)
     else
       {:error, reason} -> cover {:error, reason}
-      {:merged?, false} -> cover {:error, :incomplete_merge}
-      {:has_all_objects?, false} -> cover {:error, :objects_missing}
     end
   end
 
@@ -106,32 +91,5 @@ defmodule Xgit.Plumbing.WriteTree do
     end
 
     {missing_ok?, prefix}
-  end
-
-  defp has_all_objects?(repository, entries, missing_ok?)
-
-  defp has_all_objects?(_repository, _entries, true), do: cover(true)
-
-  defp has_all_objects?(repository, entries, false) do
-    entries
-    |> Enum.chunk_every(100)
-    |> Enum.all?(fn entries_chunk ->
-      Repository.has_all_object_ids?(
-        repository,
-        Enum.map(entries_chunk, fn %{object_id: id} -> id end)
-      )
-    end)
-  end
-
-  defp write_all_objects(repository, objects)
-
-  defp write_all_objects(_repository, []), do: :ok
-
-  defp write_all_objects(repository, [object | tail]) do
-    case Repository.put_loose_object(repository, object) do
-      :ok -> write_all_objects(repository, tail)
-      {:error, :object_exists} -> write_all_objects(repository, tail)
-      {:error, reason} -> {:error, reason}
-    end
   end
 end
