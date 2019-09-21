@@ -23,6 +23,8 @@ defmodule Xgit.Repository.WorkingTree do
   alias Xgit.Core.DirCache
   alias Xgit.Core.DirCache.Entry, as: DirCacheEntry
   alias Xgit.Core.FilePath
+  alias Xgit.Core.Object
+  alias Xgit.Core.ObjectId
   alias Xgit.Repository
   alias Xgit.Repository.WorkingTree.ParseIndexFile
   alias Xgit.Repository.WorkingTree.WriteIndexFile
@@ -242,6 +244,123 @@ defmodule Xgit.Repository.WorkingTree do
     end
   end
 
+  @typedoc ~S"""
+  Reason codes that can be returned by `write_tree/2`.
+  """
+  @type write_tree_reason ::
+          :incomplete_merge
+          | :objects_missing
+          | :prefix_not_found
+          | DirCache.to_tree_objects_reason()
+          | ParseIndexFile.from_iodevice_reason()
+          | Repository.put_loose_object_reason()
+
+  @doc ~S"""
+  Translates the current dir cache, as reflected in its index file, to one or more
+  tree objects.
+
+  The working tree must be in a fully-merged state.
+
+  ## Options
+
+  `:missing_ok?`: `true` to ignore any objects that are referenced by the index
+  file that are not present in the object database. Normally this would be an error.
+
+  `:prefix`: (`Xgit.Core.FilePath`) if present, returns the `object_id` for the tree at
+  the given subdirectory. If not present, writes a tree corresponding to the root.
+  (The entire tree is written in either case.)
+
+  ## Return Value
+
+  `{:ok, object_id}` with the object ID for the tree that was generated. (If the exact tree
+  specified by the index already existed, it will return that existing tree's ID.)
+
+  `{:error, :incomplete_merge}` if any entry in the index file is not fully merged.
+
+  `{:error, :objects_missing}` if any of the objects referenced by the index
+  are not present in the object store. (Exception: If `missing_ok?` is `true`,
+  then this condition will be ignored.)
+
+  `{:error, :prefix_not_found}` if `prefix` was specified, but that prefix is not referenced
+  in the index file.
+
+  Reason codes may also come from the following functions:
+
+  * `Xgit.Core.DirCache.to_tree_objects/2`
+  * `Xgit.Repository.put_loose_object/2`
+  * `Xgit.Repository.WorkingTree.ParseIndexFile.from_iodevice/1`
+  """
+  @spec write_tree(working_tree :: t, missing_ok?: boolean, prefix: FilePath.t()) ::
+          {:ok, object_id :: ObjectId.t()} | {:error, reason :: write_tree_reason}
+  def write_tree(working_tree, opts \\ []) when is_pid(working_tree) do
+    {missing_ok?, prefix} = validate_options(opts)
+    GenServer.call(working_tree, {:write_tree, missing_ok?, prefix})
+  end
+
+  defp validate_options(opts) do
+    missing_ok? = Keyword.get(opts, :missing_ok?, false)
+
+    unless is_boolean(missing_ok?) do
+      raise ArgumentError,
+            "Xgit.Repository.WorkingTree.write_tree/2: missing_ok? #{inspect(missing_ok?)} is invalid"
+    end
+
+    prefix = Keyword.get(opts, :prefix, [])
+
+    unless prefix == [] or FilePath.valid?(prefix) do
+      raise ArgumentError,
+            "Xgit.Repository.WorkingTree.write_tree/2: prefix #{inspect(prefix)} is invalid (should be a charlist, not a String)"
+    end
+
+    {missing_ok?, prefix}
+  end
+
+  defp handle_write_tree(
+         missing_ok?,
+         prefix,
+         %{repository: repository, work_dir: work_dir} = state
+       ) do
+    with {:ok, %DirCache{entries: entries} = dir_cache} <- parse_dir_cache_if_exists(work_dir),
+         {:merged?, true} <- {:merged?, DirCache.fully_merged?(dir_cache)},
+         {:has_all_objects?, true} <-
+           {:has_all_objects?, has_all_objects?(repository, entries, missing_ok?)},
+         {:ok, objects, %Object{id: object_id}} <- DirCache.to_tree_objects(dir_cache, prefix),
+         :ok <- write_all_objects(repository, objects) do
+      cover {:reply, {:ok, object_id}, state}
+    else
+      {:error, reason} -> cover {:reply, {:error, reason}, state}
+      {:merged?, false} -> cover {:reply, {:error, :incomplete_merge}, state}
+      {:has_all_objects?, false} -> cover {:reply, {:error, :objects_missing}, state}
+    end
+  end
+
+  defp has_all_objects?(repository, entries, missing_ok?)
+
+  defp has_all_objects?(_repository, _entries, true), do: cover(true)
+
+  defp has_all_objects?(repository, entries, false) do
+    entries
+    |> Enum.chunk_every(100)
+    |> Enum.all?(fn entries_chunk ->
+      Repository.has_all_object_ids?(
+        repository,
+        Enum.map(entries_chunk, fn %{object_id: id} -> id end)
+      )
+    end)
+  end
+
+  defp write_all_objects(repository, objects)
+
+  defp write_all_objects(_repository, []), do: cover(:ok)
+
+  defp write_all_objects(repository, [object | tail]) do
+    case Repository.put_loose_object(repository, object) do
+      :ok -> write_all_objects(repository, tail)
+      {:error, :object_exists} -> write_all_objects(repository, tail)
+      {:error, reason} -> cover {:error, reason}
+    end
+  end
+
   @impl true
   def handle_call(:valid_working_tree?, _from, state), do: {:reply, :valid_working_tree, state}
 
@@ -251,6 +370,9 @@ defmodule Xgit.Repository.WorkingTree do
 
   def handle_call({:update_dir_cache, add, remove}, _from, state),
     do: handle_update_dir_cache(add, remove, state)
+
+  def handle_call({:write_tree, missing_ok?, prefix}, _from, state),
+    do: handle_write_tree(missing_ok?, prefix, state)
 
   def handle_call(message, _from, state) do
     Logger.warn("WorkingTree received unrecognized call #{inspect(message)}")
