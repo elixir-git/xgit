@@ -141,6 +141,40 @@ defmodule Xgit.Repository.WorkingTree do
   end
 
   @typedoc ~S"""
+  Error code reasons returned by `reset_dir_cache/1`.
+  """
+  @type reset_dir_cache_reason :: WriteIndexFile.to_iodevice_reason()
+
+  @doc ~S"""
+  Reset the dir cache to empty and rewrite the index file accordingly.
+
+  ## Return Values
+
+  `:ok` if successful.
+
+  `{:error, reason}` if unable. The relevant reason codes may come from:
+
+  * `Xgit.Repository.WorkingTree.WriteIndexFile.to_iodevice/2`.
+  """
+  @spec reset_dir_cache(working_tree :: t) ::
+          :ok | {:error, reset_dir_cache_reason}
+  def reset_dir_cache(working_tree) when is_pid(working_tree),
+    do: GenServer.call(working_tree, :reset_dir_cache)
+
+  defp handle_reset_dir_cache(%{work_dir: work_dir} = state) do
+    index_path = Path.join([work_dir, ".git", "index"])
+
+    with {:ok, iodevice}
+         when is_pid(iodevice) <- TrailingHashDevice.open_file_for_write(index_path),
+         :ok <- WriteIndexFile.to_iodevice(DirCache.empty(), iodevice),
+         :ok <- File.close(iodevice) do
+      cover {:reply, :ok, state}
+    else
+      {:error, reason} -> cover {:reply, {:error, reason}, state}
+    end
+  end
+
+  @typedoc ~S"""
   Error code reasons returned by `update_dir_cache/3`.
   """
   @type update_dir_cache_reason ::
@@ -167,7 +201,7 @@ defmodule Xgit.Repository.WorkingTree do
   `{:ok, dir_cache}` where `dir_cache` is the original `dir_cache` with the new
   entries added (and properly sorted) and targeted entries removed.
 
-  `{:error, :reason}` if unable. The relevant reason codes may come from:
+  `{:error, reason}` if unable. The relevant reason codes may come from:
 
   * `Xgit.Core.DirCache.add_entries/2`
   * `Xgit.Core.DirCache.remove_entries/2`
@@ -212,6 +246,8 @@ defmodule Xgit.Repository.WorkingTree do
   def handle_call(:valid_working_tree?, _from, state), do: {:reply, :valid_working_tree, state}
 
   def handle_call(:dir_cache, _from, state), do: handle_dir_cache(state)
+
+  def handle_call(:reset_dir_cache, _from, state), do: handle_reset_dir_cache(state)
 
   def handle_call({:update_dir_cache, add, remove}, _from, state),
     do: handle_update_dir_cache(add, remove, state)
