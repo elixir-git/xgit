@@ -896,6 +896,22 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
       assert {:error, :incomplete_merge} = WorkingTree.write_tree(working_tree, missing_ok?: true)
     end
 
+    test "error: can't write tree object" do
+      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
+
+      :ok = OnDisk.create(xgit)
+      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+
+      working_tree = Repository.default_working_tree(repo)
+      :ok = WorkingTree.update_dir_cache(working_tree, [@valid_entry], [])
+
+      objects_path = Path.join([xgit, ".git", "objects"])
+      File.rm_rf!(objects_path)
+      File.write!(objects_path, "not a directory")
+
+      assert {:error, :cant_create_file} = WorkingTree.write_tree(working_tree, missing_ok?: true)
+    end
+
     test "error: :prefix invalid" do
       {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
 
