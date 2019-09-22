@@ -387,6 +387,12 @@ defmodule Xgit.Plumbing.WriteTreeTest do
                WriteTree.run(repo, missing_ok?: true, prefix: 'no/such/prefix')
     end
 
+    test "error: invalid repo" do
+      {:ok, not_repo} = GenServer.start_link(NotValid, nil)
+
+      assert {:error, :invalid_repository} = WriteTree.run(not_repo, missing_ok?: true)
+    end
+
     test "error: invalid dir cache" do
       {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
 
@@ -449,6 +455,22 @@ defmodule Xgit.Plumbing.WriteTreeTest do
         )
 
       assert {:error, :incomplete_merge} = WriteTree.run(repo, missing_ok?: true)
+    end
+
+    test "error: can't write tree object" do
+      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
+
+      :ok = OnDisk.create(xgit)
+      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+
+      working_tree = Repository.default_working_tree(repo)
+      :ok = WorkingTree.update_dir_cache(working_tree, [@valid_entry], [])
+
+      objects_path = Path.join([xgit, ".git", "objects"])
+      File.rm_rf!(objects_path)
+      File.write!(objects_path, "not a directory")
+
+      assert {:error, :cant_create_file} = WriteTree.run(repo, missing_ok?: true)
     end
 
     test "error: :prefix invalid" do
