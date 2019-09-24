@@ -157,14 +157,19 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
 
   defp read_extensions(iodevice) do
     case IO.binread(iodevice, 1) do
-      :eof -> :ok
-      [char] when char >= ?A and char <= ?Z -> read_optional_extension(iodevice, char)
-      [char] -> read_required_extension(iodevice, char)
+      :eof ->
+        :ok
+
+      char when byte_size(char) == 1 and char >= "A" and char <= "Z" ->
+        read_optional_extension(iodevice, char)
+
+      char ->
+        read_required_extension(iodevice, char)
     end
   end
 
   defp read_optional_extension(iodevice, char) do
-    signature = [char | IO.binread(iodevice, 3)]
+    signature = "#{char}#{IO.binread(iodevice, 3)}"
     length = read_uint32(iodevice)
 
     Logger.info(fn ->
@@ -176,7 +181,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
   end
 
   defp read_required_extension(iodevice, char) do
-    signature = [char | IO.binread(iodevice, 3)]
+    signature = "#{char}#{IO.binread(iodevice, 3)}"
     length = read_uint32(iodevice)
 
     Logger.info(fn ->
