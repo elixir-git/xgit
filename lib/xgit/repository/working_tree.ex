@@ -25,6 +25,7 @@ defmodule Xgit.Repository.WorkingTree do
   alias Xgit.Core.FilePath
   alias Xgit.Core.Object
   alias Xgit.Core.ObjectId
+  alias Xgit.Core.Tree
   alias Xgit.Repository
   alias Xgit.Repository.WorkingTree.ParseIndexFile
   alias Xgit.Repository.WorkingTree.WriteIndexFile
@@ -70,9 +71,12 @@ defmodule Xgit.Repository.WorkingTree do
   def init({repository, work_dir}) do
     case File.mkdir_p(work_dir) do
       :ok ->
+        index_path = Path.join([work_dir, ".git", "index"])
+
         Process.monitor(repository)
         # Read index file here or maybe in a :continue handler?
-        cover {:ok, %{repository: repository, work_dir: work_dir}}
+
+        cover {:ok, %{repository: repository, work_dir: work_dir, index_path: index_path}}
 
       {:error, reason} ->
         cover {:stop, {:mkdir, reason}}
@@ -120,25 +124,10 @@ defmodule Xgit.Repository.WorkingTree do
   def dir_cache(working_tree) when is_pid(working_tree),
     do: GenServer.call(working_tree, :dir_cache)
 
-  defp handle_dir_cache(%{work_dir: work_dir} = state) do
-    case parse_dir_cache_if_exists(work_dir) do
+  defp handle_dir_cache(%{index_path: index_path} = state) do
+    case parse_index_file_if_exists(index_path) do
       {:ok, dir_cache} -> {:reply, {:ok, dir_cache}, state}
       {:error, reason} -> {:reply, {:error, reason}, state}
-    end
-  end
-
-  defp parse_dir_cache_if_exists(work_dir) do
-    index_path = Path.join([work_dir, ".git", "index"])
-
-    with true <- File.exists?(index_path),
-         {:ok, iodevice} when is_pid(iodevice) <- TrailingHashDevice.open_file(index_path) do
-      res = ParseIndexFile.from_iodevice(iodevice)
-      :ok = File.close(iodevice)
-
-      res
-    else
-      false -> cover {:ok, DirCache.empty()}
-      {:error, reason} -> cover {:error, reason}
     end
   end
 
@@ -163,13 +152,8 @@ defmodule Xgit.Repository.WorkingTree do
   def reset_dir_cache(working_tree) when is_pid(working_tree),
     do: GenServer.call(working_tree, :reset_dir_cache)
 
-  defp handle_reset_dir_cache(%{work_dir: work_dir} = state) do
-    index_path = Path.join([work_dir, ".git", "index"])
-
-    with {:ok, iodevice}
-         when is_pid(iodevice) <- TrailingHashDevice.open_file_for_write(index_path),
-         :ok <- WriteIndexFile.to_iodevice(DirCache.empty(), iodevice),
-         :ok <- File.close(iodevice) do
+  defp handle_reset_dir_cache(%{index_path: index_path} = state) do
+    with :ok <- write_index_file(DirCache.empty(), index_path) do
       cover {:reply, :ok, state}
     else
       {:error, reason} -> cover {:reply, {:error, reason}, state}
@@ -228,21 +212,166 @@ defmodule Xgit.Repository.WorkingTree do
       when is_pid(working_tree) and is_list(add) and is_list(remove),
       do: GenServer.call(working_tree, {:update_dir_cache, add, remove})
 
-  defp handle_update_dir_cache(add, remove, %{work_dir: work_dir} = state) do
-    index_path = Path.join([work_dir, ".git", "index"])
-
-    with {:ok, dir_cache} <- parse_dir_cache_if_exists(work_dir),
+  defp handle_update_dir_cache(add, remove, %{index_path: index_path} = state) do
+    with {:ok, dir_cache} <- parse_index_file_if_exists(index_path),
          {:ok, dir_cache} <- DirCache.add_entries(dir_cache, add),
          {:ok, dir_cache} <- DirCache.remove_entries(dir_cache, remove),
-         {:ok, iodevice}
-         when is_pid(iodevice) <- TrailingHashDevice.open_file_for_write(index_path),
-         :ok <- WriteIndexFile.to_iodevice(dir_cache, iodevice),
-         :ok <- File.close(iodevice) do
+         :ok <- write_index_file(dir_cache, index_path) do
       {:reply, :ok, state}
     else
       {:error, reason} -> {:reply, {:error, reason}, state}
     end
   end
+
+  @typedoc ~S"""
+  Reason codes that can be returned by `read_tree/2`.
+  """
+  @type read_tree_reason ::
+          :objects_missing
+  # | DirCache.to_tree_objects_reason()
+  # | ParseIndexFile.from_iodevice_reason()
+  # | Repository.put_loose_object_reason()
+
+  @doc ~S"""
+  Read a `tree` object and any trees it may refer to and populate the dir cache accordingly.
+
+  Does not update files in the working tree itself.
+
+  Analogous to [`git read-tree`](https://git-scm.com/docs/git-read-tree).
+
+  ## Parameters
+
+  `object_id` is the object ID of the root working tree.
+
+  ## Options
+
+  `:missing_ok?`: `true` to ignore any objects that are referenced by the tree
+  structures that are not present in the object database. Normally this would be an error.
+
+  ## Return Value
+
+  `:ok` if successful.
+
+  `{:error, :tree_not_found}` if `object_id` or any of the tree object it references
+  are not present in the object store.
+
+  `{:error, :prefix_not_found}` if `prefix` was specified, but that prefix is not referenced
+  in the tree structure.
+
+  `{:error, :objects_missing}` if any of the objects referenced by the index
+  are not present in the object store. (Exception: If `missing_ok?` is `true`,
+  then this condition will be ignored.)
+
+  Reason codes may also come from the following functions:
+
+  (NEED TO REVISIT THIS LIST)
+
+  * `Xgit.Core.Tree.from_object/1`
+  * `Xgit.Repository.get_object/2`
+  * `Xgit.Repository.WorkingTree.ParseIndexFile.from_iodevice/1`
+
+  ## TO DO
+
+  Implement `--prefix` option. https://github.com/elixir-git/xgit/issues/175
+  """
+  @spec read_tree(working_tree :: t, object_id :: ObjectId.t(), missing_ok?: boolean) ::
+          :ok | {:error, reason :: read_tree_reason}
+  def read_tree(working_tree, object_id, opts \\ [])
+      when is_pid(working_tree) and is_binary(object_id) and is_list(opts) do
+    missing_ok? = validate_read_tree_options(opts)
+    GenServer.call(working_tree, {:read_tree, object_id, missing_ok?})
+  end
+
+  defp validate_read_tree_options(opts) do
+    missing_ok? = Keyword.get(opts, :missing_ok?, false)
+
+    unless is_boolean(missing_ok?) do
+      raise ArgumentError,
+            "Xgit.Repository.WorkingTree.read_tree/3: missing_ok? #{inspect(missing_ok?)} is invalid"
+    end
+
+    missing_ok?
+  end
+
+  defp handle_read_tree(
+         object_id,
+         missing_ok?,
+         %{repository: repository, index_path: index_path} = state
+       ) do
+    with {:ok, %DirCache{entries: entries} = dir_cache} <-
+           tree_to_dir_cache(repository, object_id),
+         {:has_all_objects?, true} <-
+           {:has_all_objects?, has_all_objects?(repository, entries, missing_ok?)},
+         :ok <- write_index_file(dir_cache, index_path) do
+      cover {:reply, :ok, state}
+    else
+      {:error, reason} -> cover {:reply, {:error, reason}, state}
+      {:has_all_objects?, false} -> cover {:reply, {:error, :objects_missing}, state}
+    end
+  end
+
+  defp tree_to_dir_cache(repository, object_id) do
+    with {:ok, reversed_entries} <- tree_to_dir_cache_entries(repository, object_id, '', []) do
+      {:ok,
+       %DirCache{
+         version: 2,
+         entry_count: Enum.count(reversed_entries),
+         entries: Enum.reverse(reversed_entries)
+       }}
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp tree_to_dir_cache_entries(repository, object_id, prefix, acc) do
+    with {:ok, object} <- Repository.get_object(repository, object_id),
+         {:ok, %Tree{entries: tree_entries} = _tree} <- Tree.from_object(object) do
+      tree_entries_to_dir_cache_entries(repository, tree_entries, prefix, acc)
+      # FIXME: A malformed tree could cause an infinite loop here.
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp tree_entries_to_dir_cache_entries(repository, tree_entries, prefix, acc)
+
+  defp tree_entries_to_dir_cache_entries(_repository, [], _prefix, acc), do: {:ok, acc}
+
+  defp tree_entries_to_dir_cache_entries(
+         repository,
+         [%{mode: 0o040000, object_id: object_id, name: name} = _tree_entry | tail],
+         prefix,
+         acc
+       ) do
+    with {:ok, acc} <-
+           tree_to_dir_cache_entries(repository, object_id, append_to_prefix(prefix, name), acc) do
+      tree_entries_to_dir_cache_entries(repository, tail, prefix, acc)
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp tree_entries_to_dir_cache_entries(
+         repository,
+         [%{mode: mode, object_id: object_id, name: name} = _tree_entry | tail],
+         prefix,
+         acc
+       ) do
+    dir_cache_entry = %DirCacheEntry{
+      name: append_to_prefix(prefix, name),
+      stage: 0,
+      object_id: object_id,
+      mode: mode,
+      size: 0,
+      ctime: 0,
+      mtime: 0
+    }
+
+    tree_entries_to_dir_cache_entries(repository, tail, prefix, [dir_cache_entry | acc])
+  end
+
+  defp append_to_prefix('', name), do: name
+  defp append_to_prefix(prefix, name), do: '#{prefix}/#{name}'
 
   @typedoc ~S"""
   Reason codes that can be returned by `write_tree/2`.
@@ -293,11 +422,11 @@ defmodule Xgit.Repository.WorkingTree do
   @spec write_tree(working_tree :: t, missing_ok?: boolean, prefix: FilePath.t()) ::
           {:ok, object_id :: ObjectId.t()} | {:error, reason :: write_tree_reason}
   def write_tree(working_tree, opts \\ []) when is_pid(working_tree) do
-    {missing_ok?, prefix} = validate_options(opts)
+    {missing_ok?, prefix} = validate_write_tree_options(opts)
     GenServer.call(working_tree, {:write_tree, missing_ok?, prefix})
   end
 
-  defp validate_options(opts) do
+  defp validate_write_tree_options(opts) do
     missing_ok? = Keyword.get(opts, :missing_ok?, false)
 
     unless is_boolean(missing_ok?) do
@@ -320,7 +449,7 @@ defmodule Xgit.Repository.WorkingTree do
          prefix,
          %{repository: repository, work_dir: work_dir} = state
        ) do
-    with {:ok, %DirCache{entries: entries} = dir_cache} <- parse_dir_cache_if_exists(work_dir),
+    with {:ok, %DirCache{entries: entries} = dir_cache} <- parse_index_file_if_exists(work_dir),
          {:merged?, true} <- {:merged?, DirCache.fully_merged?(dir_cache)},
          {:has_all_objects?, true} <-
            {:has_all_objects?, has_all_objects?(repository, entries, missing_ok?)},
@@ -361,6 +490,30 @@ defmodule Xgit.Repository.WorkingTree do
     end
   end
 
+  defp parse_index_file_if_exists(index_path) do
+    with true <- File.exists?(index_path),
+         {:ok, iodevice} when is_pid(iodevice) <- TrailingHashDevice.open_file(index_path) do
+      res = ParseIndexFile.from_iodevice(iodevice)
+      :ok = File.close(iodevice)
+
+      res
+    else
+      false -> cover {:ok, DirCache.empty()}
+      {:error, reason} -> cover {:error, reason}
+    end
+  end
+
+  defp write_index_file(dir_cache, index_path) do
+    with {:ok, iodevice}
+         when is_pid(iodevice) <- TrailingHashDevice.open_file_for_write(index_path),
+         :ok <- WriteIndexFile.to_iodevice(dir_cache, iodevice),
+         :ok <- File.close(iodevice) do
+      :ok
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   @impl true
   def handle_call(:valid_working_tree?, _from, state), do: {:reply, :valid_working_tree, state}
 
@@ -370,6 +523,9 @@ defmodule Xgit.Repository.WorkingTree do
 
   def handle_call({:update_dir_cache, add, remove}, _from, state),
     do: handle_update_dir_cache(add, remove, state)
+
+  def handle_call({:read_tree, object_id, missing_ok?}, _from, state),
+    do: handle_read_tree(object_id, missing_ok?, state)
 
   def handle_call({:write_tree, missing_ok?, prefix}, _from, state),
     do: handle_write_tree(missing_ok?, prefix, state)
