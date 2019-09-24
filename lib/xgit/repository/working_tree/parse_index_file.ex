@@ -9,6 +9,8 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
 
   import Xgit.Util.ForceCoverage
 
+  require Logger
+
   alias Xgit.Core.DirCache
   alias Xgit.Core.DirCache.Entry, as: DirCacheEntry
   alias Xgit.Core.ObjectId
@@ -23,7 +25,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
           | :invalid_format
           | :unsupported_version
           | :too_many_entries
-          | :extensions_not_supported
+          | :unsupported_extension
           | :sha_hash_mismatch
           | File.posix()
 
@@ -49,9 +51,10 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
   entries. This is an arbitrary limit to guard against malformed files and to
   prevent overconsumption of memory. With experience, it could be revisited.
 
-  `{:error, :extensions_not_supported}` if any index file extensions are present.
-  Parsing extensions is not yet supported. (See
-  [issue #67](https://github.com/elixir-git/xgit/issues/67).)
+  `{:error, :unsupported_extension}` if any index file extensions are present
+  that can not be parsed. Optional extensions will be skipped, but no required
+  extensions are understood at this time. (See
+  [issue #172](https://github.com/elixir-git/xgit/issues/172).)
 
   `{:error, :sha_hash_mismatch}` if the SHA-1 hash written at the end of the file
   does not match the file contents.
@@ -67,9 +70,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
            {:entry_count, read_uint32(iodevice)},
          {:entries, entries} when is_list(entries) <-
            {:entries, read_entries(iodevice, version, entry_count)},
-         {:extensions, :eof} <- {:extensions, IO.binread(iodevice, 1)},
-         # TO DO: Parse extensions. For now, error out if any are present.
-         # https://github.com/elixir-git/xgit/issues/67
+         {:extensions, :ok} <- {:extensions, read_extensions(iodevice)},
          {:sha_valid?, true} <- {:sha_valid?, TrailingHashDevice.valid_hash?(iodevice)} do
       cover {:ok,
              %DirCache{
@@ -84,7 +85,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
       {:entry_count, :invalid} -> cover {:error, :invalid_format}
       {:entry_count, _} -> cover {:error, :too_many_entries}
       {:entries, _} -> cover {:error, :invalid_format}
-      {:extensions, _} -> cover {:error, :extensions_not_supported}
+      {:extensions, error} -> cover {:error, error}
       {:sha_valid?, _} -> cover {:error, :sha_hash_mismatch}
     end
   end
@@ -153,6 +154,42 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
 
   defp valid_entry?(%DirCacheEntry{}), do: cover(true)
   defp valid_entry?(_), do: cover(false)
+
+  defp read_extensions(iodevice) do
+    case IO.binread(iodevice, 1) do
+      :eof ->
+        :ok
+
+      char when byte_size(char) == 1 and char >= "A" and char <= "Z" ->
+        read_optional_extension(iodevice, char)
+
+      char ->
+        read_required_extension(iodevice, char)
+    end
+  end
+
+  defp read_optional_extension(iodevice, char) do
+    signature = "#{char}#{IO.binread(iodevice, 3)}"
+    length = read_uint32(iodevice)
+
+    Logger.info(fn ->
+      "skipping extension with signature #{inspect(signature)}, #{length} bytes"
+    end)
+
+    IO.binread(iodevice, length)
+    read_extensions(iodevice)
+  end
+
+  defp read_required_extension(iodevice, char) do
+    signature = "#{char}#{IO.binread(iodevice, 3)}"
+    length = read_uint32(iodevice)
+
+    Logger.info(fn ->
+      "don't know how to read required extension with signature #{inspect(signature)}, #{length} bytes"
+    end)
+
+    :unsupported_extension
+  end
 
   defp read_uint16(iodevice) do
     case IO.binread(iodevice, 2) do

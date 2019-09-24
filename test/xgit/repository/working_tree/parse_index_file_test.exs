@@ -5,6 +5,8 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFileTest do
   alias Xgit.Repository.WorkingTree.ParseIndexFile
   alias Xgit.Util.TrailingHashDevice
 
+  import ExUnit.CaptureLog
+
   describe "from_iodevice/1" do
     test "happy path: can read from command-line git (empty index)", %{ref: ref} do
       {_output, 0} =
@@ -199,6 +201,78 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFileTest do
     end
   end
 
+  test "happy path: can skip TREE data structure" do
+    Enum.each(@names, fn name ->
+      Temp.track!()
+      tmp = Temp.mkdir!()
+
+      {_output, 0} =
+        System.cmd(
+          "git",
+          ["init"],
+          cd: tmp
+        )
+
+      {_output, 0} =
+        System.cmd(
+          "git",
+          [
+            "update-index",
+            "--add",
+            "--cacheinfo",
+            "100644",
+            "18832d35117ef2f013c4009f5b2128dfaeff354f",
+            name
+          ],
+          cd: tmp
+        )
+
+      # Calling `git write-tree` causes git to add a `TREE` extension into the index file.
+      # Test that we know how to read that and skip it.
+
+      {_output, 0} =
+        System.cmd(
+          "git",
+          ["write-tree", "--missing-ok"],
+          cd: tmp
+        )
+
+      assert capture_log(fn ->
+               assert {:ok, index_file} =
+                        [tmp, ".git", "index"]
+                        |> Path.join()
+                        |> thd_open_file!()
+                        |> ParseIndexFile.from_iodevice()
+             end) =~ ~s(skipping extension with signature "TREE", 25 bytes)
+
+      assert index_file = %DirCache{
+               entries: [
+                 %DirCache.Entry{
+                   assume_valid?: false,
+                   ctime: 0,
+                   ctime_ns: 0,
+                   dev: 0,
+                   extended?: false,
+                   gid: 0,
+                   ino: 0,
+                   intent_to_add?: false,
+                   mode: 0o100644,
+                   mtime: 0,
+                   mtime_ns: 0,
+                   name: :binary.bin_to_list(name),
+                   object_id: "18832d35117ef2f013c4009f5b2128dfaeff354f",
+                   size: 0,
+                   skip_worktree?: false,
+                   stage: 0,
+                   uid: 0
+                 }
+               ],
+               entry_count: 1,
+               version: 2
+             }
+    end)
+  end
+
   test "error: iodevice isn't a TrailingHashDevice" do
     {:ok, pid} = GenServer.start_link(NotValid, nil)
     assert {:error, :not_sha_hash_device} = ParseIndexFile.from_iodevice(pid)
@@ -299,16 +373,22 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFileTest do
              ])
   end
 
-  test "error: extensions not supported" do
-    assert {:error, :extensions_not_supported} =
-             parse_iodata_as_index_file([
-               v2_header_with_valid_entry_through_file_size(),
-               Enum.map(1..20, fn n -> n end),
-               [0, 9],
-               'hello.txt',
-               0,
-               'abcd'
-             ])
+  test "error: required extensions not supported" do
+    assert capture_log(fn ->
+             assert {:error, :unsupported_extension} =
+                      parse_iodata_as_index_file([
+                        v2_header_with_valid_entry_through_file_size(),
+                        Enum.map(1..20, fn n -> n end),
+                        [0, 9],
+                        'hello.txt',
+                        0,
+                        'abcd',
+                        0,
+                        0,
+                        0,
+                        25
+                      ])
+           end) =~ ~s(don't know how to read required extension with signature "abcd", 25 bytes)
   end
 
   test "error: incorrect SHA-1 hash" do
