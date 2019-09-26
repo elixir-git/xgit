@@ -397,6 +397,50 @@ defmodule Xgit.Repository.WorkingTree.ReadTreeTest do
                    end
     end
 
+    test "error: can't replace malformed index file", %{xgit: xgit} do
+      File.mkdir_p!(xgit)
+
+      {_output, 0} = System.cmd("git", ["init"], cd: xgit)
+
+      {_output, 0} =
+        System.cmd(
+          "git",
+          [
+            "update-index",
+            "--add",
+            "--cacheinfo",
+            "100644",
+            "18832d35117ef2f013c4009f5b2128dfaeff354f",
+            "hello.txt"
+          ],
+          cd: xgit
+        )
+
+      {_output, 0} =
+        System.cmd(
+          "git",
+          [
+            "update-index",
+            "--remove",
+            "hello.txt"
+          ],
+          cd: xgit
+        )
+
+      {output, 0} = System.cmd("git", ["write-tree", "--missing-ok"], cd: xgit)
+      tree_object_id = String.trim(output)
+
+      index_path = Path.join([xgit, '.git', 'index'])
+      File.rm_rf!(index_path)
+      File.mkdir_p!(index_path)
+
+      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+      working_tree = Repository.default_working_tree(repo)
+
+      assert {:error, :eisdir} =
+               WorkingTree.read_tree(working_tree, tree_object_id, missing_ok?: true)
+    end
+
     # test "error: can't write tree object" do
     #   {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
 
@@ -415,12 +459,6 @@ defmodule Xgit.Repository.WorkingTree.ReadTreeTest do
 
     defp write_git_tree_and_read_back(git_ref_fn, opts) do
       {:ok, ref: ref, xgit: _xgit} = GitInitTestCase.setup_git_repo()
-
-      # ref = "/Users/scouten/Desktop/foo"
-      # File.rm_rf!(ref)
-      # File.mkdir_p!(ref)
-
-      # {_output, 0} = System.cmd("git", ["init"], cd: ref)
 
       git_ref_fn.(ref)
 
