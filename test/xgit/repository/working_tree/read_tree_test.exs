@@ -5,12 +5,9 @@ defmodule Xgit.Repository.WorkingTree.ReadTreeTest do
   alias Xgit.Core.DirCache.Entry
   alias Xgit.GitInitTestCase
   alias Xgit.Plumbing.UpdateIndex.CacheInfo
-  # alias Xgit.Plumbing.HashObject
   alias Xgit.Repository
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.WorkingTree
-
-  # import ExUnit.CaptureLog
 
   describe "read_tree/2" do
     test "happy path: empty dir cache" do
