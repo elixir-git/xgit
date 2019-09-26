@@ -328,7 +328,8 @@ defmodule Xgit.Repository.WorkingTree do
     with {:ok, object} <- Repository.get_object(repository, object_id),
          {:ok, %Tree{entries: tree_entries} = _tree} <- Tree.from_object(object) do
       tree_entries_to_dir_cache_entries(repository, tree_entries, prefix, acc)
-      # FIXME: A malformed tree could cause an infinite loop here.
+      # TO DO: A malformed tree could cause an infinite loop here.
+      # https://github.com/elixir-git/xgit/issues/178
     else
       {:error, reason} -> {:error, reason}
     end
