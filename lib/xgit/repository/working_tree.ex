@@ -449,9 +449,9 @@ defmodule Xgit.Repository.WorkingTree do
   defp handle_write_tree(
          missing_ok?,
          prefix,
-         %{repository: repository, work_dir: work_dir} = state
+         %{repository: repository, index_path: index_path} = state
        ) do
-    with {:ok, %DirCache{entries: entries} = dir_cache} <- parse_index_file_if_exists(work_dir),
+    with {:ok, %DirCache{entries: entries} = dir_cache} <- parse_index_file_if_exists(index_path),
          {:merged?, true} <- {:merged?, DirCache.fully_merged?(dir_cache)},
          {:has_all_objects?, true} <-
            {:has_all_objects?, has_all_objects?(repository, entries, missing_ok?)},
