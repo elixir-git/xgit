@@ -341,7 +341,7 @@ defmodule Xgit.Repository.WorkingTree.ReadTreeTest do
                    gid: 0,
                    ino: 0,
                    intent_to_add?: false,
-                   mode: 33188,
+                   mode: 0o100644,
                    mtime: 0,
                    mtime_ns: 0,
                    name: 'a/b',
