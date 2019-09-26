@@ -441,22 +441,6 @@ defmodule Xgit.Repository.WorkingTree.ReadTreeTest do
                WorkingTree.read_tree(working_tree, tree_object_id, missing_ok?: true)
     end
 
-    # test "error: can't write tree object" do
-    #   {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
-
-    #   :ok = OnDisk.create(xgit)
-    #   {:ok, repo} = OnDisk.start_link(work_dir: xgit)
-
-    #   working_tree = Repository.default_working_tree(repo)
-    #   :ok = WorkingTree.update_dir_cache(working_tree, [@valid_entry], [])
-
-    #   objects_path = Path.join([xgit, ".git", "objects"])
-    #   File.rm_rf!(objects_path)
-    #   File.write!(objects_path, "not a directory")
-
-    #   assert {:error, :cant_create_file} = WorkingTree.read_tree(working_tree, missing_ok?: true)
-    # end
-
     defp write_git_tree_and_read_back(git_ref_fn, opts) do
       {:ok, ref: ref, xgit: _xgit} = GitInitTestCase.setup_git_repo()
 
