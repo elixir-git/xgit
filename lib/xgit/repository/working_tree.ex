@@ -153,9 +153,8 @@ defmodule Xgit.Repository.WorkingTree do
     do: GenServer.call(working_tree, :reset_dir_cache)
 
   defp handle_reset_dir_cache(%{index_path: index_path} = state) do
-    with :ok <- write_index_file(DirCache.empty(), index_path) do
-      cover {:reply, :ok, state}
-    else
+    case write_index_file(DirCache.empty(), index_path) do
+      :ok -> cover {:reply, :ok, state}
       {:error, reason} -> cover {:reply, {:error, reason}, state}
     end
   end
@@ -311,15 +310,17 @@ defmodule Xgit.Repository.WorkingTree do
   end
 
   defp tree_to_dir_cache(repository, object_id) do
-    with {:ok, reversed_entries} <- tree_to_dir_cache_entries(repository, object_id, '', []) do
-      {:ok,
-       %DirCache{
-         version: 2,
-         entry_count: Enum.count(reversed_entries),
-         entries: Enum.reverse(reversed_entries)
-       }}
-    else
-      {:error, reason} -> {:error, reason}
+    case tree_to_dir_cache_entries(repository, object_id, '', []) do
+      {:ok, reversed_entries} ->
+        {:ok,
+         %DirCache{
+           version: 2,
+           entry_count: Enum.count(reversed_entries),
+           entries: Enum.reverse(reversed_entries)
+         }}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -343,11 +344,12 @@ defmodule Xgit.Repository.WorkingTree do
          prefix,
          acc
        ) do
-    with {:ok, acc} <-
-           tree_to_dir_cache_entries(repository, object_id, append_to_prefix(prefix, name), acc) do
-      tree_entries_to_dir_cache_entries(repository, tail, prefix, acc)
-    else
-      {:error, reason} -> {:error, reason}
+    case tree_to_dir_cache_entries(repository, object_id, append_to_prefix(prefix, name), acc) do
+      {:ok, acc} ->
+        tree_entries_to_dir_cache_entries(repository, tail, prefix, acc)
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 

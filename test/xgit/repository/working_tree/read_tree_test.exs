@@ -329,7 +329,7 @@ defmodule Xgit.Repository.WorkingTree.ReadTreeTest do
     #   assert {:error, :cant_create_file} = WorkingTree.read_tree(working_tree, missing_ok?: true)
     # end
 
-    defp write_git_tree_and_read_back(git_ref_fn) do
+    defp write_git_tree_and_read_back(git_ref_fn, opts) do
       {:ok, ref: ref, xgit: _xgit} = GitInitTestCase.setup_git_repo()
 
       # ref = "/Users/scouten/Desktop/foo"
