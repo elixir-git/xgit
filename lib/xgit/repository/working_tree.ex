@@ -223,13 +223,13 @@ defmodule Xgit.Repository.WorkingTree do
   end
 
   @typedoc ~S"""
-  Reason codes that can be returned by `read_tree/2`.
+  Reason codes that can be returned by `read_tree/3`.
   """
   @type read_tree_reason ::
           :objects_missing
-  # | DirCache.to_tree_objects_reason()
-  # | ParseIndexFile.from_iodevice_reason()
-  # | Repository.put_loose_object_reason()
+          | Tree.from_object_reason()
+          | Repository.get_object_reason()
+          | WriteIndexFile.to_iodevice_reason()
 
   @doc ~S"""
   Read a `tree` object and any trees it may refer to and populate the dir cache accordingly.
@@ -251,23 +251,15 @@ defmodule Xgit.Repository.WorkingTree do
 
   `:ok` if successful.
 
-  `{:error, :tree_not_found}` if `object_id` or any of the tree object it references
-  are not present in the object store.
-
-  `{:error, :prefix_not_found}` if `prefix` was specified, but that prefix is not referenced
-  in the tree structure.
-
   `{:error, :objects_missing}` if any of the objects referenced by the index
   are not present in the object store. (Exception: If `missing_ok?` is `true`,
   then this condition will be ignored.)
 
   Reason codes may also come from the following functions:
 
-  (NEED TO REVISIT THIS LIST)
-
   * `Xgit.Core.Tree.from_object/1`
   * `Xgit.Repository.get_object/2`
-  * `Xgit.Repository.WorkingTree.ParseIndexFile.from_iodevice/1`
+  * `Xgit.Repository.WorkingTree.WriteIndexFile.to_iodevice/2`
 
   ## TO DO
 
