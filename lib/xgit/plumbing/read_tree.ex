@@ -63,10 +63,14 @@ defmodule Xgit.Plumbing.ReadTree do
   @spec run(repository :: Repository.t(), object_id :: ObjectId.t(), missing_ok?: boolean) ::
           :ok | {:error, reason :: reason}
   def run(repository, object_id, opts \\ [])
-      when is_pid(repository) and is_binary(object_id) and is_list(opts) do
+      when is_pid(repository) and (is_binary(object_id) or object_id == :empty) and is_list(opts) do
     with {:ok, working_tree} <- WorkingTreeOpt.get(repository),
          _missing_ok? <- validate_options(opts) do
-      WorkingTree.read_tree(working_tree, object_id, opts)
+      if object_id == :empty do
+        WorkingTree.reset_dir_cache(working_tree)
+      else
+        WorkingTree.read_tree(working_tree, object_id, opts)
+      end
     else
       {:error, reason} -> cover {:error, reason}
     end

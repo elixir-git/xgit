@@ -88,6 +88,33 @@ defmodule Xgit.Plumbing.ReadTreeTest do
              }
     end
 
+    test "happy path: :empty" do
+      {:ok, ref: ref, xgit: _xgit} = GitInitTestCase.setup_git_repo()
+
+      {_output, 0} =
+        System.cmd(
+          "git",
+          [
+            "update-index",
+            "--add",
+            "--cacheinfo",
+            "100644",
+            "7919e8900c3af541535472aebd56d44222b7b3a3",
+            "hello.txt"
+          ],
+          cd: ref
+        )
+
+      {_output, 0} = System.cmd("git", ["write-tree", "--missing-ok"], cd: ref)
+
+      {:ok, repo} = OnDisk.start_link(work_dir: ref)
+
+      assert :ok = ReadTree.run(repo, :empty)
+
+      working_tree = Repository.default_working_tree(repo)
+      assert {:ok, dir_cache} = WorkingTree.dir_cache(working_tree)
+    end
+
     test "happy path: one blob nested one level" do
       assert write_git_tree_and_read_back(
                fn git_dir ->
