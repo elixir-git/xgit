@@ -1,5 +1,19 @@
 # Changelog for v0.x Series
 
+## v0.2.4
+
+_28 September 2019_
+
+* **Implement `Xgit.Plumbing.ReadTree`.** This is an API equivalent to `git read-tree`. (#180)
+* First benchmark: Looking at `Xgit.Repository.WorkingTree.ParseIndexFile.from_iodevice/1`. (#167)
+* Implement `WorkingTree.reset_dir_cache/1`. (#169)
+* Implement `Xgit.Repository.WorkingTree.write_tree/2`. (#170)
+* Refactor `Xgit.Plumbing.WriteTree` to use `WorkingTree.write_tree/2`. (#171)
+* Minimal extension support for index file parsing. (#173)
+* Bump `dialyxir` from 1.0.0-rc.6 to 1.0.0-rc.7 (#174)
+* Pull out index file as part of WorkingTree state. (#177)
+* Implement `Xgit.Repository.WorkingTree.read_tree/3`. (#176)
+
 ## v0.2.3
 
 _16 September 2019_
