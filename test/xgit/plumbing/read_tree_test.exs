@@ -7,6 +7,7 @@ defmodule Xgit.Plumbing.ReadTreeTest do
   alias Xgit.Plumbing.ReadTree
   alias Xgit.Plumbing.UpdateIndex.CacheInfo
   alias Xgit.Repository
+  alias Xgit.Repository.InMemory
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.WorkingTree
 
@@ -475,10 +476,13 @@ defmodule Xgit.Plumbing.ReadTreeTest do
       File.mkdir_p!(index_path)
 
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
-      working_tree = Repository.default_working_tree(repo)
 
-      assert {:error, :eisdir} =
-               WorkingTree.read_tree(working_tree, tree_object_id, missing_ok?: true)
+      assert {:error, :eisdir} = ReadTree.run(repo, tree_object_id, missing_ok?: true)
+    end
+
+    test "error: no working tree" do
+      {:ok, repo} = InMemory.start_link()
+      assert {:error, :bare} = ReadTree.run(repo, :empty)
     end
 
     defp write_git_tree_and_read_back(git_ref_fn, opts) do
