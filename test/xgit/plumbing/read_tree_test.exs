@@ -1,310 +1,313 @@
 defmodule Xgit.Plumbing.ReadTreeTest do
   use Xgit.GitInitTestCase, async: true
 
+  alias Xgit.Core.DirCache
   alias Xgit.Core.DirCache.Entry
   alias Xgit.GitInitTestCase
-  alias Xgit.Plumbing.HashObject
   alias Xgit.Plumbing.ReadTree
   alias Xgit.Plumbing.UpdateIndex.CacheInfo
   alias Xgit.Repository
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.WorkingTree
 
-  import FolderDiff
-
-  describe "to_tree_objects/2" do
+  describe "run/3" do
     test "happy path: empty dir cache" do
-      assert_same_output(fn _git_dir -> nil end, fn _xgit_repo -> nil end)
+      assert write_git_tree_and_read_back(
+               fn git_dir ->
+                 {_output, 0} =
+                   System.cmd(
+                     "git",
+                     [
+                       "update-index",
+                       "--add",
+                       "--cacheinfo",
+                       "100644",
+                       "18832d35117ef2f013c4009f5b2128dfaeff354f",
+                       "hello.txt"
+                     ],
+                     cd: git_dir
+                   )
+
+                 {_output, 0} =
+                   System.cmd(
+                     "git",
+                     [
+                       "update-index",
+                       "--remove",
+                       "hello.txt"
+                     ],
+                     cd: git_dir
+                   )
+               end,
+               missing_ok?: true
+             ) == DirCache.empty()
     end
 
     test "happy path: one root-level entry in dir cache" do
-      assert_same_output(
-        fn git_dir ->
-          {_output, 0} =
-            System.cmd(
-              "git",
-              [
-                "update-index",
-                "--add",
-                "--cacheinfo",
-                "100644",
-                "7919e8900c3af541535472aebd56d44222b7b3a3",
-                "hello.txt"
-              ],
-              cd: git_dir
-            )
-        end,
-        fn xgit_repo ->
-          assert :ok =
-                   CacheInfo.run(
-                     xgit_repo,
-                     [{0o100644, "7919e8900c3af541535472aebd56d44222b7b3a3", 'hello.txt'}]
+      assert write_git_tree_and_read_back(
+               fn git_dir ->
+                 {_output, 0} =
+                   System.cmd(
+                     "git",
+                     [
+                       "update-index",
+                       "--add",
+                       "--cacheinfo",
+                       "100644",
+                       "7919e8900c3af541535472aebd56d44222b7b3a3",
+                       "hello.txt"
+                     ],
+                     cd: git_dir
                    )
-        end,
-        missing_ok?: true
-      )
-    end
-
-    test "can ignore existing tree objects" do
-      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
-
-      :ok = OnDisk.create(xgit)
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
-
-      assert :ok =
-               CacheInfo.run(
-                 repo,
-                 [{0o100644, "7919e8900c3af541535472aebd56d44222b7b3a3", 'hello.txt'}]
-               )
-
-      assert {:ok, xgit_object_id} = ReadTree.run(repo, missing_ok?: true)
-
-      assert {:ok, ^xgit_object_id} = ReadTree.run(repo, missing_ok?: true)
+               end,
+               missing_ok?: true
+             ) == %DirCache{
+               version: 2,
+               entry_count: 1,
+               entries: [
+                 %Entry{
+                   assume_valid?: false,
+                   ctime: 0,
+                   ctime_ns: 0,
+                   dev: 0,
+                   extended?: false,
+                   gid: 0,
+                   ino: 0,
+                   intent_to_add?: false,
+                   mode: 0o100644,
+                   mtime: 0,
+                   mtime_ns: 0,
+                   name: 'hello.txt',
+                   object_id: "7919e8900c3af541535472aebd56d44222b7b3a3",
+                   size: 0,
+                   skip_worktree?: false,
+                   stage: 0,
+                   uid: 0
+                 }
+               ]
+             }
     end
 
     test "happy path: one blob nested one level" do
-      assert_same_output(
-        fn git_dir ->
-          {_output, 0} =
-            System.cmd(
-              "git",
-              [
-                "update-index",
-                "--add",
-                "--cacheinfo",
-                "100644",
-                "7fa62716fc68733db4c769fe678295cf4cf5b336",
-                "a/b"
-              ],
-              cd: git_dir
-            )
-        end,
-        fn xgit_repo ->
-          assert :ok =
-                   CacheInfo.run(
-                     xgit_repo,
-                     [{0o100644, "7fa62716fc68733db4c769fe678295cf4cf5b336", 'a/b'}]
+      assert write_git_tree_and_read_back(
+               fn git_dir ->
+                 {_output, 0} =
+                   System.cmd(
+                     "git",
+                     [
+                       "update-index",
+                       "--add",
+                       "--cacheinfo",
+                       "100644",
+                       "7fa62716fc68733db4c769fe678295cf4cf5b336",
+                       "a/b"
+                     ],
+                     cd: git_dir
                    )
-        end,
-        missing_ok?: true
-      )
+               end,
+               missing_ok?: true
+             ) == %DirCache{
+               version: 2,
+               entry_count: 1,
+               entries: [
+                 %Entry{
+                   assume_valid?: false,
+                   ctime: 0,
+                   ctime_ns: 0,
+                   dev: 0,
+                   extended?: false,
+                   gid: 0,
+                   ino: 0,
+                   intent_to_add?: false,
+                   mode: 0o100644,
+                   mtime: 0,
+                   mtime_ns: 0,
+                   name: 'a/b',
+                   object_id: "7fa62716fc68733db4c769fe678295cf4cf5b336",
+                   size: 0,
+                   skip_worktree?: false,
+                   stage: 0,
+                   uid: 0
+                 }
+               ]
+             }
     end
 
     test "happy path: deeply nested dir cache" do
-      assert_same_output(
-        fn git_dir ->
-          {_output, 0} =
-            System.cmd(
-              "git",
-              [
-                "update-index",
-                "--add",
-                "--cacheinfo",
-                "100644",
-                "7fa62716fc68733db4c769fe678295cf4cf5b336",
-                "a/a/b"
-              ],
-              cd: git_dir
-            )
-
-          {_output, 0} =
-            System.cmd(
-              "git",
-              [
-                "update-index",
-                "--add",
-                "--cacheinfo",
-                "100644",
-                "0f717230e297de82d0f8d761143dc1e1145c6bd5",
-                "a/b/c"
-              ],
-              cd: git_dir
-            )
-
-          {_output, 0} =
-            System.cmd(
-              "git",
-              [
-                "update-index",
-                "--add",
-                "--cacheinfo",
-                "100644",
-                "ff287368514462578ba6406d366113953539cbf1",
-                "a/b/d"
-              ],
-              cd: git_dir
-            )
-
-          {_output, 0} =
-            System.cmd(
-              "git",
-              [
-                "update-index",
-                "--add",
-                "--cacheinfo",
-                "100644",
-                "de588889c4d62aaf3ef3bd90be38fa239be2f5d1",
-                "a/c/x"
-              ],
-              cd: git_dir
-            )
-
-          {_output, 0} =
-            System.cmd(
-              "git",
-              [
-                "update-index",
-                "--add",
-                "--cacheinfo",
-                "100755",
-                "7919e8900c3af541535472aebd56d44222b7b3a3",
-                "other.txt"
-              ],
-              cd: git_dir
-            )
-        end,
-        fn xgit_repo ->
-          assert :ok =
-                   CacheInfo.run(
-                     xgit_repo,
-                     [{0o100644, "7fa62716fc68733db4c769fe678295cf4cf5b336", 'a/a/b'}]
+      assert write_git_tree_and_read_back(
+               fn git_dir ->
+                 {_output, 0} =
+                   System.cmd(
+                     "git",
+                     [
+                       "update-index",
+                       "--add",
+                       "--cacheinfo",
+                       "100644",
+                       "7fa62716fc68733db4c769fe678295cf4cf5b336",
+                       "a/a/b"
+                     ],
+                     cd: git_dir
                    )
 
-          assert :ok =
-                   CacheInfo.run(
-                     xgit_repo,
-                     [{0o100644, "0f717230e297de82d0f8d761143dc1e1145c6bd5", 'a/b/c'}]
+                 {_output, 0} =
+                   System.cmd(
+                     "git",
+                     [
+                       "update-index",
+                       "--add",
+                       "--cacheinfo",
+                       "100644",
+                       "0f717230e297de82d0f8d761143dc1e1145c6bd5",
+                       "a/b/c"
+                     ],
+                     cd: git_dir
                    )
 
-          assert :ok =
-                   CacheInfo.run(
-                     xgit_repo,
-                     [{0o100644, "ff287368514462578ba6406d366113953539cbf1", 'a/b/d'}]
+                 {_output, 0} =
+                   System.cmd(
+                     "git",
+                     [
+                       "update-index",
+                       "--add",
+                       "--cacheinfo",
+                       "100644",
+                       "ff287368514462578ba6406d366113953539cbf1",
+                       "a/b/d"
+                     ],
+                     cd: git_dir
                    )
 
-          assert :ok =
-                   CacheInfo.run(
-                     xgit_repo,
-                     [{0o100644, "de588889c4d62aaf3ef3bd90be38fa239be2f5d1", 'a/c/x'}]
+                 {_output, 0} =
+                   System.cmd(
+                     "git",
+                     [
+                       "update-index",
+                       "--add",
+                       "--cacheinfo",
+                       "100644",
+                       "de588889c4d62aaf3ef3bd90be38fa239be2f5d1",
+                       "a/c/x"
+                     ],
+                     cd: git_dir
                    )
 
-          assert :ok =
-                   CacheInfo.run(
-                     xgit_repo,
-                     [{0o100755, "7919e8900c3af541535472aebd56d44222b7b3a3", 'other.txt'}]
+                 {_output, 0} =
+                   System.cmd(
+                     "git",
+                     [
+                       "update-index",
+                       "--add",
+                       "--cacheinfo",
+                       "100755",
+                       "7919e8900c3af541535472aebd56d44222b7b3a3",
+                       "other.txt"
+                     ],
+                     cd: git_dir
                    )
-        end,
-        missing_ok?: true
-      )
-    end
-
-    test "honors prefix" do
-      assert_same_output(
-        fn git_dir ->
-          {_output, 0} =
-            System.cmd(
-              "git",
-              [
-                "update-index",
-                "--add",
-                "--cacheinfo",
-                "100644",
-                "7fa62716fc68733db4c769fe678295cf4cf5b336",
-                "a/a/b"
-              ],
-              cd: git_dir
-            )
-
-          {_output, 0} =
-            System.cmd(
-              "git",
-              [
-                "update-index",
-                "--add",
-                "--cacheinfo",
-                "100644",
-                "0f717230e297de82d0f8d761143dc1e1145c6bd5",
-                "a/b/c"
-              ],
-              cd: git_dir
-            )
-
-          {_output, 0} =
-            System.cmd(
-              "git",
-              [
-                "update-index",
-                "--add",
-                "--cacheinfo",
-                "100644",
-                "ff287368514462578ba6406d366113953539cbf1",
-                "a/b/d"
-              ],
-              cd: git_dir
-            )
-
-          {_output, 0} =
-            System.cmd(
-              "git",
-              [
-                "update-index",
-                "--add",
-                "--cacheinfo",
-                "100644",
-                "de588889c4d62aaf3ef3bd90be38fa239be2f5d1",
-                "a/c/x"
-              ],
-              cd: git_dir
-            )
-
-          {_output, 0} =
-            System.cmd(
-              "git",
-              [
-                "update-index",
-                "--add",
-                "--cacheinfo",
-                "100755",
-                "7919e8900c3af541535472aebd56d44222b7b3a3",
-                "other.txt"
-              ],
-              cd: git_dir
-            )
-        end,
-        fn xgit_repo ->
-          assert :ok =
-                   CacheInfo.run(
-                     xgit_repo,
-                     [{0o100644, "7fa62716fc68733db4c769fe678295cf4cf5b336", 'a/a/b'}]
-                   )
-
-          assert :ok =
-                   CacheInfo.run(
-                     xgit_repo,
-                     [{0o100644, "0f717230e297de82d0f8d761143dc1e1145c6bd5", 'a/b/c'}]
-                   )
-
-          assert :ok =
-                   CacheInfo.run(
-                     xgit_repo,
-                     [{0o100644, "ff287368514462578ba6406d366113953539cbf1", 'a/b/d'}]
-                   )
-
-          assert :ok =
-                   CacheInfo.run(
-                     xgit_repo,
-                     [{0o100644, "de588889c4d62aaf3ef3bd90be38fa239be2f5d1", 'a/c/x'}]
-                   )
-
-          assert :ok =
-                   CacheInfo.run(
-                     xgit_repo,
-                     [{0o100755, "7919e8900c3af541535472aebd56d44222b7b3a3", 'other.txt'}]
-                   )
-        end,
-        missing_ok?: true,
-        prefix: 'a/b'
-      )
+               end,
+               missing_ok?: true
+             ) == %DirCache{
+               version: 2,
+               entry_count: 5,
+               entries: [
+                 %Entry{
+                   assume_valid?: false,
+                   ctime: 0,
+                   ctime_ns: 0,
+                   dev: 0,
+                   extended?: false,
+                   gid: 0,
+                   ino: 0,
+                   intent_to_add?: false,
+                   mode: 0o100644,
+                   mtime: 0,
+                   mtime_ns: 0,
+                   name: 'a/a/b',
+                   object_id: "7fa62716fc68733db4c769fe678295cf4cf5b336",
+                   size: 0,
+                   skip_worktree?: false,
+                   stage: 0,
+                   uid: 0
+                 },
+                 %Entry{
+                   assume_valid?: false,
+                   ctime: 0,
+                   ctime_ns: 0,
+                   dev: 0,
+                   extended?: false,
+                   gid: 0,
+                   ino: 0,
+                   intent_to_add?: false,
+                   mode: 0o100644,
+                   mtime: 0,
+                   mtime_ns: 0,
+                   name: 'a/b/c',
+                   object_id: "0f717230e297de82d0f8d761143dc1e1145c6bd5",
+                   size: 0,
+                   skip_worktree?: false,
+                   stage: 0,
+                   uid: 0
+                 },
+                 %Entry{
+                   assume_valid?: false,
+                   ctime: 0,
+                   ctime_ns: 0,
+                   dev: 0,
+                   extended?: false,
+                   gid: 0,
+                   ino: 0,
+                   intent_to_add?: false,
+                   mode: 0o100644,
+                   mtime: 0,
+                   mtime_ns: 0,
+                   name: 'a/b/d',
+                   object_id: "ff287368514462578ba6406d366113953539cbf1",
+                   size: 0,
+                   skip_worktree?: false,
+                   stage: 0,
+                   uid: 0
+                 },
+                 %Entry{
+                   assume_valid?: false,
+                   ctime: 0,
+                   ctime_ns: 0,
+                   dev: 0,
+                   extended?: false,
+                   gid: 0,
+                   ino: 0,
+                   intent_to_add?: false,
+                   mode: 0o100644,
+                   mtime: 0,
+                   mtime_ns: 0,
+                   name: 'a/c/x',
+                   object_id: "de588889c4d62aaf3ef3bd90be38fa239be2f5d1",
+                   size: 0,
+                   skip_worktree?: false,
+                   stage: 0,
+                   uid: 0
+                 },
+                 %Entry{
+                   assume_valid?: false,
+                   ctime: 0,
+                   ctime_ns: 0,
+                   dev: 0,
+                   extended?: false,
+                   gid: 0,
+                   ino: 0,
+                   intent_to_add?: false,
+                   mode: 0o100755,
+                   mtime: 0,
+                   mtime_ns: 0,
+                   name: 'other.txt',
+                   object_id: "7919e8900c3af541535472aebd56d44222b7b3a3",
+                   size: 0,
+                   skip_worktree?: false,
+                   stage: 0,
+                   uid: 0
+                 }
+               ]
+             }
     end
 
     test "missing_ok?: false happy path" do
@@ -312,23 +315,44 @@ defmodule Xgit.Plumbing.ReadTreeTest do
       path = Temp.path!()
       File.write!(path, "test content\n")
 
-      assert_same_output(
-        fn git_dir ->
-          {output, 0} = System.cmd("git", ["hash-object", "-w", path], cd: git_dir)
-          object_id = String.trim(output)
+      assert write_git_tree_and_read_back(
+               fn git_dir ->
+                 {output, 0} = System.cmd("git", ["hash-object", "-w", path], cd: git_dir)
+                 object_id = String.trim(output)
 
-          {_output, 0} =
-            System.cmd(
-              "git",
-              ["update-index", "--add", "--cacheinfo", "100644", object_id, "a/b"],
-              cd: git_dir
-            )
-        end,
-        fn xgit_repo ->
-          {:ok, object_id} = HashObject.run("test content\n", repo: xgit_repo, write?: true)
-          :ok = CacheInfo.run(xgit_repo, [{0o100644, object_id, 'a/b'}])
-        end
-      )
+                 {_output, 0} =
+                   System.cmd(
+                     "git",
+                     ["update-index", "--add", "--cacheinfo", "100644", object_id, "a/b"],
+                     cd: git_dir
+                   )
+               end,
+               missing_ok?: false
+             ) == %DirCache{
+               entries: [
+                 %DirCache.Entry{
+                   assume_valid?: false,
+                   ctime: 0,
+                   ctime_ns: 0,
+                   dev: 0,
+                   extended?: false,
+                   gid: 0,
+                   ino: 0,
+                   intent_to_add?: false,
+                   mode: 0o100644,
+                   mtime: 0,
+                   mtime_ns: 0,
+                   name: 'a/b',
+                   object_id: "d670460b4b4aece5915caf5c68d12f560a9fe3e4",
+                   size: 0,
+                   skip_worktree?: false,
+                   stage: 0,
+                   uid: 0
+                 }
+               ],
+               entry_count: 1,
+               version: 2
+             }
     end
 
     test "missing_ok? error" do
@@ -344,60 +368,29 @@ defmodule Xgit.Plumbing.ReadTreeTest do
         [{0o100644, "7919e8900c3af541535472aebd56d44222b7b3a3", 'hello.txt'}]
       )
 
-      assert {:error, :objects_missing} = ReadTree.run(repo)
+      {output, 0} = System.cmd("git", ["write-tree", "--missing-ok"], cd: xgit)
+      tree_object_id = String.trim(output)
+
+      assert {:error, :objects_missing} = ReadTree.run(repo, tree_object_id)
     end
 
-    test "prefix doesn't exist" do
+    test "missing_ok? error (defaulted)" do
       {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
 
       :ok = OnDisk.create(xgit)
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
-      :ok =
-        CacheInfo.run(
-          repo,
-          [{0o100644, "7fa62716fc68733db4c769fe678295cf4cf5b336", 'a/a/b'}]
-        )
+      :ok
 
-      :ok =
-        CacheInfo.run(
-          repo,
-          [{0o100644, "0f717230e297de82d0f8d761143dc1e1145c6bd5", 'a/b/c'}]
-        )
+      CacheInfo.run(
+        repo,
+        [{0o100644, "7919e8900c3af541535472aebd56d44222b7b3a3", 'hello.txt'}]
+      )
 
-      :ok =
-        CacheInfo.run(
-          repo,
-          [{0o100644, "ff287368514462578ba6406d366113953539cbf1", 'a/b/d'}]
-        )
+      {output, 0} = System.cmd("git", ["write-tree", "--missing-ok"], cd: xgit)
+      tree_object_id = String.trim(output)
 
-      :ok =
-        CacheInfo.run(
-          repo,
-          [{0o100644, "de588889c4d62aaf3ef3bd90be38fa239be2f5d1", 'a/c/x'}]
-        )
-
-      :ok =
-        CacheInfo.run(
-          repo,
-          [{0o100755, "7919e8900c3af541535472aebd56d44222b7b3a3", 'other.txt'}]
-        )
-
-      assert {:error, :prefix_not_found} =
-               ReadTree.run(repo, missing_ok?: true, prefix: 'no/such/prefix')
-    end
-
-    test "error: invalid dir cache" do
-      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
-
-      :ok = OnDisk.create(xgit)
-
-      index_path = Path.join([xgit, ".git", "index"])
-      File.write!(index_path, "not a valid index file")
-
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
-
-      assert {:error, :invalid_format} = ReadTree.run(repo, missing_ok?: true)
+      assert {:error, :objects_missing} = ReadTree.run(repo, tree_object_id)
     end
 
     test "error: :missing_ok? invalid" do
@@ -407,98 +400,81 @@ defmodule Xgit.Plumbing.ReadTreeTest do
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       assert_raise ArgumentError,
-                   ~s(Xgit.Plumbing.ReadTree.run/2: missing_ok? "sure" is invalid),
+                   ~s(Xgit.Plumbing.ReadTree.run/3: missing_ok? "sure" is invalid),
                    fn ->
-                     ReadTree.run(repo, missing_ok?: "sure")
+                     ReadTree.run(
+                       repo,
+                       "7919e8900c3af541535472aebd56d44222b7b3a3",
+                       missing_ok?: "sure"
+                     )
                    end
     end
 
-    @valid_entry %Entry{
-      name: 'hello.txt',
-      stage: 0,
-      object_id: "7919e8900c3af541535472aebd56d44222b7b3a3",
-      mode: 0o100644,
-      size: 42,
-      ctime: 1_565_612_933,
-      ctime_ns: 0,
-      mtime: 1_565_612_941,
-      mtime_ns: 0,
-      dev: 0,
-      ino: 0,
-      uid: 0,
-      gid: 0,
-      assume_valid?: true,
-      extended?: false,
-      skip_worktree?: false,
-      intent_to_add?: false
-    }
+    test "error: can't replace malformed index file", %{xgit: xgit} do
+      File.mkdir_p!(xgit)
 
-    test "error: incomplete merge" do
-      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
+      {_output, 0} = System.cmd("git", ["init"], cd: xgit)
 
-      :ok = OnDisk.create(xgit)
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
-
-      working_tree = Repository.default_working_tree(repo)
-
-      :ok =
-        WorkingTree.update_dir_cache(
-          working_tree,
-          [@valid_entry, Map.put(@valid_entry, :stage, 1)],
-          []
+      {_output, 0} =
+        System.cmd(
+          "git",
+          [
+            "update-index",
+            "--add",
+            "--cacheinfo",
+            "100644",
+            "18832d35117ef2f013c4009f5b2128dfaeff354f",
+            "hello.txt"
+          ],
+          cd: xgit
         )
 
-      assert {:error, :incomplete_merge} = ReadTree.run(repo, missing_ok?: true)
-    end
+      {_output, 0} =
+        System.cmd(
+          "git",
+          [
+            "update-index",
+            "--remove",
+            "hello.txt"
+          ],
+          cd: xgit
+        )
 
-    test "error: :prefix invalid" do
-      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
+      {output, 0} = System.cmd("git", ["write-tree", "--missing-ok"], cd: xgit)
+      tree_object_id = String.trim(output)
 
-      :ok = OnDisk.create(xgit)
+      index_path = Path.join([xgit, '.git', 'index'])
+      File.rm_rf!(index_path)
+      File.mkdir_p!(index_path)
+
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+      working_tree = Repository.default_working_tree(repo)
 
-      assert_raise ArgumentError,
-                   ~s[Xgit.Plumbing.ReadTree.run/2: prefix "a/b/c" is invalid (should be a charlist, not a String)],
-                   fn ->
-                     ReadTree.run(repo, prefix: "a/b/c")
-                   end
+      assert {:error, :eisdir} =
+               WorkingTree.read_tree(working_tree, tree_object_id, missing_ok?: true)
     end
 
-    defp assert_same_output(git_ref_fn, xgit_fn, opts \\ []) do
-      {:ok, ref: ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
-
-      missing_ok? = Keyword.get(opts, :missing_ok?, false)
-      prefix = Keyword.get(opts, :prefix, [])
+    defp write_git_tree_and_read_back(git_ref_fn, opts) do
+      {:ok, ref: ref, xgit: _xgit} = GitInitTestCase.setup_git_repo()
 
       git_ref_fn.(ref)
 
-      git_opts =
-        ["write-tree"]
-        |> maybe_add_missing_ok?(missing_ok?)
-        |> maybe_add_prefix(prefix)
+      {output, 0} = System.cmd("git", ["write-tree", "--missing-ok"], cd: ref)
+      tree_object_id = String.trim(output)
 
-      {output, 0} = System.cmd("git", git_opts, cd: ref)
-      git_ref_object_id = String.trim(output)
+      # We want the *tree* to be present, but the dir cache should be empty.
+      # Otherwise, the subsequent call to `WorkingTree.dir_cache/1` could mask
+      # any failure in `ReadTree.run/3`.
+      {_output, 0} = System.cmd("git", ["read-tree", "--empty"], cd: ref)
 
-      :ok = OnDisk.create(xgit)
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+      {:ok, repo} = OnDisk.start_link(work_dir: ref)
 
-      xgit_fn.(repo)
+      assert :ok = ReadTree.run(repo, tree_object_id, opts)
 
-      assert {:ok, xgit_object_id} = ReadTree.run(repo, opts)
+      working_tree = Repository.default_working_tree(repo)
+      assert {:ok, dir_cache} = WorkingTree.dir_cache(working_tree)
 
-      assert_folders_are_equal(
-        Path.join([ref, ".git", "objects"]),
-        Path.join([xgit, ".git", "objects"])
-      )
-
-      assert git_ref_object_id == xgit_object_id
+      dir_cache
     end
-
-    defp maybe_add_missing_ok?(git_opts, false), do: git_opts
-    defp maybe_add_missing_ok?(git_opts, true), do: git_opts ++ ["--missing-ok"]
-
-    defp maybe_add_prefix(git_opts, []), do: git_opts
-    defp maybe_add_prefix(git_opts, prefix), do: git_opts ++ ["--prefix=#{prefix}"]
   end
 end
