@@ -9,7 +9,7 @@ defmodule Xgit.Repository.WorkingTree.ReadTreeTest do
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.WorkingTree
 
-  describe "read_tree/2" do
+  describe "read_tree/3" do
     test "happy path: empty dir cache" do
       assert write_git_tree_and_read_back(
                fn git_dir ->
@@ -448,7 +448,7 @@ defmodule Xgit.Repository.WorkingTree.ReadTreeTest do
 
       # We want the *tree* to be present, but the dir cache should be empty.
       # Otherwise, the subsequent call to `WorkingTree.dir_cache/1` could mask
-      # any failure in `WorkingTree.read_tree/2`.
+      # any failure in `WorkingTree.read_tree/3`.
       {_output, 0} = System.cmd("git", ["read-tree", "--empty"], cd: ref)
 
       {:ok, repo} = OnDisk.start_link(work_dir: ref)
