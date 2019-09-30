@@ -71,7 +71,7 @@ defmodule Xgit.Repository.OnDisk.GetObject do
 
   defp read_loose_object_prefix(path) do
     path
-    |> File.stream!([:binary], 100)
+    |> File.stream!([:binary], 1000)
     |> UnzipStream.unzip()
     |> Stream.take(100)
     |> Stream.take_while(&(&1 != 0))
