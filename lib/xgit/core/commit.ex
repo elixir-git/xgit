@@ -70,8 +70,12 @@ defmodule Xgit.Core.Commit do
           author: %PersonIdent{} = author,
           committer: %PersonIdent{} = committer,
           message: message
-        } = _commit
+        } = commit
       ) do
+    unless valid?(commit) do
+      raise ArgumentError, "Xgit.Core.Commit.to_object/1: commit is not valid"
+    end
+
     rendered_parents =
       parents
       |> Enum.uniq()

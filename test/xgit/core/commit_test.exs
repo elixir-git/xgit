@@ -432,6 +432,17 @@ defmodule Xgit.Core.CommitTest do
       )
     end
 
+    test "raises ArgumentError if commit is invalid" do
+      assert_raise ArgumentError, "Xgit.Core.Commit.to_object/1: commit is not valid", fn ->
+        Commit.to_object(%Commit{
+          tree: "be9bfa841874ccc9f2ef7c48d0c76226f89b7189",
+          author: @invalid_pi,
+          committer: pi("<> 0 +0000"),
+          message: 'x'
+        })
+      end
+    end
+
     defp assert_same_output(write_tree_fn, xgit_fn, opts \\ []) do
       author_date = Keyword.get(opts, :author_date, "1142878501 +0230")
       committer_date = Keyword.get(opts, :committer_date, "1142878501 +0230")
