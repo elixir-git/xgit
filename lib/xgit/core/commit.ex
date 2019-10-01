@@ -2,6 +2,7 @@ defmodule Xgit.Core.Commit do
   @moduledoc ~S"""
   Represents a git `commit` object in memory.
   """
+  alias Xgit.Core.Object
   alias Xgit.Core.ObjectId
   alias Xgit.Core.PersonIdent
 
@@ -51,4 +52,48 @@ defmodule Xgit.Core.Commit do
   end
 
   def valid?(_), do: cover(false)
+
+  @doc ~S"""
+  Renders this commit structure into a corresponding `Xgit.Core.Object`.
+
+  If duplicate parents are detected, they will be silently de-duplicated.
+
+  If the commit structure is not valid, will raise `ArgumentError`.
+  """
+  @spec to_object(commit :: t) :: Object.t()
+  def to_object(commit)
+
+  def to_object(
+        %__MODULE__{
+          tree: tree,
+          parents: parents,
+          author: %PersonIdent{} = author,
+          committer: %PersonIdent{} = committer,
+          message: message
+        } = commit
+      ) do
+    unless valid?(commit) do
+      raise ArgumentError, "Xgit.Core.Commit.to_object/1: commit is not valid"
+    end
+
+    rendered_parents =
+      parents
+      |> Enum.uniq()
+      |> Enum.flat_map(&'parent #{&1}\n')
+
+    rendered_commit =
+      'tree #{tree}\n' ++
+        rendered_parents ++
+        'author #{PersonIdent.to_external_string(author)}\n' ++
+        'committer #{PersonIdent.to_external_string(committer)}\n' ++
+        '\n' ++
+        message
+
+    %Object{
+      type: :commit,
+      content: rendered_commit,
+      size: Enum.count(rendered_commit),
+      id: ObjectId.calculate_id(rendered_commit, :commit)
+    }
+  end
 end
