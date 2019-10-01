@@ -343,7 +343,87 @@ defmodule Xgit.Core.CommitTest do
         fn tree_id, parents ->
           %Commit{
             tree: tree_id,
-            parents: [parents],
+            parents: parents,
+            author: @valid_pi,
+            committer: @valid_pi,
+            message: 'x\n'
+          }
+        end
+      )
+    end
+
+    test "deduplicates and warns on duplicate parent" do
+      assert_same_output(
+        fn git_dir ->
+          {empty_tree_id_str, 0} =
+            System.cmd(
+              "git",
+              [
+                "write-tree"
+              ],
+              cd: git_dir
+            )
+
+          empty_tree_id = String.trim(empty_tree_id_str)
+
+          env = [
+            {"GIT_AUTHOR_DATE", "1142878449 +0230"},
+            {"GIT_COMMITTER_DATE", "1142878449 +0230"},
+            {"GIT_AUTHOR_EMAIL", "author@example.com"},
+            {"GIT_COMMITTER_EMAIL", "author@example.com"},
+            {"GIT_AUTHOR_NAME", "A. U. Thor"},
+            {"GIT_COMMITTER_NAME", "A. U. Thor"}
+          ]
+
+          {empty_commit_id_str, 0} =
+            System.cmd(
+              "git",
+              [
+                "commit-tree",
+                "-m",
+                "empty",
+                empty_tree_id
+              ],
+              cd: git_dir,
+              env: env
+            )
+
+          empty_commit_id = String.trim(empty_commit_id_str)
+
+          {_output, 0} =
+            System.cmd(
+              "git",
+              [
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                "100644",
+                "7919e8900c3af541535472aebd56d44222b7b3a3",
+                "hello.txt"
+              ],
+              cd: git_dir
+            )
+
+          {_output, 0} =
+            System.cmd(
+              "git",
+              [
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                "100755",
+                "4a43a489f107e7ece679950f53567c648038449a",
+                "xyzzy.sh"
+              ],
+              cd: git_dir
+            )
+
+          [empty_commit_id, empty_commit_id]
+        end,
+        fn tree_id, parents ->
+          %Commit{
+            tree: tree_id,
+            parents: parents,
             author: @valid_pi,
             committer: @valid_pi,
             message: 'x\n'
@@ -384,7 +464,7 @@ defmodule Xgit.Core.CommitTest do
         System.cmd(
           "git",
           ["commit-tree", tree_content_id, "-m", message] ++
-            Enum.flat_map(ref_parents, &["-p", &1]),
+            Enum.flat_map(Enum.uniq(ref_parents), &["-p", &1]),
           cd: ref,
           env: env
         )

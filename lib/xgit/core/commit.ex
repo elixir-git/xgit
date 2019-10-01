@@ -55,6 +55,10 @@ defmodule Xgit.Core.Commit do
 
   @doc ~S"""
   Renders this commit structure into a corresponding `Xgit.Core.Object`.
+
+  If duplicate parents are detected, they will be silently de-duplicated.
+
+  If the commit structure is not valid, will raise `ArgumentError`.
   """
   @spec to_object(commit :: t) :: Object.t()
   def to_object(commit)
@@ -68,9 +72,14 @@ defmodule Xgit.Core.Commit do
           message: message
         } = _commit
       ) do
+    rendered_parents =
+      parents
+      |> Enum.uniq()
+      |> Enum.flat_map(&'parent #{&1}\n')
+
     rendered_commit =
       'tree #{tree}\n' ++
-        Enum.flat_map(parents, &'parent #{&1}\n') ++
+        rendered_parents ++
         'author #{PersonIdent.to_external_string(author)}\n' ++
         'committer #{PersonIdent.to_external_string(committer)}\n' ++
         '\n' ++
