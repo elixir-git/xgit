@@ -2,6 +2,7 @@ defmodule Xgit.Core.Commit do
   @moduledoc ~S"""
   Represents a git `commit` object in memory.
   """
+  alias Xgit.Core.Object
   alias Xgit.Core.ObjectId
   alias Xgit.Core.PersonIdent
 
@@ -51,4 +52,35 @@ defmodule Xgit.Core.Commit do
   end
 
   def valid?(_), do: cover(false)
+
+  @doc ~S"""
+  Renders this commit structure into a corresponding `Xgit.Core.Object`.
+  """
+  @spec to_object(commit :: t) :: Object.t()
+  def to_object(commit)
+
+  def to_object(
+        %__MODULE__{
+          tree: tree,
+          parents: parents,
+          author: %PersonIdent{} = author,
+          committer: %PersonIdent{} = committer,
+          message: message
+        } = _commit
+      ) do
+    rendered_commit =
+      'tree #{tree}\n' ++
+        Enum.flat_map(parents, &'parent #{&1}\n') ++
+        'author #{PersonIdent.to_external_string(author)}\n' ++
+        'committer #{PersonIdent.to_external_string(committer)}\n' ++
+        '\n' ++
+        message
+
+    %Object{
+      type: :commit,
+      content: rendered_commit,
+      size: Enum.count(rendered_commit),
+      id: ObjectId.calculate_id(rendered_commit, :commit)
+    }
+  end
 end
