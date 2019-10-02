@@ -43,5 +43,5 @@ defmodule Xgit.Util.ForceCoverage do
     end
   end
 
-  # coveralls-ignore-end
+  # coveralls-ignore-stop
 end
