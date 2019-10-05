@@ -34,11 +34,14 @@ defmodule Xgit.Repository.OnDisk do
   ## Return Value
 
   See `GenServer.start_link/3`.
+
+  `{:error, :work_dir_invalid}` if `work_dir` is missing or not a String.
   """
   @spec start_link(work_dir: Path.t()) :: GenServer.on_start()
   def start_link(opts) do
-    with {:ok, repo} <- Repository.start_link(__MODULE__, opts, opts),
-         {:ok, working_tree} <- WorkingTree.start_link(repo, Keyword.get(opts, :work_dir)),
+    with {:ok, work_dir} <- get_work_dir_opt(opts),
+         {:ok, repo} <- Repository.start_link(__MODULE__, work_dir, opts),
+         {:ok, working_tree} <- WorkingTree.start_link(repo, work_dir),
          :ok <- Repository.set_default_working_tree(repo, working_tree) do
       cover {:ok, repo}
     else
@@ -46,19 +49,34 @@ defmodule Xgit.Repository.OnDisk do
     end
   end
 
+  defp get_work_dir_opt(opts) do
+    with {:has_opt?, true} <- {:has_opt?, Keyword.has_key?(opts, :work_dir)},
+         _ <- IO.puts("@54"),
+         work_dir <- Keyword.get(opts, :work_dir),
+         _ <- IO.puts("@56"),
+         true <- is_binary(work_dir) do
+      {:ok, work_dir}
+    else
+      {:has_opt?, _} ->
+        {:error, :missing_arguments}
+
+      x ->
+        IO.inspect(x, label: "WD WTF")
+        {:error, :work_dir_invalid}
+        # _ -> {:error, :work_dir_invalid}
+    end
+  end
+
   @impl true
-  def init(opts) when is_list(opts) do
+  def init(work_dir) when is_binary(work_dir) do
     # TO DO: Be smarter about bare repos and non-standard git_dir locations.
     # https://github.com/elixir-git/xgit/issues/44
 
-    with {:work_dir_arg, work_dir} when is_binary(work_dir) <-
-           {:work_dir_arg, Keyword.get(opts, :work_dir)},
-         {:work_dir, true} <- {:work_dir, File.dir?(work_dir)},
+    with {:work_dir, true} <- {:work_dir, File.dir?(work_dir)},
          git_dir <- Path.join(work_dir, ".git"),
          {:git_dir, true} <- {:git_dir, File.dir?(git_dir)} do
       cover {:ok, %{work_dir: work_dir, git_dir: git_dir}}
     else
-      {:work_dir_arg, _} -> cover {:stop, :missing_arguments}
       {:work_dir, _} -> cover {:stop, :work_dir_doesnt_exist}
       {:git_dir, _} -> cover {:stop, :git_dir_doesnt_exist}
     end
