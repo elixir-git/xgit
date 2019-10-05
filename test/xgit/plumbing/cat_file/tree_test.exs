@@ -1,37 +1,30 @@
 defmodule Xgit.Plumbing.CatFile.TreeTest do
-  use Xgit.GitInitTestCase, async: true
+  use Xgit.Test.OnDiskRepoTestCase, async: true
 
   alias Xgit.Core.Tree
   alias Xgit.Plumbing.CatFile.Tree, as: CatFileTree
   alias Xgit.Repository.InMemory
-  alias Xgit.Repository.OnDisk
 
   describe "run/2" do
-    setup do
-      Temp.track!()
-      repo = Temp.mkdir!()
-
-      {_output, 0} = System.cmd("git", ["init"], cd: repo)
-      objects_dir = Path.join([repo, ".git", "objects"])
-
-      {:ok, xgit} = OnDisk.start_link(work_dir: repo)
-
-      {:ok, repo: repo, objects_dir: objects_dir, xgit: xgit}
-    end
-
-    defp write_git_tree_and_read_xgit_tree(repo, xgit) do
-      {output, 0} = System.cmd("git", ["write-tree", "--missing-ok"], cd: repo)
+    defp write_git_tree_and_read_xgit_tree(xgit_repo, xgit_path) do
+      {output, 0} = System.cmd("git", ["write-tree", "--missing-ok"], cd: xgit_path)
       tree_id = String.trim(output)
 
-      assert {:ok, %Tree{} = tree} = CatFileTree.run(xgit, tree_id)
+      assert {:ok, %Tree{} = tree} = CatFileTree.run(xgit_repo, tree_id)
       tree
     end
 
-    test "happy path: can read from command-line git (no files)", %{repo: repo, xgit: xgit} do
-      assert %Tree{entries: []} = write_git_tree_and_read_xgit_tree(repo, xgit)
+    test "happy path: can read from command-line git (no files)", %{
+      xgit_repo: xgit_repo,
+      xgit_path: xgit_path
+    } do
+      assert %Tree{entries: []} = write_git_tree_and_read_xgit_tree(xgit_repo, xgit_path)
     end
 
-    test "happy path: can read from command-line git (one file)", %{repo: repo, xgit: xgit} do
+    test "happy path: can read from command-line git (one file)", %{
+      xgit_repo: xgit_repo,
+      xgit_path: xgit_path
+    } do
       {_output, 0} =
         System.cmd(
           "git",
@@ -43,7 +36,7 @@ defmodule Xgit.Plumbing.CatFile.TreeTest do
             "7919e8900c3af541535472aebd56d44222b7b3a3",
             "hello.txt"
           ],
-          cd: repo
+          cd: xgit_path
         )
 
       assert %Tree{
@@ -54,10 +47,10 @@ defmodule Xgit.Plumbing.CatFile.TreeTest do
                    object_id: "7919e8900c3af541535472aebd56d44222b7b3a3"
                  }
                ]
-             } = write_git_tree_and_read_xgit_tree(repo, xgit)
+             } = write_git_tree_and_read_xgit_tree(xgit_repo, xgit_path)
     end
 
-    test "tree with multiple entries", %{repo: repo, xgit: xgit} do
+    test "tree with multiple entries", %{xgit_repo: xgit_repo, xgit_path: xgit_path} do
       {_output, 0} =
         System.cmd(
           "git",
@@ -69,7 +62,7 @@ defmodule Xgit.Plumbing.CatFile.TreeTest do
             "18832d35117ef2f013c4009f5b2128dfaeff354f",
             "hello.txt"
           ],
-          cd: repo
+          cd: xgit_path
         )
 
       {_output, 0} =
@@ -83,10 +76,10 @@ defmodule Xgit.Plumbing.CatFile.TreeTest do
             "d670460b4b4aece5915caf5c68d12f560a9fe3e4",
             "test_content.txt"
           ],
-          cd: repo
+          cd: xgit_path
         )
 
-      assert write_git_tree_and_read_xgit_tree(repo, xgit) == %Tree{
+      assert write_git_tree_and_read_xgit_tree(xgit_repo, xgit_path) == %Tree{
                entries: [
                  %Tree.Entry{
                    name: 'hello.txt',
@@ -109,8 +102,8 @@ defmodule Xgit.Plumbing.CatFile.TreeTest do
                CatFileTree.run(repo, "6c22d81cc51c6518e4625a9fe26725af52403b4f")
     end
 
-    test "error: invalid_object", %{repo: repo, xgit: xgit} do
-      path = Path.join([repo, ".git", "objects", "5c"])
+    test "error: invalid_object", %{xgit_repo: xgit_repo, xgit_path: xgit_path} do
+      path = Path.join([xgit_path, ".git", "objects", "5c"])
       File.mkdir_p!(path)
 
       File.write!(
@@ -119,18 +112,19 @@ defmodule Xgit.Plumbing.CatFile.TreeTest do
       )
 
       assert {:error, :invalid_object} =
-               CatFileTree.run(xgit, "5cb5d77be2d92c7368038dac67e648a69e0a654d")
+               CatFileTree.run(xgit_repo, "5cb5d77be2d92c7368038dac67e648a69e0a654d")
     end
 
-    test "error: not_a_tree", %{repo: repo, xgit: xgit} do
+    test "error: not_a_tree", %{xgit_repo: xgit_repo, xgit_path: xgit_path} do
       Temp.track!()
       path = Temp.path!()
+
       File.write!(path, "test content\n")
 
-      {output, 0} = System.cmd("git", ["hash-object", "-w", path], cd: repo)
+      {output, 0} = System.cmd("git", ["hash-object", "-w", path], cd: xgit_path)
       object_id = String.trim(output)
 
-      assert {:error, :not_a_tree} = CatFileTree.run(xgit, object_id)
+      assert {:error, :not_a_tree} = CatFileTree.run(xgit_repo, object_id)
     end
 
     test "error: repository invalid (not PID)" do

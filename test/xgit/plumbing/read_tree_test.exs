@@ -10,6 +10,7 @@ defmodule Xgit.Plumbing.ReadTreeTest do
   alias Xgit.Repository.InMemory
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.WorkingTree
+  alias Xgit.Test.OnDiskRepoTestCase
 
   describe "run/3" do
     test "happy path: empty dir cache" do
@@ -384,54 +385,41 @@ defmodule Xgit.Plumbing.ReadTreeTest do
     end
 
     test "missing_ok? error" do
-      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
-
-      :ok = OnDisk.create(xgit)
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
-
-      :ok
+      %{xgit_path: xgit_path, xgit_repo: xgit_repo} = OnDiskRepoTestCase.repo!()
 
       CacheInfo.run(
-        repo,
+        xgit_repo,
         [{0o100644, "7919e8900c3af541535472aebd56d44222b7b3a3", 'hello.txt'}]
       )
 
-      {output, 0} = System.cmd("git", ["write-tree", "--missing-ok"], cd: xgit)
+      {output, 0} = System.cmd("git", ["write-tree", "--missing-ok"], cd: xgit_path)
       tree_object_id = String.trim(output)
 
-      assert {:error, :objects_missing} = ReadTree.run(repo, tree_object_id)
+      assert {:error, :objects_missing} = ReadTree.run(xgit_repo, tree_object_id)
     end
 
     test "missing_ok? error (defaulted)" do
-      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
-
-      :ok = OnDisk.create(xgit)
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
-
-      :ok
+      %{xgit_path: xgit_path, xgit_repo: xgit_repo} = OnDiskRepoTestCase.repo!()
 
       CacheInfo.run(
-        repo,
+        xgit_repo,
         [{0o100644, "7919e8900c3af541535472aebd56d44222b7b3a3", 'hello.txt'}]
       )
 
-      {output, 0} = System.cmd("git", ["write-tree", "--missing-ok"], cd: xgit)
+      {output, 0} = System.cmd("git", ["write-tree", "--missing-ok"], cd: xgit_path)
       tree_object_id = String.trim(output)
 
-      assert {:error, :objects_missing} = ReadTree.run(repo, tree_object_id)
+      assert {:error, :objects_missing} = ReadTree.run(xgit_repo, tree_object_id)
     end
 
     test "error: :missing_ok? invalid" do
-      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
-
-      :ok = OnDisk.create(xgit)
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+      %{xgit_repo: xgit_repo} = OnDiskRepoTestCase.repo!()
 
       assert_raise ArgumentError,
                    ~s(Xgit.Plumbing.ReadTree.run/3: missing_ok? "sure" is invalid),
                    fn ->
                      ReadTree.run(
-                       repo,
+                       xgit_repo,
                        "7919e8900c3af541535472aebd56d44222b7b3a3",
                        missing_ok?: "sure"
                      )

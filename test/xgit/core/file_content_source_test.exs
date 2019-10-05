@@ -3,24 +3,25 @@ defmodule Xgit.Core.FileContentSourceTest do
 
   alias Xgit.Core.ContentSource
   alias Xgit.Core.FileContentSource
+  alias Xgit.Test.TempDirTestCase
 
   describe "implementation for file that exists" do
     setup do
-      Temp.track!()
-      t = Temp.mkdir!()
+      %{tmp_dir: t} = TempDirTestCase.tmp_dir!()
+
       path = Path.join(t, "example")
       File.write!(path, "example")
-      {:ok, path: path}
+
+      fcs = FileContentSource.new(path)
+
+      {:ok, fcs: fcs}
     end
 
-    test "length/1", %{path: path} do
-      fcs = FileContentSource.new(path)
+    test "length/1", %{fcs: fcs} do
       assert ContentSource.length(fcs) == 7
     end
 
-    test "stream/1", %{path: path} do
-      fcs = FileContentSource.new(path)
-
+    test "stream/1", %{fcs: fcs} do
       assert %File.Stream{} = stream = ContentSource.stream(fcs)
       assert Enum.to_list(stream) == ['example']
     end
@@ -28,23 +29,21 @@ defmodule Xgit.Core.FileContentSourceTest do
 
   describe "implementation for file that doesn't exist" do
     setup do
-      Temp.track!()
-      t = Temp.mkdir!()
-      path = Path.join(t, "example")
-      {:ok, path: path}
-    end
+      %{tmp_dir: t} = TempDirTestCase.tmp_dir!()
 
-    test "length/1", %{path: path} do
+      path = Path.join(t, "example")
       fcs = FileContentSource.new(path)
 
+      {:ok, fcs: fcs}
+    end
+
+    test "length/1", %{fcs: fcs} do
       assert_raise RuntimeError, "file not found", fn ->
         ContentSource.length(fcs)
       end
     end
 
-    test "stream/1", %{path: path} do
-      fcs = FileContentSource.new(path)
-
+    test "stream/1", %{fcs: fcs} do
       assert_raise RuntimeError, "file not found", fn ->
         ContentSource.stream(fcs)
       end

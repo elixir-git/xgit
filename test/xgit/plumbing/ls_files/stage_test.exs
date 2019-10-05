@@ -7,13 +7,13 @@ defmodule Xgit.Plumbing.LsFiles.StageTest do
   alias Xgit.Repository.InMemory
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.WorkingTree
+  alias Xgit.Test.TempDirTestCase
 
   describe "run/1" do
     test "happy path: no index file" do
       {:ok, repo} = InMemory.start_link()
 
-      Temp.track!()
-      path = Temp.mkdir!()
+      %{tmp_dir: path} = TempDirTestCase.tmp_dir!()
 
       {:ok, working_tree} = WorkingTree.start_link(repo, path)
       :ok = Repository.set_default_working_tree(repo, working_tree)

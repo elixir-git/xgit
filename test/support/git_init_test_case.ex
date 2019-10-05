@@ -6,13 +6,15 @@ defmodule Xgit.GitInitTestCase do
 
   use ExUnit.CaseTemplate
 
+  alias Xgit.Test.TempDirTestCase
+
   setup do
     setup_git_repo()
   end
 
   def setup_git_repo do
-    Temp.track!()
-    tmp = Temp.mkdir!()
+    %{tmp_dir: tmp} = TempDirTestCase.tmp_dir!()
+
     ref = Path.join(tmp, "ref")
     xgit = Path.join(tmp, "xgit")
 

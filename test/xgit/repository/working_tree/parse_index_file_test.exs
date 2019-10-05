@@ -3,6 +3,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFileTest do
 
   alias Xgit.Core.DirCache
   alias Xgit.Repository.WorkingTree.ParseIndexFile
+  alias Xgit.Test.TempDirTestCase
   alias Xgit.Util.TrailingHashDevice
 
   import ExUnit.CaptureLog
@@ -142,8 +143,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFileTest do
 
     test "happy path: can read from command-line git (varying name lengths)" do
       Enum.each(@names, fn name ->
-        Temp.track!()
-        tmp = Temp.mkdir!()
+        %{tmp_dir: tmp} = TempDirTestCase.tmp_dir!()
 
         {_output, 0} =
           System.cmd(
@@ -203,8 +203,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFileTest do
 
   test "happy path: can skip TREE data structure" do
     Enum.each(@names, fn name ->
-      Temp.track!()
-      tmp = Temp.mkdir!()
+      %{tmp_dir: tmp} = TempDirTestCase.tmp_dir!()
 
       {_output, 0} =
         System.cmd(

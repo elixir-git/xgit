@@ -4,6 +4,7 @@ defmodule Xgit.Repository.DefaultWorkingTreeTest do
   alias Xgit.Repository
   alias Xgit.Repository.InMemory
   alias Xgit.Repository.WorkingTree
+  alias Xgit.Test.TempDirTestCase
 
   # We use InMemory repository because OnDisk will create its own WorkingTree
   # by default.
@@ -16,8 +17,7 @@ defmodule Xgit.Repository.DefaultWorkingTreeTest do
 
       # Create a working tree and assign it.
 
-      Temp.track!()
-      path = Temp.mkdir!()
+      %{tmp_dir: path} = TempDirTestCase.tmp_dir!()
 
       {:ok, working_tree} = WorkingTree.start_link(repo, path)
 

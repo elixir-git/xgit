@@ -50,6 +50,7 @@ defmodule Xgit.Core.ObjectTest do
 
   alias Xgit.Core.FileContentSource
   alias Xgit.Core.Object
+  alias Xgit.Test.TempDirTestCase
 
   import Xgit.Core.Object, only: [check: 1, check: 2]
 
@@ -116,8 +117,8 @@ defmodule Xgit.Core.ObjectTest do
     end
 
     test "accepts content with a FileContentSource" do
-      Temp.track!()
-      t = Temp.mkdir!()
+      %{tmp_dir: t} = TempDirTestCase.tmp_dir!()
+
       path = Path.join(t, "example")
       File.write!(path, "example")
 
