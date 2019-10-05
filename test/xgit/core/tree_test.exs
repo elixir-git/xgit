@@ -7,6 +7,7 @@ defmodule Xgit.Core.TreeTest do
   alias Xgit.GitInitTestCase
   alias Xgit.Repository
   alias Xgit.Repository.OnDisk
+  alias Xgit.Test.TempDirTestCase
 
   import FolderDiff
 
@@ -70,15 +71,14 @@ defmodule Xgit.Core.TreeTest do
 
   describe "from_object/1" do
     setup do
-      Temp.track!()
-      repo = Temp.mkdir!()
+      %{tmp_dir: xgit_path} = TempDirTestCase.tmp_dir!()
 
-      {_output, 0} = System.cmd("git", ["init"], cd: repo)
-      objects_dir = Path.join([repo, ".git", "objects"])
+      {_output, 0} = System.cmd("git", ["init"], cd: xgit_path)
+      objects_dir = Path.join([xgit_path, ".git", "objects"])
 
-      {:ok, xgit} = OnDisk.start_link(work_dir: repo)
+      {:ok, xgit} = OnDisk.start_link(work_dir: xgit_path)
 
-      {:ok, repo: repo, objects_dir: objects_dir, xgit: xgit}
+      {:ok, repo: xgit_path, objects_dir: objects_dir, xgit: xgit}
     end
 
     defp write_git_tree_and_read_xgit_tree_entries(repo, xgit) do

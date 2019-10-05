@@ -5,18 +5,18 @@ defmodule Xgit.Plumbing.CatFile.TreeTest do
   alias Xgit.Plumbing.CatFile.Tree, as: CatFileTree
   alias Xgit.Repository.InMemory
   alias Xgit.Repository.OnDisk
+  alias Xgit.Test.TempDirTestCase
 
   describe "run/2" do
     setup do
-      Temp.track!()
-      repo = Temp.mkdir!()
+      %{tmp_dir: xgit_path} = TempDirTestCase.tmp_dir!()
 
-      {_output, 0} = System.cmd("git", ["init"], cd: repo)
-      objects_dir = Path.join([repo, ".git", "objects"])
+      {_output, 0} = System.cmd("git", ["init"], cd: xgit_path)
+      objects_dir = Path.join([xgit_path, ".git", "objects"])
 
-      {:ok, xgit} = OnDisk.start_link(work_dir: repo)
+      {:ok, xgit} = OnDisk.start_link(work_dir: xgit_path)
 
-      {:ok, repo: repo, objects_dir: objects_dir, xgit: xgit}
+      {:ok, repo: xgit_path, objects_dir: objects_dir, xgit: xgit}
     end
 
     defp write_git_tree_and_read_xgit_tree(repo, xgit) do
@@ -125,6 +125,7 @@ defmodule Xgit.Plumbing.CatFile.TreeTest do
     test "error: not_a_tree", %{repo: repo, xgit: xgit} do
       Temp.track!()
       path = Temp.path!()
+
       File.write!(path, "test content\n")
 
       {output, 0} = System.cmd("git", ["hash-object", "-w", path], cd: repo)
