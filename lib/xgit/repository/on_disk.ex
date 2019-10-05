@@ -55,13 +55,8 @@ defmodule Xgit.Repository.OnDisk do
          true <- is_binary(work_dir) do
       {:ok, work_dir}
     else
-      {:has_opt?, _} ->
-        {:error, :missing_arguments}
-
-      x ->
-        IO.inspect(x, label: "WD WTF")
-        {:error, :work_dir_invalid}
-        # _ -> {:error, :work_dir_invalid}
+      {:has_opt?, _} -> {:error, :missing_arguments}
+      _ -> {:error, :work_dir_invalid}
     end
   end
 
