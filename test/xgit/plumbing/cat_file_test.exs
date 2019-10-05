@@ -5,6 +5,7 @@ defmodule Xgit.Plumbing.CatFileTest do
   alias Xgit.Plumbing.CatFile
   alias Xgit.Plumbing.HashObject
   alias Xgit.Repository.OnDisk
+  alias Xgit.Test.OnDiskRepoTestCase
 
   describe "run/2" do
     test "happy path: can read from command-line git (small file)", %{ref: ref} do
@@ -28,9 +29,8 @@ defmodule Xgit.Plumbing.CatFileTest do
       assert rendered_content == 'test content\n'
     end
 
-    test "happy path: can read back from Xgit-written loose object", %{xgit: xgit} do
-      assert :ok = OnDisk.create(xgit)
-      assert {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+    test "happy path: can read back from Xgit-written loose object" do
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       {:ok, test_content_id} = HashObject.run("test content\n", repo: repo, write?: true)
 
@@ -45,18 +45,15 @@ defmodule Xgit.Plumbing.CatFileTest do
       assert rendered_content == 'test content\n'
     end
 
-    test "error: not_found", %{xgit: xgit} do
-      :ok = OnDisk.create(xgit)
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
-
+    test "error: not_found" do
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
       assert {:error, :not_found} = CatFile.run(repo, "6c22d81cc51c6518e4625a9fe26725af52403b4f")
     end
 
-    test "error: invalid_object", %{xgit: xgit} do
-      :ok = OnDisk.create(xgit)
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+    test "error: invalid_object" do
+      %{xgit_path: xgit_path, xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
-      path = Path.join([xgit, ".git", "objects", "5c"])
+      path = Path.join([xgit_path, ".git", "objects", "5c"])
       File.mkdir_p!(path)
 
       File.write!(
@@ -81,20 +78,19 @@ defmodule Xgit.Plumbing.CatFileTest do
                CatFile.run(not_repo, "18a4a651653d7caebd3af9c05b0dc7ffa2cd0ae0")
     end
 
-    test "error: object_id invalid (not binary)", %{xgit: xgit} do
-      :ok = OnDisk.create(xgit)
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+    test "error: object_id invalid (not binary)" do
+      %{xgit_repo: xgit_repo} = OnDiskRepoTestCase.repo!()
 
       assert_raise FunctionClauseError, fn ->
-        CatFile.run(repo, 0x18A4)
+        CatFile.run(xgit_repo, 0x18A4)
       end
     end
 
-    test "error: object_id invalid (binary, but not valid object ID)", %{xgit: xgit} do
-      :ok = OnDisk.create(xgit)
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+    test "error: object_id invalid (binary, but not valid object ID)" do
+      %{xgit_repo: xgit_repo} = OnDiskRepoTestCase.repo!()
 
-      assert {:error, :invalid_object_id} = CatFile.run(repo, "some random ID that isn't valid")
+      assert {:error, :invalid_object_id} =
+               CatFile.run(xgit_repo, "some random ID that isn't valid")
     end
   end
 end

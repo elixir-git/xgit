@@ -35,8 +35,8 @@ defmodule Xgit.Repository.OnDisk do
 
   See `GenServer.start_link/3`.
   """
-  @spec start_link(opts :: Keyword.t()) :: GenServer.on_start()
-  def start_link(opts \\ []) do
+  @spec start_link(work_dir: Path.t()) :: GenServer.on_start()
+  def start_link(opts) do
     with {:ok, repo} <- Repository.start_link(__MODULE__, opts, opts),
          {:ok, working_tree} <- WorkingTree.start_link(repo, Keyword.get(opts, :work_dir)),
          :ok <- Repository.set_default_working_tree(repo, working_tree) do

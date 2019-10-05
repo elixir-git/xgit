@@ -7,7 +7,7 @@ defmodule Xgit.Core.TreeTest do
   alias Xgit.GitInitTestCase
   alias Xgit.Repository
   alias Xgit.Repository.OnDisk
-  alias Xgit.Test.TempDirTestCase
+  alias Xgit.Test.OnDiskRepoTestCase
 
   import FolderDiff
 
@@ -71,31 +71,24 @@ defmodule Xgit.Core.TreeTest do
 
   describe "from_object/1" do
     setup do
-      %{tmp_dir: xgit_path} = TempDirTestCase.tmp_dir!()
-
-      {_output, 0} = System.cmd("git", ["init"], cd: xgit_path)
-      objects_dir = Path.join([xgit_path, ".git", "objects"])
-
-      {:ok, xgit} = OnDisk.start_link(work_dir: xgit_path)
-
-      {:ok, repo: xgit_path, objects_dir: objects_dir, xgit: xgit}
+      {:ok, OnDiskRepoTestCase.repo!()}
     end
 
-    defp write_git_tree_and_read_xgit_tree_entries(repo, xgit) do
-      {output, 0} = System.cmd("git", ["write-tree", "--missing-ok"], cd: repo)
+    defp write_git_tree_and_read_xgit_tree_entries(xgit_repo, xgit_path) do
+      {output, 0} = System.cmd("git", ["write-tree", "--missing-ok"], cd: xgit_path)
       tree_id = String.trim(output)
 
-      assert {:ok, %Object{} = object} = Repository.get_object(xgit, tree_id)
+      assert {:ok, %Object{} = object} = Repository.get_object(xgit_repo, tree_id)
       assert {:ok, %Tree{entries: entries} = _tree} = Tree.from_object(object)
 
       entries
     end
 
-    test "empty tree", %{repo: repo, xgit: xgit} do
-      assert write_git_tree_and_read_xgit_tree_entries(repo, xgit) == []
+    test "empty tree", %{xgit_repo: xgit_repo, xgit_path: xgit_path} do
+      assert write_git_tree_and_read_xgit_tree_entries(xgit_repo, xgit_path) == []
     end
 
-    test "tree with one entry", %{repo: repo, xgit: xgit} do
+    test "tree with one entry", %{xgit_repo: xgit_repo, xgit_path: xgit_path} do
       {_output, 0} =
         System.cmd(
           "git",
@@ -107,10 +100,10 @@ defmodule Xgit.Core.TreeTest do
             "18832d35117ef2f013c4009f5b2128dfaeff354f",
             "hello.txt"
           ],
-          cd: repo
+          cd: xgit_path
         )
 
-      assert write_git_tree_and_read_xgit_tree_entries(repo, xgit) == [
+      assert write_git_tree_and_read_xgit_tree_entries(xgit_repo, xgit_path) == [
                %Entry{
                  name: 'hello.txt',
                  object_id: "18832d35117ef2f013c4009f5b2128dfaeff354f",
@@ -119,7 +112,7 @@ defmodule Xgit.Core.TreeTest do
              ]
     end
 
-    test "tree with multiple entries", %{repo: repo, xgit: xgit} do
+    test "tree with multiple entries", %{xgit_repo: xgit_repo, xgit_path: xgit_path} do
       {_output, 0} =
         System.cmd(
           "git",
@@ -131,7 +124,7 @@ defmodule Xgit.Core.TreeTest do
             "18832d35117ef2f013c4009f5b2128dfaeff354f",
             "hello.txt"
           ],
-          cd: repo
+          cd: xgit_path
         )
 
       {_output, 0} =
@@ -145,10 +138,10 @@ defmodule Xgit.Core.TreeTest do
             "d670460b4b4aece5915caf5c68d12f560a9fe3e4",
             "test_content.txt"
           ],
-          cd: repo
+          cd: xgit_path
         )
 
-      assert write_git_tree_and_read_xgit_tree_entries(repo, xgit) == [
+      assert write_git_tree_and_read_xgit_tree_entries(xgit_repo, xgit_path) == [
                %Entry{
                  name: 'hello.txt',
                  object_id: "18832d35117ef2f013c4009f5b2128dfaeff354f",
