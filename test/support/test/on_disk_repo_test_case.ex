@@ -4,7 +4,6 @@ defmodule Xgit.Test.OnDiskRepoTestCase do
   """
   use ExUnit.CaseTemplate
 
-  alias Xgit.Repository
   alias Xgit.Repository.OnDisk
   alias Xgit.Test.TempDirTestCase
 
@@ -15,7 +14,7 @@ defmodule Xgit.Test.OnDiskRepoTestCase do
   @doc ~S"""
   Returns a context with an on-disk repository set up.
   """
-  @spec repo!() :: %{tmp_dir: Path.t(), xgit_repo: Repository.t()}
+  @spec repo!() :: %{tmp_dir: Path.t(), xgit_path: Path.t(), xgit_repo: Repository.t()}
   def repo! do
     %{tmp_dir: xgit_path} = context = TempDirTestCase.tmp_dir!()
 
