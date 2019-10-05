@@ -51,9 +51,7 @@ defmodule Xgit.Repository.OnDisk do
 
   defp get_work_dir_opt(opts) do
     with {:has_opt?, true} <- {:has_opt?, Keyword.has_key?(opts, :work_dir)},
-         _ <- IO.puts("@54"),
          work_dir <- Keyword.get(opts, :work_dir),
-         _ <- IO.puts("@56"),
          true <- is_binary(work_dir) do
       {:ok, work_dir}
     else
