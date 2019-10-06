@@ -5,11 +5,10 @@ defmodule Xgit.Plumbing.CommitTreeTest do
   alias Xgit.Core.PersonIdent
   # alias Xgit.GitInitTestCase
   alias Xgit.Plumbing.CommitTree
-  # alias Xgit.Plumbing.HashObject
-  # alias Xgit.Plumbing.UpdateIndex.CacheInfo
-  # alias Xgit.Plumbing.WriteTree
+  alias Xgit.Plumbing.HashObject
+  alias Xgit.Plumbing.UpdateIndex.CacheInfo
+  alias Xgit.Plumbing.WriteTree
   alias Xgit.Repository
-  # alias Xgit.Repository.WorkingTree
   alias Xgit.Test.OnDiskRepoTestCase
 
   # import FolderDiff
@@ -21,6 +20,10 @@ defmodule Xgit.Plumbing.CommitTreeTest do
       when: 1_142_878_501_000,
       tz_offset: 150
     }
+
+    test "no parents" do
+      # unimplemented
+    end
 
     test "error: invalid repo" do
       {:ok, not_repo} = GenServer.start_link(NotValid, nil)
@@ -69,6 +72,195 @@ defmodule Xgit.Plumbing.CommitTreeTest do
                  tree: "d670460b4b4aece5915caf5c68d12f560a9fe3e4",
                  author: @valid_pi
                )
+    end
+
+    test "error: parents isn't a list" do
+      %{xgit_repo: xgit_repo, tree_id: tree_id} = setup_with_valid_tree!()
+
+      assert {:error, :invalid_parents} =
+               CommitTree.run(xgit_repo,
+                 tree: tree_id,
+                 parents: "mom and dad",
+                 author: @valid_pi
+               )
+    end
+
+    test "error: parents is a list of invalid object IDs 1" do
+      %{xgit_repo: xgit_repo, tree_id: tree_id} = setup_with_valid_tree!()
+
+      assert {:error, :invalid_parent_ids} =
+               CommitTree.run(xgit_repo,
+                 tree: tree_id,
+                 parents: ["mom and dad"],
+                 author: @valid_pi
+               )
+    end
+
+    test "error: parents is a list of invalid object IDs 2" do
+      %{xgit_repo: xgit_repo, tree_id: tree_id} = setup_with_valid_tree!()
+
+      assert {:error, :invalid_parent_ids} =
+               CommitTree.run(xgit_repo,
+                 tree: tree_id,
+                 parents: ['e2f6b54e68192566b90a0ed123fcdcf14a58a421'],
+                 author: @valid_pi
+               )
+    end
+
+    test "error: parents refers to a commit that doesn't exist" do
+      %{xgit_repo: xgit_repo, tree_id: tree_id} = setup_with_valid_tree!()
+
+      assert {:error, :invalid_parent_ids} =
+               CommitTree.run(xgit_repo,
+                 tree: tree_id,
+                 parents: ["e2f6b54e68192566b90a0ed123fcdcf14a58a421"],
+                 author: @valid_pi
+               )
+    end
+
+    test "error: parents refers to a commit that isn't a commit" do
+      %{xgit_repo: xgit_repo, tree_id: tree_id} = setup_with_valid_tree!()
+
+      assert {:error, :invalid_parent_ids} =
+               CommitTree.run(xgit_repo,
+                 tree: tree_id,
+                 parents: [tree_id],
+                 author: @valid_pi
+               )
+    end
+
+    test "error: message isn't a list" do
+      %{xgit_repo: xgit_repo, tree_id: tree_id, parent_id: parent_id} =
+        setup_with_valid_parent_commit!()
+
+      assert {:error, :invalid_message} =
+               CommitTree.run(xgit_repo,
+                 tree: tree_id,
+                 parents: [parent_id],
+                 message: "message",
+                 author: @valid_pi
+               )
+    end
+
+    test "error: message isn't a byte list" do
+      %{xgit_repo: xgit_repo, tree_id: tree_id, parent_id: parent_id} =
+        setup_with_valid_parent_commit!()
+
+      assert {:error, :invalid_message} =
+               CommitTree.run(xgit_repo,
+                 tree: tree_id,
+                 parents: [parent_id],
+                 message: 'abc' ++ [false],
+                 author: @valid_pi
+               )
+    end
+
+    test "error: author isn't a PersonIdent struct" do
+      %{xgit_repo: xgit_repo, tree_id: tree_id, parent_id: parent_id} =
+        setup_with_valid_parent_commit!()
+
+      assert {:error, :invalid_author} =
+               CommitTree.run(xgit_repo,
+                 tree: tree_id,
+                 parents: [parent_id],
+                 message: 'message',
+                 author: "A. U. Thor <author@example.com> Sat Oct 5 21:32:49 2019 -0700",
+                 committer: @valid_pi
+               )
+    end
+
+    test "error: author isn't a valid PersonIdent struct" do
+      %{xgit_repo: xgit_repo, tree_id: tree_id, parent_id: parent_id} =
+        setup_with_valid_parent_commit!()
+
+      assert {:error, :invalid_author} =
+               CommitTree.run(xgit_repo,
+                 tree: tree_id,
+                 parents: [parent_id],
+                 message: 'message',
+                 author: Map.put(@valid_pi, :tz_offset, 15000),
+                 committer: @valid_pi
+               )
+    end
+
+    test "error: committer isn't a PersonIdent struct" do
+      %{xgit_repo: xgit_repo, tree_id: tree_id, parent_id: parent_id} =
+        setup_with_valid_parent_commit!()
+
+      assert {:error, :invalid_author} =
+               CommitTree.run(xgit_repo,
+                 tree: tree_id,
+                 parents: [parent_id],
+                 message: 'message',
+                 author: @valid_pi,
+                 committer: "A. U. Thor <author@example.com> Sat Oct 5 21:32:49 2019 -0700"
+               )
+    end
+
+    test "error: committer isn't a valid PersonIdent struct" do
+      %{xgit_repo: xgit_repo, tree_id: tree_id, parent_id: parent_id} =
+        setup_with_valid_parent_commit!()
+
+      assert {:error, :invalid_author} =
+               CommitTree.run(xgit_repo,
+                 tree: tree_id,
+                 parents: [parent_id],
+                 message: 'message',
+                 author: @valid_pi,
+                 committer: Map.put(@valid_pi, :tz_offset, 15000)
+               )
+    end
+
+    defp setup_with_valid_tree! do
+      %{xgit_repo: xgit_repo} = context = OnDiskRepoTestCase.repo!()
+
+      {:ok, object_id} = HashObject.run("test content\n", repo: xgit_repo, write?: true)
+      :ok = CacheInfo.run(xgit_repo, [{0o100644, object_id, 'test'}])
+
+      {:ok, xgit_tree_id} = WriteTree.run(xgit_repo)
+
+      Map.put(context, :tree_id, xgit_tree_id)
+    end
+
+    defp setup_with_valid_parent_commit! do
+      %{xgit_path: xgit_path} = context = setup_with_valid_tree!()
+
+      env = [
+        {"GIT_AUTHOR_DATE", "1142878449 +0230"},
+        {"GIT_COMMITTER_DATE", "1142878449 +0230"},
+        {"GIT_AUTHOR_EMAIL", "author@example.com"},
+        {"GIT_COMMITTER_EMAIL", "author@example.com"},
+        {"GIT_AUTHOR_NAME", "A. U. Thor"},
+        {"GIT_COMMITTER_NAME", "A. U. Thor"}
+      ]
+
+      {empty_tree_id_str, 0} =
+        System.cmd(
+          "git",
+          [
+            "write-tree"
+          ],
+          cd: xgit_path
+        )
+
+      empty_tree_id = String.trim(empty_tree_id_str)
+
+      {parent_id_str, 0} =
+        System.cmd(
+          "git",
+          [
+            "commit-tree",
+            "-m",
+            "empty",
+            empty_tree_id
+          ],
+          cd: xgit_path,
+          env: env
+        )
+
+      parent_id = String.trim(parent_id_str)
+
+      Map.put(context, :parent_id, parent_id)
     end
   end
 end

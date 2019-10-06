@@ -20,6 +20,11 @@ defmodule Xgit.Plumbing.CommitTree do
   """
   @type reason ::
           :invalid_repository
+          | :invalid_tree
+          | :invalid_parents
+          | :invalid_message
+          | :invalid_author
+          | :invalid_committer
           | Repository.put_loose_object_reason()
 
   # TODO: More to come, I'm sure.
@@ -55,6 +60,17 @@ defmodule Xgit.Plumbing.CommitTree do
   `{:error, :invalid_repository}` if `repository` doesn't represent a valid
   `Xgit.Repository` process.
 
+  `{:error, :invalid_tree}` if the `:tree` option refers to a tree that
+  does not exist.
+
+  `{:error, :invalid_parents}` if the `:parents` option is not a list.
+
+  `{:error, :invalid_message}` if the `:message` option isn't a valid byte string.
+
+  `{:error, :invalid_author}` if the `:author` option isn't a valid `PersonIdent` struct.
+
+  `{:error, :invalid_committer}` if the `:committer` option isn't a valid `PersonIdent` struct.
+
   Reason codes may also come from the following functions:
 
   * **TODO**: Identify other reason codes and functions that contribute reasons.
@@ -83,9 +99,9 @@ defmodule Xgit.Plumbing.CommitTree do
     with {:ok, tree_id} <- validate_tree(repository, Keyword.get(opts, :tree)),
          {:ok, parent_ids} <- validate_parents(repository, Keyword.get(opts, :parents)),
          {:ok, message} <- validate_message(Keyword.get(opts, :message)),
-         {:ok, author} <- validate_person_ident(Keyword.get(opts, :author), :author_invalid),
+         {:ok, author} <- validate_person_ident(Keyword.get(opts, :author), :invalid_author),
          {:ok, committer} <-
-           validate_person_ident(Keyword.get(opts, :committer, author), :committer_invalid) do
+           validate_person_ident(Keyword.get(opts, :committer, author), :invalid_committer) do
       cover {tree_id, parent_ids, message, author, committer}
     else
       {:error, reason} -> cover {:error, reason}
@@ -102,7 +118,7 @@ defmodule Xgit.Plumbing.CommitTree do
     end
   end
 
-  defp validate_parents(_repository, nil), do: {:ok, []}
+  defp validate_parents(_repository, nil), do: cover({:ok, []})
 
   defp validate_parents(repository, parent_ids) when is_list(parent_ids) do
     if Enum.all?(parent_ids, &commit_id_valid?(repository, &1)) do
@@ -112,7 +128,7 @@ defmodule Xgit.Plumbing.CommitTree do
     end
   end
 
-  defp validate_parents(_repository, _parents), do: {:error, :invalid_parents}
+  defp validate_parents(_repository, _parents), do: cover({:error, :invalid_parents})
 
   defp commit_id_valid?(repository, parent_id) do
     with true <- ObjectId.valid?(parent_id),
