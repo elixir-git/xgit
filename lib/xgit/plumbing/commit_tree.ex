@@ -88,7 +88,7 @@ defmodule Xgit.Plumbing.CommitTree do
     with {:repository_valid?, true} <- {:repository_valid?, Repository.valid?(repository)},
          {_tree, _parents, _message, _author, _committer} <- validate_options(repository, opts) do
       # validate: all objects referenced by tree are present?
-      :unimplemented
+      cover :unimplemented
     else
       {:repository_valid?, _} -> cover {:error, :invalid_repository}
       {:error, reason} -> cover {:error, reason}

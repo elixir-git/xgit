@@ -11,7 +11,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
   alias Xgit.Repository
   alias Xgit.Test.OnDiskRepoTestCase
 
-  # import FolderDiff
+  import FolderDiff
 
   describe "run/2" do
     @valid_pi %PersonIdent{
@@ -21,7 +21,34 @@ defmodule Xgit.Plumbing.CommitTreeTest do
       tz_offset: 150
     }
 
-    test "no parents" do
+    @env [
+      {"GIT_AUTHOR_DATE", "1142878449 +0230"},
+      {"GIT_COMMITTER_DATE", "1142878449 +0230"},
+      {"GIT_AUTHOR_EMAIL", "author@example.com"},
+      {"GIT_COMMITTER_EMAIL", "author@example.com"},
+      {"GIT_AUTHOR_NAME", "A. U. Thor"},
+      {"GIT_COMMITTER_NAME", "A. U. Thor"}
+    ]
+
+    test "happy path: no parents" do
+      %{xgit_path: ref_path, tree_id: tree_id} = setup_with_valid_tree!()
+
+      assert {ref_commit_id_str, 0} =
+               System.cmd("git", ["commit-tree", tree_id, "-m", "xxx"], cd: ref_path, env: @env)
+
+      %{xgit_path: xgit_path, xgit_repo: xgit_repo, tree_id: ^tree_id} = setup_with_valid_tree!()
+
+      assert {:ok, commit_id} =
+               CommitTree.run(xgit_repo,
+                 tree: tree_id,
+                 message: 'xxx',
+                 author: @valid_pi
+               )
+
+      assert_folders_are_equal(ref_path, xgit_path)
+    end
+
+    test "has parents" do
       # unimplemented
     end
 
@@ -187,7 +214,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
       %{xgit_repo: xgit_repo, tree_id: tree_id, parent_id: parent_id} =
         setup_with_valid_parent_commit!()
 
-      assert {:error, :invalid_author} =
+      assert {:error, :invalid_committer} =
                CommitTree.run(xgit_repo,
                  tree: tree_id,
                  parents: [parent_id],
@@ -201,7 +228,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
       %{xgit_repo: xgit_repo, tree_id: tree_id, parent_id: parent_id} =
         setup_with_valid_parent_commit!()
 
-      assert {:error, :invalid_author} =
+      assert {:error, :invalid_committer} =
                CommitTree.run(xgit_repo,
                  tree: tree_id,
                  parents: [parent_id],
@@ -225,15 +252,6 @@ defmodule Xgit.Plumbing.CommitTreeTest do
     defp setup_with_valid_parent_commit! do
       %{xgit_path: xgit_path} = context = setup_with_valid_tree!()
 
-      env = [
-        {"GIT_AUTHOR_DATE", "1142878449 +0230"},
-        {"GIT_COMMITTER_DATE", "1142878449 +0230"},
-        {"GIT_AUTHOR_EMAIL", "author@example.com"},
-        {"GIT_COMMITTER_EMAIL", "author@example.com"},
-        {"GIT_AUTHOR_NAME", "A. U. Thor"},
-        {"GIT_COMMITTER_NAME", "A. U. Thor"}
-      ]
-
       {empty_tree_id_str, 0} =
         System.cmd(
           "git",
@@ -255,7 +273,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
             empty_tree_id
           ],
           cd: xgit_path,
-          env: env
+          env: @env
         )
 
       parent_id = String.trim(parent_id_str)
