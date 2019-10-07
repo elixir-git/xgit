@@ -8,7 +8,7 @@ defmodule Xgit.Plumbing.CommitTree do
 
   import Xgit.Util.ForceCoverage
 
-  # alias Xgit.Core.Commit
+  alias Xgit.Core.Commit
   alias Xgit.Core.Object
   alias Xgit.Core.ObjectId
   alias Xgit.Core.PersonIdent
@@ -86,9 +86,12 @@ defmodule Xgit.Plumbing.CommitTree do
           | {:error, reason :: reason}
   def run(repository, opts \\ []) when is_pid(repository) do
     with {:repository_valid?, true} <- {:repository_valid?, Repository.valid?(repository)},
-         {_tree, _parents, _message, _author, _committer} <- validate_options(repository, opts) do
-      # validate: all objects referenced by tree are present?
-      cover :unimplemented
+         {_tree, _parents, _message, _author, _committer} = verified_args <-
+           validate_options(repository, opts),
+         commit <- make_commit(verified_args),
+         %{id: id} = object <- Commit.to_object(commit),
+         :ok <- Repository.put_loose_object(repository, object) do
+      cover {:ok, id}
     else
       {:repository_valid?, _} -> cover {:error, :invalid_repository}
       {:error, reason} -> cover {:error, reason}
@@ -155,5 +158,15 @@ defmodule Xgit.Plumbing.CommitTree do
     else
       cover {:error, invalid_reason}
     end
+  end
+
+  defp make_commit({tree, parents, message, author, committer} = _verified_args) do
+    %Commit{
+      tree: tree,
+      parents: parents,
+      author: author,
+      committer: committer,
+      message: message
+    }
   end
 end
