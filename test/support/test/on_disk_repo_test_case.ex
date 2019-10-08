@@ -13,24 +13,20 @@ defmodule Xgit.Test.OnDiskRepoTestCase do
 
   @doc ~S"""
   Returns a context with an on-disk repository set up.
+
+  Can optionally take a hard-wired path to use instead of the default
+  temporary directory. Use that when you need to debug a test that is
+  failing and you want to inspect the repo after the test completes.
   """
-  @spec repo! :: %{tmp_dir: Path.t(), xgit_path: Path.t(), xgit_repo: Repository.t()}
-  def repo!, do: git_init_repo(TempDirTestCase.tmp_dir!())
-
-  @doc ~S"""
-  Returns a context with an on-disk repository set up.
-
-  Unlike `repo!/0`, this takes a hard-wired path and uses that instead.
-  Ensures that this directory is created and empty.
-
-  Use this when debugging tests that fail so you can inspect contents
-  after the test run.
-  """
-  @spec repo!(dir :: Path.t()) :: %{
+  @spec repo!(path :: Path.t() | nil) :: %{
           tmp_dir: Path.t(),
           xgit_path: Path.t(),
           xgit_repo: Repository.t()
         }
+  def repo!(path \\ nil)
+
+  def repo!(nil), do: git_init_repo(TempDirTestCase.tmp_dir!())
+
   def repo!(dir) when is_binary(dir) do
     File.rm_rf!(dir)
     File.mkdir!(dir)
