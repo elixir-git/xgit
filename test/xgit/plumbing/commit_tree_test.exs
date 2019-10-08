@@ -3,7 +3,6 @@ defmodule Xgit.Plumbing.CommitTreeTest do
 
   alias Xgit.Core.Object
   alias Xgit.Core.PersonIdent
-  # alias Xgit.GitInitTestCase
   alias Xgit.Plumbing.CommitTree
   alias Xgit.Plumbing.HashObject
   alias Xgit.Plumbing.UpdateIndex.CacheInfo
@@ -17,7 +16,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
     @valid_pi %PersonIdent{
       name: "A. U. Thor",
       email: "author@example.com",
-      when: 1_142_878_501_000,
+      when: 1_142_878_449_000,
       tz_offset: 150
     }
 
@@ -48,8 +47,111 @@ defmodule Xgit.Plumbing.CommitTreeTest do
       assert_folders_are_equal(ref_path, xgit_path)
     end
 
-    test "has parents" do
-      # unimplemented
+    test "happy path: one parent" do
+      %{xgit_path: ref_path, tree_id: tree_id, parent_id: parent_id} =
+        setup_with_valid_parent_commit!()
+
+      assert {ref_commit_id_str, 0} =
+               System.cmd("git", ["commit-tree", tree_id, "-m", "mumble", "-p", parent_id],
+                 cd: ref_path,
+                 env: @env
+               )
+
+      %{xgit_path: xgit_path, xgit_repo: xgit_repo, tree_id: ^tree_id, parent_id: parent_id} =
+        setup_with_valid_parent_commit!()
+
+      assert {:ok, commit_id} =
+               CommitTree.run(xgit_repo,
+                 tree: tree_id,
+                 parents: [parent_id],
+                 message: 'mumble',
+                 author: @valid_pi
+               )
+
+      assert_folders_are_equal(ref_path, xgit_path)
+    end
+
+    test "happy path: duplicate parents" do
+      %{xgit_path: ref_path, tree_id: tree_id, parent_id: parent_id} =
+        setup_with_valid_parent_commit!()
+
+      assert {ref_commit_id_str, 0} =
+               System.cmd(
+                 "git",
+                 ["commit-tree", tree_id, "-m", "mumble", "-p", parent_id, "-p", parent_id],
+                 cd: ref_path,
+                 env: @env,
+                 stderr_to_stdout: true
+               )
+
+      %{xgit_path: xgit_path, xgit_repo: xgit_repo, tree_id: ^tree_id, parent_id: parent_id} =
+        setup_with_valid_parent_commit!()
+
+      assert {:ok, commit_id} =
+               CommitTree.run(xgit_repo,
+                 tree: tree_id,
+                 parents: [parent_id, parent_id],
+                 message: 'mumble',
+                 author: @valid_pi
+               )
+
+      assert_folders_are_equal(ref_path, xgit_path)
+    end
+
+    test "happy path: multiple parents" do
+      %{xgit_path: ref_path, tree_id: tree_id, parent_id: parent_id} =
+        setup_with_valid_parent_commit!()
+
+      {parent2_id_str, 0} =
+        System.cmd(
+          "git",
+          [
+            "commit-tree",
+            "-m",
+            "second",
+            tree_id
+          ],
+          cd: ref_path,
+          env: @env
+        )
+
+      parent2_id = String.trim(parent2_id_str)
+
+      assert {ref_commit_id_str, 0} =
+               System.cmd(
+                 "git",
+                 ["commit-tree", tree_id, "-m", "mumble", "-p", parent_id, "-p", parent2_id],
+                 cd: ref_path,
+                 env: @env
+               )
+
+      %{xgit_path: xgit_path, xgit_repo: xgit_repo, tree_id: ^tree_id, parent_id: parent_id} =
+        setup_with_valid_parent_commit!()
+
+      {parent2_id_str, 0} =
+        System.cmd(
+          "git",
+          [
+            "commit-tree",
+            "-m",
+            "second",
+            tree_id
+          ],
+          cd: xgit_path,
+          env: @env
+        )
+
+      parent2_id = String.trim(parent2_id_str)
+
+      assert {:ok, commit_id} =
+               CommitTree.run(xgit_repo,
+                 tree: tree_id,
+                 parents: [parent_id, parent2_id],
+                 message: 'mumble',
+                 author: @valid_pi
+               )
+
+      assert_folders_are_equal(ref_path, xgit_path)
     end
 
     test "error: invalid repo" do
@@ -238,8 +340,8 @@ defmodule Xgit.Plumbing.CommitTreeTest do
                )
     end
 
-    defp setup_with_valid_tree! do
-      %{xgit_repo: xgit_repo} = context = OnDiskRepoTestCase.repo!()
+    defp setup_with_valid_tree!(path \\ nil) do
+      %{xgit_repo: xgit_repo} = context = OnDiskRepoTestCase.repo!(path)
 
       {:ok, object_id} = HashObject.run("test content\n", repo: xgit_repo, write?: true)
       :ok = CacheInfo.run(xgit_repo, [{0o100644, object_id, 'test'}])

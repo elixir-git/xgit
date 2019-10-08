@@ -166,7 +166,15 @@ defmodule Xgit.Plumbing.CommitTree do
       parents: parents,
       author: author,
       committer: committer,
-      message: message
+      message: ensure_trailing_newline(message)
     }
+  end
+
+  defp ensure_trailing_newline(message) do
+    if List.last(message) == 10 do
+      message
+    else
+      message ++ '\n'
+    end
   end
 end
