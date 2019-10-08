@@ -22,6 +22,7 @@ defmodule Xgit.Plumbing.CommitTree do
           :invalid_repository
           | :invalid_tree
           | :invalid_parents
+          | :invalid_parent_ids
           | :invalid_message
           | :invalid_author
           | :invalid_committer
@@ -64,6 +65,9 @@ defmodule Xgit.Plumbing.CommitTree do
   does not exist.
 
   `{:error, :invalid_parents}` if the `:parents` option is not a list.
+
+  `{:error, :invalid_parent_ids}` if the `:parents` option contains any entries that
+  do not reference valid commit objects.
 
   `{:error, :invalid_message}` if the `:message` option isn't a valid byte string.
 
