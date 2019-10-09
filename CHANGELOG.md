@@ -1,5 +1,18 @@
 # Changelog for v0.x Series
 
+## v0.2.5
+
+_08 October 2019_
+
+* **Implement `Xgit.Plumbing.CommitTree`. (#191)
+* Introduce `Xgit.Core.Commit` struct. (#182)
+* [BUG FIX]: Unable to decode certain `tree` structures. (#183)
+* Implement `Xgit.Core.Commit.to_object/1`. (#184)
+* Fix broken `coveralls-ignore` comments. (#186)
+* Refactor the basics of how tests are set up. (#187)
+* Clean up issues flagged by ElixirLS. (#188)
+* `OnDiskRepoTestCase`: Make it possible to override the temporary directory for testing purposes. (#189, #190)
+
 ## v0.2.4
 
 _28 September 2019_
