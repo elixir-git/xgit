@@ -307,7 +307,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
                  tree: tree_id,
                  parents: [parent_id],
                  message: 'message',
-                 author: Map.put(@valid_pi, :tz_offset, 15000),
+                 author: Map.put(@valid_pi, :tz_offset, 15_000),
                  committer: @valid_pi
                )
     end
@@ -336,7 +336,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
                  parents: [parent_id],
                  message: 'message',
                  author: @valid_pi,
-                 committer: Map.put(@valid_pi, :tz_offset, 15000)
+                 committer: Map.put(@valid_pi, :tz_offset, 15_000)
                )
     end
 
