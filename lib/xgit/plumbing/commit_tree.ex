@@ -28,8 +28,6 @@ defmodule Xgit.Plumbing.CommitTree do
           | :invalid_committer
           | Repository.put_loose_object_reason()
 
-  # TODO: More to come, I'm sure.
-
   @doc ~S"""
   Creates a new commit object based on the provided tree object and parent commits.
 
@@ -75,9 +73,7 @@ defmodule Xgit.Plumbing.CommitTree do
 
   `{:error, :invalid_committer}` if the `:committer` option isn't a valid `PersonIdent` struct.
 
-  Reason codes may also come from the following functions:
-
-  * **TODO**: Identify other reason codes and functions that contribute reasons.
+  Reason codes may also come from `Xgit.Repository.put_loose_object/2`.
   """
   @spec run(repository :: Repository.t(),
           tree: ObjectId.t(),
