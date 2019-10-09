@@ -4,7 +4,7 @@
 
 _08 October 2019_
 
-* **Implement `Xgit.Plumbing.CommitTree`. (#191)
+* **Implement `Xgit.Plumbing.CommitTree`.** (#191)
 * Introduce `Xgit.Core.Commit` struct. (#182)
 * [BUG FIX]: Unable to decode certain `tree` structures. (#183)
 * Implement `Xgit.Core.Commit.to_object/1`. (#184)
