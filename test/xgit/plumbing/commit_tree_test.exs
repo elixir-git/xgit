@@ -47,6 +47,24 @@ defmodule Xgit.Plumbing.CommitTreeTest do
       assert_folders_are_equal(ref_path, xgit_path)
     end
 
+    test "happy path: no parents (line ending provided)" do
+      %{xgit_path: ref_path, tree_id: tree_id} = setup_with_valid_tree!()
+
+      assert {ref_commit_id_str, 0} =
+               System.cmd("git", ["commit-tree", tree_id, "-m", "xxx"], cd: ref_path, env: @env)
+
+      %{xgit_path: xgit_path, xgit_repo: xgit_repo, tree_id: ^tree_id} = setup_with_valid_tree!()
+
+      assert {:ok, commit_id} =
+               CommitTree.run(xgit_repo,
+                 tree: tree_id,
+                 message: 'xxx\n',
+                 author: @valid_pi
+               )
+
+      assert_folders_are_equal(ref_path, xgit_path)
+    end
+
     test "happy path: one parent" do
       %{xgit_path: ref_path, tree_id: tree_id, parent_id: parent_id} =
         setup_with_valid_parent_commit!()
