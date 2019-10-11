@@ -169,20 +169,6 @@ defmodule Xgit.Util.RawParseUtils do
   def until_next_lf(b, char), do: Enum.take_while(b, fn c -> c != ?\n and c != char end)
 
   @doc ~S"""
-  Locate the end of the header. Note that headers may be more than one line long.
-
-  Returns charlist beginning just after the header. This is either `[]` or the
-  charlist beginning with the `\n` character that terminates the header.
-  """
-  @spec header_end(b :: charlist) :: charlist
-  def header_end(b)
-
-  def header_end([?\n | [?\s | b]]), do: header_end(b)
-  def header_end([?\n | _] = b), do: b
-  def header_end([]), do: cover([])
-  def header_end([_ | b]), do: header_end(b)
-
-  @doc ~S"""
   Find the start of the contents of a given header in the given charlist.
 
   Returns charlist beginning at the start of the header's contents or `nil`
