@@ -196,87 +196,6 @@ defmodule Xgit.Util.RawParseUtils do
     do: possible_header_match(header_name, header_name, b, b)
 
   @doc ~S"""
-  Locate the `author ` header line data.
-
-  Returns a charlist beginning just after the space in `author ` which should be
-  the first character of the author's name. If no author header can be located,
-  `nil` is returned.
-  """
-  @spec author(b :: charlist) :: charlist | nil
-  def author(b) when is_list(b), do: header_start('author', b)
-
-  @doc ~S"""
-  Locate the `committer ` header line data.
-
-  Returns a charlist beginning just after the space in `committer ` which should be
-  the first character of the committer's name. If no committer header can be located,
-  `nil` is returned.
-  """
-  @spec committer(b :: charlist) :: charlist | nil
-  def committer(b) when is_list(b), do: header_start('committer', b)
-
-  @doc ~S"""
-  Locate the `tagger ` header line data.
-
-  Returns a charlist beginning just after the space in `tagger ` which should be
-  the first character of the tagger's name. If no tagger header can be located,
-  `nil` is returned.
-  """
-  @spec tagger(b :: charlist) :: charlist | nil
-  def tagger(b) when is_list(b), do: header_start('tagger', b)
-
-  @doc ~S"""
-  Locate the `encoding ` header line data.
-
-  Returns a charlist beginning just after the space in `encoding ` which should be
-  the first character of the encoding's name. If no encoding header can be located,
-  `nil` is returned (and UTF-8 should be assumed).
-  """
-  @spec encoding(b :: charlist) :: charlist | nil
-  def encoding(b) when is_list(b), do: header_start('encoding', b)
-
-  @doc ~S"""
-  Parse the `encoding ` header as a string.
-
-  Returns the encoding header as specified in the commit or `nil` if the header
-  was not present and UTF-8 should be assumed.
-  """
-  @spec parse_encoding_name(b :: charlist) :: String.t() | nil
-  def parse_encoding_name(b) when is_list(b) do
-    enc = encoding(b)
-
-    if enc == nil do
-      cover nil
-    else
-      enc
-      |> until_next_lf()
-      |> decode()
-    end
-  end
-
-  @doc ~S"""
-  Parse the `encoding ` header into a character set reference.
-
-  Returns `:utf8` or `:latin1`.
-
-  Raises `ArgumentError` if the character set is unknown.
-
-  _WARNING:_ Compared to jgit, the character set support in xgit is limited.
-  """
-  @spec parse_encoding(b :: charlist) :: :utf8 | :latin1
-  def parse_encoding(b) when is_list(b) do
-    case b |> parse_encoding_name() |> trim_if_string() do
-      nil -> cover :utf8
-      "UTF-8" -> cover :utf8
-      "ISO-8859-1" -> cover :latin1
-      x -> raise ArgumentError, "charset #{inspect(x)} unsupported"
-    end
-  end
-
-  defp trim_if_string(s) when is_binary(s), do: String.trim(s)
-  defp trim_if_string(s), do: s
-
-  @doc ~S"""
   Convert a list of bytes to an Elixir (UTF-8) string when the encoding is not
   definitively known. Try parsing as a UTF-8 byte array first, then try ISO-8859-1.
 
@@ -294,32 +213,5 @@ defmodule Xgit.Util.RawParseUtils do
       utf8 when is_binary(utf8) -> utf8
       _ -> :unicode.characters_to_binary(raw, :latin1)
     end
-  end
-
-  @doc ~S"""
-  Return the contents of the charlist up to, but not including, the next end-of-paragraph
-  sequence.
-  """
-  @spec until_end_of_paragraph(b :: [byte]) :: [byte]
-  def until_end_of_paragraph(b) when is_list(b),
-    do: until_end_of_paragraph([], b)
-
-  defp until_end_of_paragraph(acc, [?\r | [?\n | [?\r | _]]]), do: acc
-  defp until_end_of_paragraph(acc, [?\n | [?\n | _]]), do: acc
-  defp until_end_of_paragraph(acc, [c | rem]), do: until_end_of_paragraph(acc ++ [c], rem)
-  defp until_end_of_paragraph(acc, []), do: acc
-
-  @doc ~S"""
-  Return the portion of the byte array up to, but not including the last instance of
-  `ch`, disregarding any trailing spaces.
-  """
-  @spec until_last_instance_of_trim(b :: [byte], ch :: char) :: [byte]
-  def until_last_instance_of_trim(b, ch) when is_list(b) do
-    b
-    |> Enum.reverse()
-    |> Enum.drop_while(&(&1 == ?\s))
-    |> Enum.drop_while(&(&1 != ch))
-    |> Enum.drop(1)
-    |> Enum.reverse()
   end
 end
