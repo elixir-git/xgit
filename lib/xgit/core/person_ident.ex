@@ -147,7 +147,7 @@ defmodule Xgit.Core.PersonIdent do
     case {time, tz} do
       {[_ | _], [_ | _]} ->
         {time |> ParseDecimal.from_decimal_charlist() |> elem(0),
-         tz |> RawParseUtils.parse_timezone_offset() |> elem(0)}
+         tz |> parse_timezone_offset() |> elem(0)}
 
       _ ->
         cover {0, 0}
@@ -162,7 +162,16 @@ defmodule Xgit.Core.PersonIdent do
       |> Enum.take_while(&(&1 != ?\s))
       |> Enum.reverse()
 
-    {word, Enum.drop(rev, Enum.count(word))}
+    cover {word, Enum.drop(rev, Enum.count(word))}
+  end
+
+  defp parse_timezone_offset(b) do
+    {v, b} = ParseDecimal.from_decimal_charlist(b)
+
+    tz_min = rem(v, 100)
+    tz_hour = div(v, 100)
+
+    cover {tz_hour * 60 + tz_min, b}
   end
 
   @doc ~S"""
