@@ -58,6 +58,7 @@ defmodule Xgit.Core.Object do
   alias Xgit.Core.FileMode
   alias Xgit.Core.FilePath
   alias Xgit.Core.ObjectId
+  alias Xgit.Util.ParseCharlist
   alias Xgit.Util.ParseDecimal
   alias Xgit.Util.RawParseUtils
 
@@ -424,7 +425,7 @@ defmodule Xgit.Core.Object do
 
   defp normalize(name, true = _mac?) when is_list(name) do
     name
-    |> RawParseUtils.decode()
+    |> ParseCharlist.decode_ambiguous_charlist()
     |> String.downcase()
     |> :unicode.characters_to_nfc_binary()
   end
