@@ -249,8 +249,8 @@ defmodule Xgit.Core.Object do
          {:parent_id, {_parent_id, []}} <- {:parent_id, ObjectId.from_hex_charlist(parent_id)} do
       check_commit_parents(next_data)
     else
-      {:parent_id, _} -> nil
-      _ -> data
+      {:parent_id, _} -> cover nil
+      _ -> cover data
     end
   end
 
