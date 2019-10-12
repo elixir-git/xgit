@@ -279,7 +279,7 @@ defmodule Xgit.Core.Object do
            {:valid_person_ident, PersonIdent.from_byte_list(tagger)} do
       cover next
     else
-      {:valid_person_ident, _} -> nil
+      {:valid_person_ident, _} -> cover nil
       _ -> cover data
     end
   end
