@@ -402,7 +402,7 @@ defmodule Xgit.Core.Object do
          {:bad_date, {_date, [?\s | tz]}} <-
            {:bad_date, ParseDecimal.from_decimal_charlist(date)},
          {:bad_timezone, {_tz, []}} <- {:bad_timezone, ParseDecimal.from_decimal_charlist(tz)} do
-      :ok
+      cover :ok
     else
       {:missing_email, _} -> cover :missing_email
       {:bad_email, _} -> cover :bad_email
