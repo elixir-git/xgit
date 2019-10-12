@@ -58,6 +58,7 @@ defmodule Xgit.Core.Object do
   alias Xgit.Core.FileMode
   alias Xgit.Core.FilePath
   alias Xgit.Core.ObjectId
+  alias Xgit.Util.ParseDecimal
   alias Xgit.Util.RawParseUtils
 
   import Xgit.Util.ForceCoverage
@@ -407,8 +408,10 @@ defmodule Xgit.Core.Object do
            {:missing_email, RawParseUtils.next_lf(data, ?<)},
          {:bad_email, [?> | after_email]} <- {:bad_email, RawParseUtils.next_lf(email_start, ?>)},
          {:missing_space_before_date, [?\s | date]} <- {:missing_space_before_date, after_email},
-         {:bad_date, {_date, [?\s | tz]}} <- {:bad_date, RawParseUtils.parse_base_10(date)},
-         {:bad_timezone, {_tz, [?\n | next]}} <- {:bad_timezone, RawParseUtils.parse_base_10(tz)} do
+         {:bad_date, {_date, [?\s | tz]}} <-
+           {:bad_date, ParseDecimal.from_decimal_charlist(date)},
+         {:bad_timezone, {_tz, [?\n | next]}} <-
+           {:bad_timezone, ParseDecimal.from_decimal_charlist(tz)} do
       next
     else
       {:missing_email, _} -> cover :missing_email

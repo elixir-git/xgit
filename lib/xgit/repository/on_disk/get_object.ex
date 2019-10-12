@@ -6,7 +6,7 @@ defmodule Xgit.Repository.OnDisk.GetObject do
 
   alias Xgit.Core.Object
   alias Xgit.Core.ObjectId
-  alias Xgit.Util.RawParseUtils
+  alias Xgit.Util.ParseDecimal
   alias Xgit.Util.UnzipStream
 
   defmodule LooseObjectContentSource do
@@ -93,7 +93,7 @@ defmodule Xgit.Repository.OnDisk.GetObject do
   defp parse_length(_type, ' '), do: cover(:invalid_header)
 
   defp parse_length(type, [?\s | length]) do
-    case RawParseUtils.parse_base_10(length) do
+    case ParseDecimal.from_decimal_charlist(length) do
       {length, []} when is_integer(length) and length >= 0 -> {:header, type, length}
       _ -> cover :invalid_header
     end
