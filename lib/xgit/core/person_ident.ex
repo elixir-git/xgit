@@ -51,9 +51,10 @@ defmodule Xgit.Core.PersonIdent do
   A combination of a person identity and time in git.
   """
 
-  import Xgit.Util.ForceCoverage
-
+  alias Xgit.Util.ParseDecimal
   alias Xgit.Util.RawParseUtils
+
+  import Xgit.Util.ForceCoverage
 
   @typedoc "Time zone offset in minutes +/- from GMT."
   @type tz_offset :: -720..840
@@ -144,7 +145,7 @@ defmodule Xgit.Core.PersonIdent do
 
     case {time, tz} do
       {[_ | _], [_ | _]} ->
-        {time |> RawParseUtils.parse_base_10() |> elem(0),
+        {time |> ParseDecimal.from_decimal_charlist() |> elem(0),
          tz |> RawParseUtils.parse_timezone_offset() |> elem(0)}
 
       _ ->
