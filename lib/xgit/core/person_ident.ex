@@ -51,6 +51,7 @@ defmodule Xgit.Core.PersonIdent do
   A combination of a person identity and time in git.
   """
 
+  alias Xgit.Util.ParseCharlist
   alias Xgit.Util.ParseDecimal
   alias Xgit.Util.RawParseUtils
 
@@ -104,8 +105,8 @@ defmodule Xgit.Core.PersonIdent do
          name <- parse_name(b),
          {time, tz} <- parse_tz(email_start) do
       %__MODULE__{
-        name: RawParseUtils.decode(name),
-        email: RawParseUtils.decode(email),
+        name: ParseCharlist.decode_ambiguous_charlist(name),
+        email: ParseCharlist.decode_ambiguous_charlist(email),
         when: time,
         tz_offset: tz
       }
