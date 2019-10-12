@@ -1,7 +1,6 @@
 defmodule Xgit.Util.ParseHeader do
-  @moduledoc ~S"""
-  Handy utility functions to parse header comments from commits, trees, and similar objects.
-  """
+  @moduledoc false
+  # Internal utility for parsing headers from commit and tag objects.
 
   import Xgit.Util.ForceCoverage
 
