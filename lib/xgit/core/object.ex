@@ -58,9 +58,9 @@ defmodule Xgit.Core.Object do
   alias Xgit.Core.FileMode
   alias Xgit.Core.FilePath
   alias Xgit.Core.ObjectId
+  alias Xgit.Core.PersonIdent
   alias Xgit.Util.ParseCharlist
   alias Xgit.Util.ParseDecimal
-  alias Xgit.Core.PersonIdent
 
   import Xgit.Util.ForceCoverage
   import Xgit.Util.ParseHeader, only: [next_header: 1]
