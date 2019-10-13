@@ -1,7 +1,7 @@
 defmodule Xgit.Util.UnzipStream do
-  @moduledoc ~S"""
-  Transforms a stream from a compressed ZIP stream to uncompressed data.
-  """
+  @moduledoc false
+  # Internal utility that transforms a stream from a compressed
+  # ZIP stream to uncompressed data.
 
   import Xgit.Util.ForceCoverage
 

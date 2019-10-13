@@ -1,14 +1,14 @@
 defmodule Xgit.Util.TrailingHashDevice do
-  @moduledoc ~S"""
-  Creates an `iodevice` process that supports git file formats with a trailing
-  SHA-1 hash.
+  @moduledoc false
+  # Creates an `iodevice` process that supports git file formats with a trailing
+  # SHA-1 hash.
 
-  When reading, the trailing 20 bytes are interpreted as a SHA-1 hash of the
-  remaining file contents and can be verified using the `valid_hash?/1` function.
+  # When reading, the trailing 20 bytes are interpreted as a SHA-1 hash of the
+  # remaining file contents and can be verified using the `valid_hash?/1` function.
 
-  This is an admittedly minimal implementation; just enough is implemented to
-  allow Xgit's index file parser to do its work.
-  """
+  # This is an admittedly minimal implementation; just enough is implemented to
+  # allow Xgit's index file parser to do its work.
+
   use GenServer
 
   import Xgit.Util.ForceCoverage
