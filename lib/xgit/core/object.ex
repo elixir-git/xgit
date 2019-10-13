@@ -58,12 +58,12 @@ defmodule Xgit.Core.Object do
   alias Xgit.Core.FileMode
   alias Xgit.Core.FilePath
   alias Xgit.Core.ObjectId
+  alias Xgit.Core.PersonIdent
   alias Xgit.Util.ParseCharlist
   alias Xgit.Util.ParseDecimal
-  alias Xgit.Util.RawParseUtils
 
   import Xgit.Util.ForceCoverage
-  import Xgit.Util.RawParseUtils, only: [after_prefix: 2]
+  import Xgit.Util.ParseHeader, only: [next_header: 1]
 
   @typedoc ~S"""
   This struct describes a single object stored or about to be stored in a git
@@ -225,13 +225,13 @@ defmodule Xgit.Core.Object do
   # -- commit specifics --
 
   defp check_commit(%__MODULE__{content: data}) when is_list(data) do
-    with {:tree, data} when is_list(data) <- {:tree, after_prefix(data, 'tree ')},
-         {:tree_id, data} when is_list(data) <- {:tree_id, check_id(data)},
+    with {:tree, {'tree', tree_id, data}} <- {:tree, next_header(data)},
+         {:tree_id, {_tree_id_str, []}} <- {:tree_id, ObjectId.from_hex_charlist(tree_id)},
          {:parents, data} when is_list(data) <- {:parents, check_commit_parents(data)},
-         {:author, data} when is_list(data) <- {:author, after_prefix(data, 'author ')},
-         {:author_id, data} when is_list(data) <- {:author_id, check_person_ident(data)},
-         {:committer, data} when is_list(data) <- {:committer, after_prefix(data, 'committer ')},
-         {:committer_id, data} when is_list(data) <- {:committer_id, check_person_ident(data)} do
+         {:author, {'author', author, data}} <- {:author, next_header(data)},
+         {:author_id, :ok} <- {:author_id, check_person_ident(author)},
+         {:committer, {'committer', committer, _data}} <- {:committer, next_header(data)},
+         {:committer_id, :ok} <- {:committer_id, check_person_ident(committer)} do
       cover :ok
     else
       {:tree, _} -> cover {:error, :no_tree_header}
@@ -245,28 +245,23 @@ defmodule Xgit.Core.Object do
   end
 
   defp check_commit_parents(data) do
-    case after_prefix(data, 'parent ') do
-      after_match when is_list(after_match) ->
-        if next_line = check_id(after_match) do
-          check_commit_parents(next_line)
-        else
-          cover nil
-        end
-
-      nil ->
-        cover data
+    with {'parent', parent_id, next_data} <- next_header(data),
+         {:parent_id, {_parent_id, []}} <- {:parent_id, ObjectId.from_hex_charlist(parent_id)} do
+      check_commit_parents(next_data)
+    else
+      {:parent_id, _} -> cover nil
+      _ -> cover data
     end
   end
 
   # -- tag specifics --
 
   defp check_tag(%__MODULE__{content: data}) when is_list(data) do
-    with {:object, data} when is_list(data) <- {:object, after_prefix(data, 'object ')},
-         {:object_id, data} when is_list(data) <- {:object_id, check_id(data)},
-         {:type, data} when is_list(data) <- {:type, after_prefix(data, 'type ')},
-         data <- RawParseUtils.next_lf(data),
-         {:tag, data} when is_list(data) <- {:tag, after_prefix(data, 'tag ')},
-         data <- RawParseUtils.next_lf(data),
+    with {:object, {'object', object_id, data}} <- {:object, next_header(data)},
+         {:object_id, {object_id, []}} when is_binary(object_id) <-
+           {:object_id, ObjectId.from_hex_charlist(object_id)},
+         {:type, {'type', _type, data}} <- {:type, next_header(data)},
+         {:tag, {'tag', _tag, data}} <- {:tag, next_header(data)},
          {:tagger, data} when is_list(data) <- {:tagger, maybe_match_tagger(data)} do
       cover :ok
     else
@@ -279,12 +274,13 @@ defmodule Xgit.Core.Object do
   end
 
   defp maybe_match_tagger(data) do
-    after_match = after_prefix(data, 'tagger ')
-
-    if is_list(after_match) do
-      check_person_ident(after_match)
+    with {'tagger', tagger, next} when next != data <- next_header(data),
+         {:valid_person_ident, %PersonIdent{}} <-
+           {:valid_person_ident, PersonIdent.from_byte_list(tagger)} do
+      cover next
     else
-      cover data
+      {:valid_person_ident, _} -> cover nil
+      _ -> cover data
     end
   end
 
@@ -397,23 +393,16 @@ defmodule Xgit.Core.Object do
 
   # -- generic matching utilities --
 
-  defp check_id(data) do
-    case ObjectId.from_hex_charlist(data) do
-      {_id, [?\n | remainder]} -> cover remainder
-      _ -> cover nil
-    end
-  end
-
   defp check_person_ident(data) do
     with {:missing_email, [?< | email_start]} <-
-           {:missing_email, RawParseUtils.next_lf(data, ?<)},
-         {:bad_email, [?> | after_email]} <- {:bad_email, RawParseUtils.next_lf(email_start, ?>)},
+           {:missing_email, Enum.drop_while(data, &(&1 != ?<))},
+         {:bad_email, [?> | after_email]} <-
+           {:bad_email, Enum.drop_while(email_start, &(&1 != ?>))},
          {:missing_space_before_date, [?\s | date]} <- {:missing_space_before_date, after_email},
          {:bad_date, {_date, [?\s | tz]}} <-
            {:bad_date, ParseDecimal.from_decimal_charlist(date)},
-         {:bad_timezone, {_tz, [?\n | next]}} <-
-           {:bad_timezone, ParseDecimal.from_decimal_charlist(tz)} do
-      next
+         {:bad_timezone, {_tz, []}} <- {:bad_timezone, ParseDecimal.from_decimal_charlist(tz)} do
+      cover :ok
     else
       {:missing_email, _} -> cover :missing_email
       {:bad_email, _} -> cover :bad_email
