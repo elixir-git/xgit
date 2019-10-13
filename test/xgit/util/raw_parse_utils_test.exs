@@ -91,17 +91,6 @@ defmodule Xgit.Util.RawParseUtilsTest do
     assert RPU.next('abcd', ?x) == ''
   end
 
-  test "next_lf/1" do
-    assert RPU.next_lf('abc\ndef') == 'def'
-    assert RPU.next_lf('xyz') == ''
-  end
-
-  test "next_lf/2" do
-    assert RPU.next_lf('abc\ndef', ?c) == 'c\ndef'
-    assert RPU.next_lf('abc\ndef', ?d) == '\ndef'
-    assert RPU.next_lf('xyz', ?y) == 'yz'
-  end
-
   test "decode/1" do
     assert RPU.decode([64, 65, 66]) == "@AB"
     assert RPU.decode([228, 105, 116, 105]) == "äiti"

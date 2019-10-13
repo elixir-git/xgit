@@ -118,27 +118,6 @@ defmodule Xgit.Util.RawParseUtils do
   def next([], char) when is_integer(char), do: cover([])
 
   @doc ~S"""
-  Locate the first position after the next LF.
-
-  This method stops on the first `\n` it finds.
-  """
-  @spec next_lf(b :: charlist) :: charlist
-  def next_lf(b), do: next(b, ?\n)
-
-  @doc ~S"""
-  Locate the first position of either the given character or LF.
-
-  This method stops on the first match it finds from either `char` or `\n`.
-  """
-  @spec next_lf(b :: charlist, char :: char) :: charlist
-  def next_lf(b, char)
-
-  def next_lf([char | _] = b, char) when is_integer(char), do: b
-  def next_lf([?\n | _] = b, char) when is_integer(char), do: b
-  def next_lf([_ | b], char) when is_integer(char), do: next_lf(b, char)
-  def next_lf([], char) when is_integer(char), do: cover([])
-
-  @doc ~S"""
   Convert a list of bytes to an Elixir (UTF-8) string when the encoding is not
   definitively known. Try parsing as a UTF-8 byte array first, then try ISO-8859-1.
 
