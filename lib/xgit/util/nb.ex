@@ -45,9 +45,8 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 defmodule Xgit.Util.NB do
-  @moduledoc ~S"""
-  Conversion utilities for network byte order handling.
-  """
+  @moduledoc false
+  # Internal conversion utilities for network byte order handling.
 
   use Bitwise
 

@@ -1,7 +1,6 @@
 defmodule Xgit.Util.Comparison do
-  @moduledoc ~S"""
-  Common vocabulary for data types that can be compared and/or sorted.
-  """
+  @moduledoc false
+  # Internal common vocabulary for data types that can be compared and/or sorted.
 
   @typedoc """
   Result of a comparison.

@@ -45,21 +45,20 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 defmodule Xgit.Util.FileSnapshot do
-  @moduledoc ~S"""
-  Caches when a file was last read, making it possible to detect future edits.
+  @moduledoc false
+  # Caches when a file was last read, making it possible to detect future edits.
 
-  This object tracks the last modified time of a file. Later during an
-  invocation of `modified?/2` the object will return `true` if the file may have
-  been modified and should be re-read from disk.
+  # This object tracks the last modified time of a file. Later during an
+  # invocation of `modified?/2` the object will return `true` if the file may have
+  # been modified and should be re-read from disk.
 
-  A snapshot does not "live update" when the underlying filesystem changes.
-  Callers must poll for updates by periodically invoking `modified?/2`.
+  # A snapshot does not "live update" when the underlying filesystem changes.
+  # Callers must poll for updates by periodically invoking `modified?/2`.
 
-  To work around the "racy git" problem (where a file may be modified multiple
-  times within the granularity of the filesystem modification clock) this class
-  may return `true` from `modified?/2` if the last modification time of the
-  file is less than 3 seconds ago.
-  """
+  # To work around the "racy git" problem (where a file may be modified multiple
+  # times within the granularity of the filesystem modification clock) this class
+  # may return `true` from `modified?/2` if the last modification time of the
+  # file is less than 3 seconds ago.
 
   import Xgit.Util.ForceCoverage
 
