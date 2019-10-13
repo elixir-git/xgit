@@ -53,23 +53,6 @@ defmodule Xgit.Util.RawParseUtils do
   import Xgit.Util.ForceCoverage
 
   @doc ~S"""
-  Return the portion of the charlist `b` that starts with the prefix `prefix`.
-
-  ## Return Values
-
-  If `b` does in fact start with `prefix`, return the portion of the charlist
-  that follows `prefix`.
-
-  If not, return `nil`.
-  """
-  @spec after_prefix(b :: charlist, prefix :: charlist) :: charlist | nil
-  def after_prefix(b, prefix)
-
-  def after_prefix(b, []), do: cover(b)
-  def after_prefix([c | b], [c | prefix]), do: after_prefix(b, prefix)
-  def after_prefix(_, _), do: cover(nil)
-
-  @doc ~S"""
   Parse a base-10 numeric value from a charlist of ASCII digits into a number.
 
   Similar to `Integer.parse/2` but uses charlist instead.
