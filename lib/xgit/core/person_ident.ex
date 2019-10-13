@@ -53,7 +53,6 @@ defmodule Xgit.Core.PersonIdent do
 
   alias Xgit.Util.ParseCharlist
   alias Xgit.Util.ParseDecimal
-  alias Xgit.Util.RawParseUtils
 
   import Xgit.Util.ForceCoverage
 
@@ -89,9 +88,6 @@ defmodule Xgit.Core.PersonIdent do
   `b` should be a charlist of an "author" or "committer" line pointing to the
   character after the header name and space.
 
-  The functions `Xgit.Util.RawParseUtils.author/1` and `Xgit.Util.RawParseUtils.committer/1`
-  will return suitable charlists.
-
   ## Return Value
 
   Returns a `PersonIdent` struct or `nil` if the charlist did not point to a
@@ -99,9 +95,9 @@ defmodule Xgit.Core.PersonIdent do
   """
   @spec from_byte_list(b :: [byte]) :: t() | nil
   def from_byte_list(b) when is_list(b) do
-    with [?< | email_start] <- RawParseUtils.next_lf(b, ?<),
+    with {_, [?< | email_start]} <- Enum.split_while(b, &(&1 != ?<)),
          true <- has_closing_angle_bracket?(email_start),
-         email <- RawParseUtils.until_next_lf(email_start, ?>),
+         {email, _} <- Enum.split_while(email_start, &(&1 != ?>)),
          name <- parse_name(b),
          {time, tz} <- parse_tz(email_start) do
       %__MODULE__{
@@ -119,7 +115,7 @@ defmodule Xgit.Core.PersonIdent do
 
   defp parse_name(b) do
     b
-    |> RawParseUtils.until_next_lf(?<)
+    |> Enum.take_while(&(&1 != ?<))
     |> Enum.reverse()
     |> drop_first_if_space()
     |> Enum.reverse()
@@ -133,12 +129,7 @@ defmodule Xgit.Core.PersonIdent do
     # another name-email pair may occur. We will ignore all kinds of
     # "junk" following the first email.
 
-    # We've to use (emailE - 1) for the case that raw[email] is LF,
-    # otherwise we would run too far. "-2" is necessary to position
-    # before the LF in case of LF termination resp. the penultimate
-    # character if there is no trailing LF.
-
-    [?> | first_email_end] = RawParseUtils.next_lf(first_email_start, ?>)
+    [?> | first_email_end] = Enum.drop_while(first_email_start, &(&1 != ?>))
     rev = Enum.reverse(first_email_end)
 
     {tz, rev} = trim_word_and_rev(rev)
