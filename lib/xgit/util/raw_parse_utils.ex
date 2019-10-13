@@ -108,16 +108,6 @@ defmodule Xgit.Util.RawParseUtils do
   end
 
   @doc ~S"""
-  Locate the first position after a given character.
-  """
-  @spec next(b :: charlist, char :: char) :: charlist
-  def next(b, char)
-
-  def next([char | b], char) when is_integer(char), do: b
-  def next([_ | b], char) when is_integer(char), do: next(b, char)
-  def next([], char) when is_integer(char), do: cover([])
-
-  @doc ~S"""
   Convert a list of bytes to an Elixir (UTF-8) string when the encoding is not
   definitively known. Try parsing as a UTF-8 byte array first, then try ISO-8859-1.
 
