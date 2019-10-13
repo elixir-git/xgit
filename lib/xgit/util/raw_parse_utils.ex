@@ -139,19 +139,6 @@ defmodule Xgit.Util.RawParseUtils do
   def next_lf([], char) when is_integer(char), do: cover([])
 
   @doc ~S"""
-  Return the contents of the charlist up to, but not including, the next LF.
-  """
-  @spec until_next_lf(b :: charlist) :: charlist
-  def until_next_lf(b), do: Enum.take_while(b, fn c -> c != ?\n end)
-
-  @doc ~S"""
-  Return the contents of the charlist up to, but not including, the next instance
-  of the given character or LF.
-  """
-  @spec until_next_lf(b :: charlist, char :: char) :: charlist
-  def until_next_lf(b, char), do: Enum.take_while(b, fn c -> c != ?\n and c != char end)
-
-  @doc ~S"""
   Convert a list of bytes to an Elixir (UTF-8) string when the encoding is not
   definitively known. Try parsing as a UTF-8 byte array first, then try ISO-8859-1.
 
