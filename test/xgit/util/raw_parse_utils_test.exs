@@ -53,22 +53,6 @@ defmodule Xgit.Util.RawParseUtilsTest do
 
   alias Xgit.Util.RawParseUtils, as: RPU
 
-  @commit 'tree e3a1035abd2b319bb01e57d69b0ba6cab289297e\n' ++
-            'parent 54e895b87c0768d2317a2b17062e3ad9f76a8105\n' ++
-            'committer A U Thor <author@xample.com 1528968566 +0200\n' ++
-            'gpgsig -----BEGIN PGP SIGNATURE-----\n' ++
-            ' \n' ++
-            ' wsBcBAABCAAQBQJbGB4pCRBK7hj4Ov3rIwAAdHIIAENrvz23867ZgqrmyPemBEZP\n' ++
-            ' U24B1Tlq/DWvce2buaxmbNQngKZ0pv2s8VMc11916WfTIC9EKvioatmpjduWvhqj\n' ++
-            ' znQTFyiMor30pyYsfrqFuQZvqBW01o8GEWqLg8zjf9Rf0R3LlOEw86aT8CdHRlm6\n' ++
-            ' wlb22xb8qoX4RB+LYfz7MhK5F+yLOPXZdJnAVbuyoMGRnDpwdzjL5Hj671+XJxN5\n' ++
-            ' SasRdhxkkfw/ZnHxaKEc4juMz8Nziz27elRwhOQqlTYoXNJnsV//wy5Losd7aKi1\n' ++
-            ' xXXyUpndEOmT0CIcKHrN/kbYoVL28OJaxoBuva3WYQaRrzEe3X02NMxZe9gkSqA=\n' ++
-            ' =TClh\n' ++
-            ' -----END PGP SIGNATURE-----\n' ++
-            'some other header\n\n' ++
-            'commit message'
-
   test "parse_base_10/1" do
     assert RPU.parse_base_10('abc') == {0, 'abc'}
     assert RPU.parse_base_10('0abc') == {0, 'abc'}
@@ -83,13 +67,5 @@ defmodule Xgit.Util.RawParseUtilsTest do
     assert RPU.parse_timezone_offset('') == {0, ''}
     assert RPU.parse_timezone_offset('-0315X') == {-195, 'X'}
     assert RPU.parse_timezone_offset('+0400abc') == {240, 'abc'}
-  end
-
-  test "decode/1" do
-    assert RPU.decode([64, 65, 66]) == "@AB"
-    assert RPU.decode([228, 105, 116, 105]) == "äiti"
-    assert RPU.decode([195, 164, 105, 116, 105]) == "äiti"
-    assert RPU.decode([66, 106, 246, 114, 110]) == "Björn"
-    assert RPU.decode([66, 106, 195, 182, 114, 110]) == "Björn"
   end
 end

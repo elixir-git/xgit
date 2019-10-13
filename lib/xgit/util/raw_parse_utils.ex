@@ -106,24 +106,4 @@ defmodule Xgit.Util.RawParseUtils do
 
     cover {tz_hour * 60 + tz_min, b}
   end
-
-  @doc ~S"""
-  Convert a list of bytes to an Elixir (UTF-8) string when the encoding is not
-  definitively known. Try parsing as a UTF-8 byte array first, then try ISO-8859-1.
-
-  _PORTING NOTE:_ A lot of the simplification of this compared to jgit's implementation
-  of RawParseUtils.decode comes from the observation that the only character set
-  ever passed to jgit's decode was UTF-8. We've baked that assumption into this
-  implementation. Should other character sets come into play, this will necessarily
-  become more complicated.
-  """
-  @spec decode(b :: [byte]) :: String.t()
-  def decode(b) when is_list(b) do
-    raw = :erlang.list_to_binary(b)
-
-    case :unicode.characters_to_binary(raw) do
-      utf8 when is_binary(utf8) -> utf8
-      _ -> :unicode.characters_to_binary(raw, :latin1)
-    end
-  end
 end
