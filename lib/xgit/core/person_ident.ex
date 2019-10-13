@@ -51,9 +51,11 @@ defmodule Xgit.Core.PersonIdent do
   A combination of a person identity and time in git.
   """
 
-  import Xgit.Util.ForceCoverage
-
+  alias Xgit.Util.ParseCharlist
+  alias Xgit.Util.ParseDecimal
   alias Xgit.Util.RawParseUtils
+
+  import Xgit.Util.ForceCoverage
 
   @typedoc "Time zone offset in minutes +/- from GMT."
   @type tz_offset :: -720..840
@@ -103,8 +105,8 @@ defmodule Xgit.Core.PersonIdent do
          name <- parse_name(b),
          {time, tz} <- parse_tz(email_start) do
       %__MODULE__{
-        name: RawParseUtils.decode(name),
-        email: RawParseUtils.decode(email),
+        name: ParseCharlist.decode_ambiguous_charlist(name),
+        email: ParseCharlist.decode_ambiguous_charlist(email),
         when: time,
         tz_offset: tz
       }
@@ -144,8 +146,8 @@ defmodule Xgit.Core.PersonIdent do
 
     case {time, tz} do
       {[_ | _], [_ | _]} ->
-        {time |> RawParseUtils.parse_base_10() |> elem(0),
-         tz |> RawParseUtils.parse_timezone_offset() |> elem(0)}
+        {time |> ParseDecimal.from_decimal_charlist() |> elem(0),
+         tz |> parse_timezone_offset() |> elem(0)}
 
       _ ->
         cover {0, 0}
@@ -160,7 +162,16 @@ defmodule Xgit.Core.PersonIdent do
       |> Enum.take_while(&(&1 != ?\s))
       |> Enum.reverse()
 
-    {word, Enum.drop(rev, Enum.count(word))}
+    cover {word, Enum.drop(rev, Enum.count(word))}
+  end
+
+  defp parse_timezone_offset(b) do
+    {v, b} = ParseDecimal.from_decimal_charlist(b)
+
+    tz_min = rem(v, 100)
+    tz_hour = div(v, 100)
+
+    cover {tz_hour * 60 + tz_min, b}
   end
 
   @doc ~S"""
