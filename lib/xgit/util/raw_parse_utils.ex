@@ -152,33 +152,6 @@ defmodule Xgit.Util.RawParseUtils do
   def until_next_lf(b, char), do: Enum.take_while(b, fn c -> c != ?\n and c != char end)
 
   @doc ~S"""
-  Find the start of the contents of a given header in the given charlist.
-
-  Returns charlist beginning at the start of the header's contents or `nil`
-  if not found.
-
-  _PORTING NOTE:_ Unlike the jgit version of this function, it does not advance
-  to the beginning of the next line. Because the API speaks in charlists, we cannot
-  differentiate between the beginning of the initial string buffer and a subsequent
-  internal portion of the buffer. Clients may need to add their own call to `next_lf/1`
-  where it would not have been necessary in jgit.
-  """
-  @spec header_start(header_name :: charlist, b :: charlist) :: charlist | nil
-  def header_start([_ | _] = header_name, b) when is_list(b),
-    do: possible_header_match(header_name, header_name, b, b)
-
-  defp possible_header_match(header_name, [c | rest_of_header], match_start, [c | rest_of_match]),
-    do: possible_header_match(header_name, rest_of_header, match_start, rest_of_match)
-
-  defp possible_header_match(_header_name, [], _match_start, [?\s | header_content]),
-    do: header_content
-
-  defp possible_header_match(_header_name, _, [], _), do: cover(nil)
-
-  defp possible_header_match(header_name, _, [_ | b], _),
-    do: possible_header_match(header_name, header_name, b, b)
-
-  @doc ~S"""
   Convert a list of bytes to an Elixir (UTF-8) string when the encoding is not
   definitively known. Try parsing as a UTF-8 byte array first, then try ISO-8859-1.
 

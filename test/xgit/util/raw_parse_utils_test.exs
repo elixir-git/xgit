@@ -113,14 +113,6 @@ defmodule Xgit.Util.RawParseUtilsTest do
     assert RPU.until_next_lf('xyz', ?y) == 'x'
   end
 
-  test "header_start/2" do
-    assert RPU.header_start('some', @commit) == Enum.drop(@commit, 625)
-    assert RPU.header_start('missing', @commit) == nil
-    assert RPU.header_start('other', Enum.drop(@commit, 629)) == nil
-    assert RPU.header_start('parens', @commit) == nil
-    assert RPU.header_start('commit', @commit) == 'message'
-  end
-
   test "decode/1" do
     assert RPU.decode([64, 65, 66]) == "@AB"
     assert RPU.decode([228, 105, 116, 105]) == "äiti"
