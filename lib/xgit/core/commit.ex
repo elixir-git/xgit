@@ -2,11 +2,13 @@ defmodule Xgit.Core.Commit do
   @moduledoc ~S"""
   Represents a git `commit` object in memory.
   """
+  alias Xgit.Core.ContentSource
   alias Xgit.Core.Object
   alias Xgit.Core.ObjectId
   alias Xgit.Core.PersonIdent
 
   import Xgit.Util.ForceCoverage
+  import Xgit.Util.ParseHeader, only: [next_header: 1]
 
   @typedoc ~S"""
   This struct describes a single `commit` object so it can be manipulated in memory.
@@ -18,6 +20,9 @@ defmodule Xgit.Core.Commit do
   * `:author`: (`Xgit.Core.PersonIdent`) author of this commit
   * `:committer`: (`Xgit.Core.PersonIdent`) committer for this commit
   * `:message`: (bytelist) user-entered commit message (encoding unspecified)
+
+  **TO DO:** Support signatures and other extensions.
+  https://github.com/elixir-git/xgit/issues/202
   """
   @type t :: %__MODULE__{
           tree: ObjectId.t(),
@@ -52,6 +57,77 @@ defmodule Xgit.Core.Commit do
   end
 
   def valid?(_), do: cover(false)
+
+  @typedoc ~S"""
+  Error response codes returned by `from_object/1`.
+  """
+  @type from_object_reason :: :not_a_commit | :invalid_commit
+
+  @doc ~S"""
+  Renders a commit structure from an `Xgit.Core.Object`.
+
+  ## Return Values
+
+  `{:ok, commit}` if the object contains a valid `commit` object.
+
+  `{:error, :not_a_commit}` if the object contains an object of a different type.
+
+  `{:error, :invalid_commit}` if the object says that is of type `commit`, but
+  can not be parsed as such.
+  """
+  @spec from_object(object :: Object.t()) :: {:ok, commit :: t} | {:error, from_object_reason}
+  def from_object(object)
+
+  def from_object(%Object{type: :commit, content: content} = _object) do
+    content
+    |> ContentSource.stream()
+    |> Enum.to_list()
+    |> from_object_internal()
+  end
+
+  def from_object(%Object{} = _object), do: cover({:error, :not_a_commit})
+
+  defp from_object_internal(data) do
+    with {:tree, {'tree', tree_id_str, data}} <- {:tree, next_header(data)},
+         {:tree_id, {tree_id, []}} <- {:tree_id, ObjectId.from_hex_charlist(tree_id_str)},
+         {:parents, {parents, data}} when is_list(data) <-
+           {:parents, read_parents(data, [])},
+         {:author, {'author', author_str, data}} <- {:author, next_header(data)},
+         {:author_id, %PersonIdent{} = author} <-
+           {:author_id, PersonIdent.from_byte_list(author_str)},
+         {:committer, {'committer', committer_str, data}} <-
+           {:committer, next_header(data)},
+         {:committer_id, %PersonIdent{} = committer} <-
+           {:committer_id, PersonIdent.from_byte_list(committer_str)},
+         message when is_list(message) <- drop_if_lf(data) do
+      # TO DO: Support signatures and other extensions.
+      # https://github.com/elixir-git/xgit/issues/202
+      cover {:ok,
+             %__MODULE__{
+               tree: tree_id,
+               parents: parents,
+               author: author,
+               committer: committer,
+               message: message
+             }}
+    else
+      _ -> cover {:error, :invalid_commit}
+    end
+  end
+
+  defp read_parents(data, parents_acc) do
+    with {'parent', parent_id, next_data} <- next_header(data),
+         {:parent_id, {parent_id, []}} <- {:parent_id, ObjectId.from_hex_charlist(parent_id)} do
+      read_parents(next_data, [parent_id | parents_acc])
+    else
+      {:parent_id, _} -> cover :error
+      _ -> cover {Enum.reverse(parents_acc), data}
+    end
+  end
+
+  defp drop_if_lf([10 | data]), do: cover(data)
+  defp drop_if_lf([]), do: cover([])
+  defp drop_if_lf(_), do: cover(:error)
 
   @doc ~S"""
   Renders this commit structure into a corresponding `Xgit.Core.Object`.
@@ -88,6 +164,9 @@ defmodule Xgit.Core.Commit do
         'committer #{PersonIdent.to_external_string(committer)}\n' ++
         '\n' ++
         message
+
+    # TO DO: Support signatures and other extensions.
+    # https://github.com/elixir-git/xgit/issues/202
 
     %Object{
       type: :commit,
