@@ -4,13 +4,13 @@ defmodule Xgit.Plumbing.CommitTreeTest do
   alias Xgit.Core.Object
   alias Xgit.Core.PersonIdent
   alias Xgit.Plumbing.CommitTree
-  alias Xgit.Plumbing.HashObject
-  alias Xgit.Plumbing.UpdateIndex.CacheInfo
-  alias Xgit.Plumbing.WriteTree
   alias Xgit.Repository
   alias Xgit.Test.OnDiskRepoTestCase
 
   import FolderDiff
+
+  import Xgit.Test.OnDiskRepoTestCase,
+    only: [setup_with_valid_tree!: 0, setup_with_valid_parent_commit!: 0]
 
   describe "run/2" do
     @valid_pi %PersonIdent{
@@ -20,14 +20,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
       tz_offset: 150
     }
 
-    @env [
-      {"GIT_AUTHOR_DATE", "1142878449 +0230"},
-      {"GIT_COMMITTER_DATE", "1142878449 +0230"},
-      {"GIT_AUTHOR_EMAIL", "author@example.com"},
-      {"GIT_COMMITTER_EMAIL", "author@example.com"},
-      {"GIT_AUTHOR_NAME", "A. U. Thor"},
-      {"GIT_COMMITTER_NAME", "A. U. Thor"}
-    ]
+    @env OnDiskRepoTestCase.sample_commit_env()
 
     test "happy path: no parents" do
       %{xgit_path: ref_path, tree_id: tree_id} = setup_with_valid_tree!()
@@ -356,49 +349,6 @@ defmodule Xgit.Plumbing.CommitTreeTest do
                  author: @valid_pi,
                  committer: Map.put(@valid_pi, :tz_offset, 15_000)
                )
-    end
-
-    defp setup_with_valid_tree!(path \\ nil) do
-      %{xgit_repo: xgit_repo} = context = OnDiskRepoTestCase.repo!(path)
-
-      {:ok, object_id} = HashObject.run("test content\n", repo: xgit_repo, write?: true)
-      :ok = CacheInfo.run(xgit_repo, [{0o100644, object_id, 'test'}])
-
-      {:ok, xgit_tree_id} = WriteTree.run(xgit_repo)
-
-      Map.put(context, :tree_id, xgit_tree_id)
-    end
-
-    defp setup_with_valid_parent_commit! do
-      %{xgit_path: xgit_path} = context = setup_with_valid_tree!()
-
-      {empty_tree_id_str, 0} =
-        System.cmd(
-          "git",
-          [
-            "write-tree"
-          ],
-          cd: xgit_path
-        )
-
-      empty_tree_id = String.trim(empty_tree_id_str)
-
-      {parent_id_str, 0} =
-        System.cmd(
-          "git",
-          [
-            "commit-tree",
-            "-m",
-            "empty",
-            empty_tree_id
-          ],
-          cd: xgit_path,
-          env: @env
-        )
-
-      parent_id = String.trim(parent_id_str)
-
-      Map.put(context, :parent_id, parent_id)
     end
   end
 end
