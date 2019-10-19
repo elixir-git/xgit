@@ -236,13 +236,13 @@ defmodule Xgit.Core.CommitTest do
                   email: "author@example.com",
                   name: "A. U. Thor",
                   tz_offset: 150,
-                  when: 1142878449
+                  when: 1_142_878_449
                 },
                 committer: %Xgit.Core.PersonIdent{
                   email: "author@example.com",
                   name: "A. U. Thor",
                   tz_offset: 150,
-                  when: 1142878449
+                  when: 1_142_878_449
                 },
                 message: 'xxx\n',
                 parents: [],
@@ -254,11 +254,11 @@ defmodule Xgit.Core.CommitTest do
       %{xgit_path: path, xgit_repo: repo, tree_id: tree_id, parent_id: parent_id} =
         setup_with_valid_parent_commit!()
 
-        assert {commit_id_str, 0} =
-          System.cmd("git", ["commit-tree", tree_id, "-m", "mumble", "-p", parent_id],
-            cd: path,
-            env: @env
-          )
+      assert {commit_id_str, 0} =
+               System.cmd("git", ["commit-tree", tree_id, "-m", "mumble", "-p", parent_id],
+                 cd: path,
+                 env: @env
+               )
 
       commit_id = String.trim(commit_id_str)
 
@@ -270,13 +270,13 @@ defmodule Xgit.Core.CommitTest do
                   email: "author@example.com",
                   name: "A. U. Thor",
                   tz_offset: 150,
-                  when: 1142878449
+                  when: 1_142_878_449
                 },
                 committer: %Xgit.Core.PersonIdent{
                   email: "author@example.com",
                   name: "A. U. Thor",
                   tz_offset: 150,
-                  when: 1142878449
+                  when: 1_142_878_449
                 },
                 message: 'mumble\n',
                 parents: [^parent_id],
