@@ -1,5 +1,17 @@
 # Changelog for v0.x Series
 
+## v0.3.0
+
+_19 October 2019_
+
+* **Implement `Xgit.Plumbing.CatFile.Commit`. This is an API equivalent to `git cat-file -p` when the target object is of type `commit`. (#207)
+* Implement `Xgit.Core.Commit.from_object/1`. (#204, #205, #206)
+* [API BREAKING] Make `Xgit.Util.*` modules private. (#201)
+* [API BREAKING] Remove `Xgit.Util.RawParseUtils`. (#195, #198, #199, #200)
+* Move `parse_timzeone_offset` into `Xgit.Core.PersonIdent`. (#197)
+* Implement `Xgit.Util.ParseCharlist.decode_ambiguous_charlist/1`. (#196)
+* Bump credo from 1.1.4 to 1.1.5 (#194)
+
 ## v0.2.5
 
 _08 October 2019_
