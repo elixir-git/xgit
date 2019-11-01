@@ -4,7 +4,7 @@ defmodule Xgit.Core.Ref do
 
   A reference is a key-value pair where the key is a name in a specific format
   (see [`git check-ref-format`](https://git-scm.com/docs/git-check-ref-format))
-  and the value (`:target') is either a SHA-1 hash or a reference to another reference key
+  and the value (`:target`) is either a SHA-1 hash or a reference to another reference key
   (i.e. `ref: (name-of-valid-ref)`).
 
   This structure contains the key-value pair and functions to validate both values.
