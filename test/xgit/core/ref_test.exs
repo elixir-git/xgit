@@ -165,4 +165,15 @@ defmodule Xgit.Core.RefTest do
       refute_valid_target("ref: rex/heads/master")
     end
   end
+
+  test "valid?/1 not a Ref" do
+    refute Ref.valid?("refs/heads/master")
+    refute Ref.valid?(42)
+    refute Ref.valid?(nil)
+
+    refute Ref.valid?(%{
+             name: "refs/heads/master",
+             target: "155b7b4b7a6b798725df04a6cfcfb1aa042f0834"
+           })
+  end
 end
