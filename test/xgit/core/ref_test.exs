@@ -7,16 +7,20 @@ defmodule Xgit.Core.RefTest do
     assert {_, 0} = System.cmd("git", check_ref_format_args(name, opts))
     assert Ref.valid?(%Ref{name: name, target: "155b7b4b7a6b798725df04a6cfcfb1aa042f0834"}, opts)
 
-    if Enum.empty?(opts) && String.starts_with?(name, "refs/"),
-      do: assert(Ref.valid?(%Ref{name: "refs/heads/master", target: "ref: #{name}"}, opts))
+    if Enum.empty?(opts) && String.starts_with?(name, "refs/") do
+      assert Ref.valid?(%Ref{name: "refs/heads/master", target: "ref: #{name}"}, opts)
+      assert Ref.valid_name?(name)
+    end
   end
 
   defp refute_valid_name(name, opts \\ []) do
     assert {_, 1} = System.cmd("git", check_ref_format_args(name, opts))
     refute Ref.valid?(%Ref{name: name, target: "155b7b4b7a6b798725df04a6cfcfb1aa042f0834"}, opts)
 
-    if Enum.empty?(opts) && String.starts_with?(name, "refs/"),
-      do: refute(Ref.valid?(%Ref{name: "refs/heads/master", target: "ref: #{name}"}, opts))
+    if Enum.empty?(opts) && String.starts_with?(name, "refs/") do
+      refute Ref.valid?(%Ref{name: "refs/heads/master", target: "ref: #{name}"}, opts)
+      refute Ref.valid_name?(name)
+    end
   end
 
   defp check_ref_format_args(name, opts) do
@@ -175,5 +179,11 @@ defmodule Xgit.Core.RefTest do
              name: "refs/heads/master",
              target: "155b7b4b7a6b798725df04a6cfcfb1aa042f0834"
            })
+  end
+
+  test "valid_name?/1 not a string" do
+    refute Ref.valid_name?('refs/heads/master')
+    refute Ref.valid_name?(42)
+    refute Ref.valid_name?(nil)
   end
 end
