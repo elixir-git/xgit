@@ -393,4 +393,19 @@ defmodule Xgit.Repository.OnDisk do
 
   defp deflate_and_write_bytes(file, z, bytes, flush \\ :none),
     do: IO.binwrite(file, :zlib.deflate(z, bytes, flush))
+
+  @impl true
+  def handle_list_refs(state) do
+    cover {:error, :unimplemented, state}
+  end
+
+  @impl true
+  def handle_put_ref(state, _ref, _opts) do
+    cover {:error, :unimplemented, state}
+  end
+
+  @impl true
+  def handle_get_ref(state, _name, _opts) do
+    cover {:error, :unimplemented, state}
+  end
 end

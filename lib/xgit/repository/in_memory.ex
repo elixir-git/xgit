@@ -65,4 +65,19 @@ defmodule Xgit.Repository.InMemory do
 
   defp maybe_read_object_content(%Object{content: content} = object),
     do: %{object | content: content |> ContentSource.stream() |> Enum.concat()}
+
+  @impl true
+  def handle_list_refs(state) do
+    cover {:error, :unimplemented, state}
+  end
+
+  @impl true
+  def handle_put_ref(state, _ref, _opts) do
+    cover {:error, :unimplemented, state}
+  end
+
+  @impl true
+  def handle_get_ref(state, _name, _opts) do
+    cover {:error, :unimplemented, state}
+  end
 end
