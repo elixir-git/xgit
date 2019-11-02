@@ -33,6 +33,13 @@ defmodule Xgit.Core.Ref do
   defstruct [:name, :target]
 
   @doc ~S"""
+  Return `true` if the string describes a valid reference name.
+  """
+  @spec valid_name?(name :: any) :: boolean
+  def valid_name?(name) when is_binary(name), do: valid_name?(name, false, false)
+  def valid_name?(_), do: cover(false)
+
+  @doc ~S"""
   Return `true` if the struct describes a valid reference.
 
   ## Options
