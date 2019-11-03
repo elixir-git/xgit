@@ -3,6 +3,8 @@ defmodule Xgit.Util.FileUtils do
 
   # Internal utility for recursively listing the contents of a directory.
 
+  import Xgit.Util.ForceCoverage
+
   @doc ~S"""
   Recursively list the files of a directory.
 
@@ -12,7 +14,7 @@ defmodule Xgit.Util.FileUtils do
   def recursive_files!(path \\ ".") do
     cond do
       File.regular?(path) ->
-        [path]
+        cover [path]
 
       File.dir?(path) ->
         File.ls!(path)
@@ -21,7 +23,7 @@ defmodule Xgit.Util.FileUtils do
         |> Enum.concat()
 
       true ->
-        []
+        cover []
     end
   end
 end
