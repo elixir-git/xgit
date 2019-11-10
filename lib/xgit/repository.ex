@@ -252,7 +252,8 @@ defmodule Xgit.Repository do
   Error codes that can be returned by `put_ref/2`.
   """
 
-  @type put_ref_reason :: :invalid_ref | :cant_create_file
+  @type put_ref_reason ::
+          :invalid_ref | :cant_create_file | :target_not_found | :target_not_commit
 
   @doc ~S"""
   Writes or updates a reference in the repository.
@@ -276,6 +277,10 @@ defmodule Xgit.Repository do
   `{:error, :invalid_ref}` if the `Xgit.Core.Ref` structure is invalid.
 
   `{:error, :cant_create_file}` if unable to create the storage for the reference.
+
+  `{:error, :target_not_found}` if the target object does not exist in the repository.
+
+  `{:error, :target_not_commit}` if the target object is not of type `commit`.
   """
   @spec put_ref(repository :: t, ref :: Ref.t(), opts :: Keyword.t()) ::
           :ok | {:error, reason :: put_ref_reason}
@@ -298,6 +303,12 @@ defmodule Xgit.Repository do
 
   Should return `{:error, :cant_create_file}` if unable to create the storage for
   the loose object.
+
+  Should return `{:error, :target_not_found}` if the target object does not
+  exist in the repository.
+
+  Should return `{:error, :target_not_commit}` if the target object is not
+  of type `commit`.
   """
   @callback handle_put_ref(state :: any, ref :: Ref.t(), opts :: Keyword.t()) ::
               {:ok, state :: any} | {:error, reason :: put_ref_reason, state :: any}
