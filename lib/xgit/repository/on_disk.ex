@@ -13,7 +13,11 @@ defmodule Xgit.Repository.OnDisk do
 
   import Xgit.Util.ForceCoverage
 
+  alias Xgit.Core.ContentSource
+  alias Xgit.Core.Object
   alias Xgit.Repository.WorkingTree
+  alias Xgit.Util.ParseDecimal
+  alias Xgit.Util.UnzipStream
 
   @doc ~S"""
   Start an on-disk git repository.
@@ -95,17 +99,298 @@ defmodule Xgit.Repository.OnDisk do
   `{:error, :work_dir_must_not_exist}` if `work_dir` already exists.
   """
   @spec create(work_dir :: Path.t()) :: :ok | {:error, :work_dir_must_not_exist}
-  defdelegate create(work_dir), to: Xgit.Repository.OnDisk.Create
+  def create(work_dir) when is_binary(work_dir) do
+    work_dir
+    |> assert_not_exists()
+    |> create_empty_repo()
+  end
+
+  defp assert_not_exists(path) do
+    if File.exists?(path) do
+      cover {:error, :work_dir_must_not_exist}
+    else
+      cover {:ok, path}
+    end
+  end
+
+  defp create_empty_repo({:error, reason}), do: cover({:error, reason})
+
+  # Exception to the usual policy about using `cover` macro:
+  # Most of these error cases are about I/O errors that are difficult
+  # to simulate (can create parent repo dir, but then can't create
+  # a child thereof, etc.). This code is un-complicated, so we
+  # choose to leave it silently uncovered.
+
+  defp create_empty_repo({:ok, path}) do
+    with :ok <- File.mkdir_p(path),
+         :ok <- create_git_dir(Path.join(path, ".git")) do
+      cover :ok
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp create_git_dir(git_dir) do
+    with :ok <- create_branches_dir(git_dir),
+         :ok <- create_config(git_dir),
+         :ok <- create_description(git_dir),
+         :ok <- create_head(git_dir),
+         :ok <- create_hooks_dir(git_dir),
+         :ok <- create_info_dir(git_dir),
+         :ok <- create_objects_dir(git_dir),
+         :ok <- create_refs_dir(git_dir) do
+      cover :ok
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp create_branches_dir(git_dir) do
+    git_dir
+    |> Path.join("branches")
+    |> File.mkdir_p()
+  end
+
+  defp create_config(git_dir) do
+    git_dir
+    |> Path.join("config")
+    |> File.write(~s"""
+    [core]
+    \trepositoryformatversion = 0
+    \tfilemode = true
+    \tbare = false
+    \tlogallrefupdates = true
+    """)
+  end
+
+  defp create_description(git_dir) do
+    git_dir
+    |> Path.join("description")
+    |> File.write("Unnamed repository; edit this file 'description' to name the repository.\n")
+  end
+
+  defp create_head(git_dir) do
+    git_dir
+    |> Path.join("HEAD")
+    |> File.write("ref: refs/heads/master\n")
+  end
+
+  defp create_hooks_dir(git_dir) do
+    git_dir
+    |> Path.join("hooks")
+    |> File.mkdir_p()
+
+    # NOTE: Intentionally not including the sample files.
+  end
+
+  defp create_info_dir(git_dir) do
+    with info_dir <- Path.join(git_dir, "info"),
+         :ok <- File.mkdir_p(info_dir) do
+      info_dir
+      |> Path.join("exclude")
+      |> File.write!(~S"""
+      # git ls-files --others --exclude-from=.git/info/exclude
+      # Lines that start with '#' are comments.
+      # For a project mostly in C, the following would be a good set of
+      # exclude patterns (uncomment them if you want to use them):
+      # *.[oa]
+      # *~
+      .DS_Store
+      """)
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp create_objects_dir(git_dir) do
+    with :ok <- File.mkdir_p(Path.join(git_dir, "objects/info")),
+         :ok <- File.mkdir_p(Path.join(git_dir, "objects/pack")) do
+      cover :ok
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp create_refs_dir(git_dir) do
+    refs_dir = Path.join(git_dir, "refs")
+
+    with :ok <- File.mkdir_p(refs_dir),
+         :ok <- File.mkdir_p(Path.join(refs_dir, "heads")),
+         :ok <- File.mkdir_p(Path.join(refs_dir, "tags")) do
+      cover :ok
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
 
   @impl true
-  defdelegate handle_has_all_object_ids?(state, object_ids),
-    to: Xgit.Repository.OnDisk.HasAllObjectIds
+  def handle_has_all_object_ids?(%{git_dir: git_dir} = state, object_ids) do
+    has_all_object_ids? =
+      Enum.all?(object_ids, fn object_id -> has_object_id?(git_dir, object_id) end)
+
+    cover {:ok, has_all_object_ids?, state}
+  end
+
+  defp has_object_id?(git_dir, object_id) do
+    loose_object_path =
+      Path.join([
+        git_dir,
+        "objects",
+        String.slice(object_id, 0, 2),
+        String.slice(object_id, 2, 38)
+      ])
+
+    File.regular?(loose_object_path)
+  end
+
+  defmodule LooseObjectContentSource do
+    @moduledoc false
+    # Implements `Xgit.Core.ContentSource` to read content from a loose object.
+
+    import Xgit.Util.ForceCoverage
+
+    @type t :: %__MODULE__{path: Path.t(), size: non_neg_integer}
+
+    @enforce_keys [:path, :size]
+    defstruct [:path, :size]
+
+    defimpl Xgit.Core.ContentSource do
+      alias Xgit.Repository.OnDisk.LooseObjectContentSource, as: LCS
+      @impl true
+      def length(%LCS{size: size}), do: cover(size)
+
+      @impl true
+      def stream(%LCS{path: path}) do
+        path
+        |> File.stream!([:binary])
+        |> UnzipStream.unzip()
+        |> Stream.drop_while(&(&1 != 0))
+        |> Stream.drop(1)
+      end
+    end
+  end
 
   @impl true
-  defdelegate handle_get_object(state, object_id),
-    to: Xgit.Repository.OnDisk.GetObject
+  def handle_get_object(%{git_dir: git_dir} = state, object_id) do
+    # Currently only checks for loose objects.
+    # TO DO: Look for object in packs.
+    # https://github.com/elixir-git/xgit/issues/52
+
+    case find_loose_object(git_dir, object_id) do
+      %Object{} = object -> {:ok, object, state}
+      {:error, :not_found} -> {:error, :not_found, state}
+      {:error, :invalid_object} -> {:error, :invalid_object, state}
+    end
+  end
+
+  defp find_loose_object(git_dir, object_id) do
+    loose_object_path =
+      Path.join([
+        git_dir,
+        "objects",
+        String.slice(object_id, 0, 2),
+        String.slice(object_id, 2, 38)
+      ])
+
+    with {:exists?, true} <- {:exists?, File.regular?(loose_object_path)},
+         {:header, type, length} <- read_loose_object_prefix(loose_object_path) do
+      loose_file_to_object(type, length, object_id, loose_object_path)
+    else
+      {:exists?, false} -> cover {:error, :not_found}
+      :invalid_header -> cover {:error, :invalid_object}
+    end
+  end
+
+  defp read_loose_object_prefix(path) do
+    path
+    |> File.stream!([:binary], 1000)
+    |> UnzipStream.unzip()
+    |> Stream.take(100)
+    |> Stream.take_while(&(&1 != 0))
+    |> Enum.to_list()
+    |> Enum.split_while(&(&1 != ?\s))
+    |> parse_prefix_and_length()
+  rescue
+    ErlangError -> cover :invalid_header
+  end
+
+  @known_types ['blob', 'tag', 'tree', 'commit']
+  @type_to_atom %{'blob' => :blob, 'tag' => :tag, 'tree' => :tree, 'commit' => :commit}
+
+  defp parse_prefix_and_length({type, length}) when type in @known_types,
+    do: parse_length(@type_to_atom[type], length)
+
+  defp parse_prefix_and_length(_), do: cover(:invalid_header)
+
+  defp parse_length(_type, ' '), do: cover(:invalid_header)
+
+  defp parse_length(type, [?\s | length]) do
+    case ParseDecimal.from_decimal_charlist(length) do
+      {length, []} when is_integer(length) and length >= 0 -> {:header, type, length}
+      _ -> cover :invalid_header
+    end
+  end
+
+  defp parse_length(_type, _length), do: cover(:invalid_header)
+
+  defp loose_file_to_object(type, length, object_id, path)
+       when is_atom(type) and is_integer(length) do
+    %Object{
+      type: type,
+      size: length,
+      id: object_id,
+      content: %__MODULE__.LooseObjectContentSource{size: length, path: path}
+    }
+  end
 
   @impl true
-  defdelegate handle_put_loose_object(state, object),
-    to: Xgit.Repository.OnDisk.PutLooseObject
+  def handle_put_loose_object(%{git_dir: git_dir} = state, %Object{id: id} = object) do
+    object_dir = Path.join([git_dir, "objects", String.slice(id, 0, 2)])
+    path = Path.join(object_dir, String.slice(id, 2, 38))
+
+    with {:mkdir, :ok} <-
+           {:mkdir, File.mkdir_p(object_dir)},
+         {:file, {:ok, :ok}} <-
+           {:file,
+            File.open(path, [:write, :binary, :exclusive], fn file_pid ->
+              deflate_and_write(file_pid, object)
+            end)} do
+      cover {:ok, state}
+    else
+      {:mkdir, _} ->
+        {:error, :cant_create_file, state}
+
+      {:file, {:error, :eexist}} ->
+        {:error, :object_exists, state}
+    end
+  end
+
+  defp deflate_and_write(file, %Object{type: type, size: size, content: content}) do
+    z = :zlib.open()
+    :ok = :zlib.deflateInit(z, 1)
+
+    deflate_and_write_bytes(file, z, '#{type} #{size}')
+    deflate_and_write_bytes(file, z, [0])
+
+    if is_list(content) do
+      deflate_and_write_bytes(file, z, content, :finish)
+    else
+      deflate_content(file, z, content)
+      deflate_and_write_bytes(file, z, [], :finish)
+    end
+
+    :zlib.deflateEnd(z)
+  end
+
+  defp deflate_content(file, z, content) do
+    content
+    |> ContentSource.stream()
+    |> Stream.each(fn chunk ->
+      deflate_and_write_bytes(file, z, [chunk])
+    end)
+    |> Stream.run()
+  end
+
+  defp deflate_and_write_bytes(file, z, bytes, flush \\ :none),
+    do: IO.binwrite(file, :zlib.deflate(z, bytes, flush))
 end
