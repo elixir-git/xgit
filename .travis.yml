@@ -14,8 +14,11 @@ env:
 script:
   - mix deps.get
   - mix format --check-formatted
-  - mix coveralls.travis
+  - mix coveralls.json
   - mix credo
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
 
 branches:
   only:
