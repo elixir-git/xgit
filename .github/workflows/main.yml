@@ -6,8 +6,8 @@ jobs:
     name: OTP ${{matrix.otp}} / Elixir ${{matrix.elixir}}
     strategy:
       matrix:
-        otp: [20.x, 21.x, 22.x]
-        elixir: [1.8.x, 1.9.x]
+        otp: [20.3.8.23, 21.3.8.10, 22.1.7]
+        elixir: [1.8.2, 1.9.4]
     env:
       MIX_ENV: test
     steps:
