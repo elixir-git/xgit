@@ -18,8 +18,10 @@ jobs:
           elixir-version: ${{matrix.elixir}}
       - run: mix deps.get
       - run: mix deps.compile
+      - run: mix format --check-formatted
       - run: mix coveralls.json
       - name: Upload coverage to CodeCov
         uses: codecov/codecov-action@v1.0.3
         with:
           token: ${{secrets.CODECOV_TOKEN}}
+      - run: mix credo
