@@ -1,0 +1,17 @@
+on: push
+
+jobs:
+  style:
+    runs-on: ubuntu-latest
+    name: Code format and style
+    env:
+      MIX_ENV: test
+    steps:
+      - uses: actions/checkout@v1.0.0
+      - uses: actions/setup-elixir@v1.0.0
+        with:
+          otp-version: 22.1.7
+          elixir-version: 1.9.4
+      - run: mix deps.get
+      - run: mix format --check-formatted
+      - run: mix credo

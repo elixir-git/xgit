@@ -1,7 +1,7 @@
 on: push
 
 jobs:
-  test:
+  coverage:
     runs-on: ubuntu-latest
     name: OTP ${{matrix.otp}} / Elixir ${{matrix.elixir}}
     strategy:
@@ -17,10 +17,8 @@ jobs:
           otp-version: ${{matrix.otp}}
           elixir-version: ${{matrix.elixir}}
       - run: mix deps.get
-      - run: mix format --check-formatted
       - run: mix coveralls.json
       - name: Upload coverage to CodeCov
         uses: codecov/codecov-action@v1.0.3
         with:
           token: ${{secrets.CODECOV_TOKEN}}
-      - run: mix credo
