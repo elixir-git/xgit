@@ -120,7 +120,7 @@ defmodule Xgit.Util.TrailingHashDeviceTest do
 
       assert capture_log(fn ->
                send(device, :random_unknown_message)
-               Process.sleep(10)
+               Process.sleep(100)
                # Give time for message to land.
              end) =~ "TrailingHashDevice received unexpected message :random_unknown_message"
     end
