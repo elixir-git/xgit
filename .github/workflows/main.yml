@@ -1,14 +1,4 @@
-on:
-  push:
-    branches:
-      master
-      bug_fix
-    tags:
-      v*
-  pull_request:
-    branches:
-      master
-      bug_fix
+on: push
 
 jobs:
   test:
