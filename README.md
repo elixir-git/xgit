@@ -3,7 +3,7 @@
 Pure Elixir native implementation of git
 
 [![Build Status](https://travis-ci.org/elixir-git/xgit.svg?branch=master)](https://travis-ci.org/elixir-git/xgit)
-[![Coverage Status](https://coveralls.io/repos/github/elixir-git/xgit/badge.svg?branch=master)](https://coveralls.io/github/elixir-git/xgit?branch=master)
+[![Code Coverage](https://codecov.io/gh/elixir-git/xgit/branch/master/graph/badge.svg)](https://codecov.io/gh/elixir-git/xgit)
 [![Hex version](https://img.shields.io/hexpm/v/xgit.svg)](https://hex.pm/packages/xgit)
 [![API Docs](https://img.shields.io/badge/hexdocs-release-blue.svg)](https://hexdocs.pm/xgit)
 [![License badge](https://img.shields.io/hexpm/l/xgit.svg)](https://github.com/elixir-git/xgit/blob/master/LICENSE)
