@@ -13,5 +13,6 @@ jobs:
           otp-version: 22.1.7
           elixir-version: 1.9.4
       - run: mix deps.get
+      - run: mix deps.compile
       - run: mix format --check-formatted
       - run: mix credo

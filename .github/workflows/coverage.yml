@@ -17,6 +17,7 @@ jobs:
           otp-version: ${{matrix.otp}}
           elixir-version: ${{matrix.elixir}}
       - run: mix deps.get
+      - run: mix deps.compile
       - run: mix coveralls.json
       - name: Upload coverage to CodeCov
         uses: codecov/codecov-action@v1.0.3
