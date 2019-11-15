@@ -4,15 +4,28 @@ jobs:
   credo-format:
     runs-on: ubuntu-latest
     name: Code format and Credo
+    strategy:
+      matrix:
+        otp: [22.1.7]
+        elixir: [1.9.4]
     env:
       MIX_ENV: test
     steps:
       - uses: actions/checkout@v1.0.0
       - uses: actions/setup-elixir@v1.0.0
         with:
-          otp-version: 22.1.7
-          elixir-version: 1.9.4
-      - run: mix deps.get credo
-      - run: mix deps.compile credo
+          otp-version: ${{matrix.otp}}
+          elixir-version: ${{matrix.elixir}}
+      - uses: actions/cache@v1
+        id: cache-mix-deps
+        with:
+          path: deps
+          key: ${{matrix.otp}}-${{matrix.elixir}}-mix-${{hashFiles(format('{0}{1}', github.workspace, '/mix.exs'))}}-${{hashFiles(format('{0}{1}', github.workspace, '/mix.lock'))}}
+          restore-keys: |
+            ${{matrix.otp}}-${{matrix.elixir}}-mix-
       - run: mix format --check-formatted
+      - run: mix deps.get
+        if: steps.cache-mix-deps.outputs.cache-hit != 'true'
+      - run: mix deps.compile
+        if: steps.cache-mix-deps.outputs.cache-hit != 'true'
       - run: mix credo
