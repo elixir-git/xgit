@@ -2,7 +2,7 @@
 
 Pure Elixir native implementation of git
 
-![Build Status](https://github.com/elixir-git/xgit/workflows/test/badge.svg?branch=master)
+![Build Status](https://github.com/elixir-git/xgit/workflows/.github/workflows/test-coverage.yml/badge.svg?branch=master)
 [![Code Coverage](https://codecov.io/gh/elixir-git/xgit/branch/master/graph/badge.svg)](https://codecov.io/gh/elixir-git/xgit)
 [![Hex version](https://img.shields.io/hexpm/v/xgit.svg)](https://hex.pm/packages/xgit)
 [![API Docs](https://img.shields.io/badge/hexdocs-release-blue.svg)](https://hexdocs.pm/xgit)
