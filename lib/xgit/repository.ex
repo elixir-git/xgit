@@ -242,6 +242,11 @@ defmodule Xgit.Repository do
     {:reply, {:error, :unknown_message}, state}
   end
 
+  def dont_call_this do
+    Logger.warn("This function should not be called")
+    :another_unreachable_line
+  end
+
   defp delegate_call_to(%{mod: mod, mod_state: mod_state} = state, function, args) do
     case apply(mod, function, [mod_state | args]) do
       {:ok, mod_state} -> {:reply, :ok, %{state | mod_state: mod_state}}
