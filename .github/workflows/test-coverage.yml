@@ -20,9 +20,9 @@ jobs:
         id: cache-mix-deps
         with:
           path: deps
-          key: ${{runner.otp}}-${{runner.elixir}}-mix-${{hashFiles(format('{0}{1}', github.workspace, '/mix.lock'))}}
+          key: ${{matrix.otp}}-${{matrix.elixir}}-mix-${{hashFiles(format('{0}{1}', github.workspace, '/mix.exs'))}}-${{hashFiles(format('{0}{1}', github.workspace, '/mix.lock'))}}
           restore-keys: |
-            ${{runner.otp}}-${{runner.elixir}}-mix-
+            ${{matrix.otp}}-${{matrix.elixir}}-mix-
       - run: mix deps.get
         if: steps.cache-mix-deps.outputs.cache-hit != 'true'
       - run: mix deps.compile
