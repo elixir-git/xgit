@@ -37,6 +37,7 @@ I considered that, and then I read [Andrea Leopardi](https://andrealeopardi.com/
 
 libgit2 is a big, complex library. And while it's been battle-tested, it's also a large C library, which means it takes on the risks cited above, will interfere with the Erlang VM scheduler, and make the build process far more complicated. I also hope to make it easy to make portions of the back-end (notably, storage) configurable; that will be far easier with an all-Elixir implementation.
 
+
 ## Credits
 
 Xgit is heavily influenced by [jgit](https://www.eclipse.org/jgit/), an all-Java implementation of git. Many thanks to the jgit team for their hard work. Small portions of Xgit are based on [an earlier port from Java to Elixir](https://github.com/elixir-git/archived-jgit-port/); those files retain the original credits and license from the jgit project.
