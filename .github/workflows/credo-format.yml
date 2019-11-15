@@ -1,0 +1,18 @@
+on: push
+
+jobs:
+  credo-format:
+    runs-on: ubuntu-latest
+    name: Code format and Credo
+    env:
+      MIX_ENV: test
+    steps:
+      - uses: actions/checkout@v1.0.0
+      - uses: actions/setup-elixir@v1.0.0
+        with:
+          otp-version: 22.1.7
+          elixir-version: 1.9.4
+      - run: mix deps.get credo
+      - run: mix deps.compile credo
+      - run: mix format --check-formatted
+      - run: mix credo

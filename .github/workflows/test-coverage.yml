@@ -27,10 +27,8 @@ jobs:
         if: steps.cache-mix-deps.outputs.cache-hit != 'true'
       - run: mix deps.compile
         if: steps.cache-mix-deps.outputs.cache-hit != 'true'
-      - run: mix format --check-formatted
       - run: mix coveralls.json
       - name: Upload coverage to CodeCov
         uses: codecov/codecov-action@v1.0.3
         with:
           token: ${{secrets.CODECOV_TOKEN}}
-      - run: mix credo
