@@ -284,7 +284,7 @@ defmodule Xgit.Repository do
   """
   @spec put_ref(repository :: t, ref :: Ref.t(), opts :: Keyword.t()) ::
           :ok | {:error, reason :: put_ref_reason}
-  def put_ref(repository, %Ref{} = ref, opts) when is_pid(repository) and is_list(opts) do
+  def put_ref(repository, %Ref{} = ref, opts \\ []) when is_pid(repository) and is_list(opts) do
     if Ref.valid?(ref) do
       GenServer.call(repository, {:put_ref, ref, []})
     else
