@@ -245,7 +245,7 @@ defmodule Xgit.Repository do
   Should return `{:error, reason}` if unable. TBD: Why might this fail?
   """
   @callback handle_list_refs(state :: any) ::
-              {:ok, refs :: [Xgit.Core.Refs], state :: any}
+              {:ok, refs :: [Ref], state :: any}
               | {:error, reason :: list_refs_reason, state :: any}
 
   @typedoc ~S"""
