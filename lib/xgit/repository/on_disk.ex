@@ -15,7 +15,9 @@ defmodule Xgit.Repository.OnDisk do
 
   alias Xgit.Core.ContentSource
   alias Xgit.Core.Object
+  alias Xgit.Core.Ref
   alias Xgit.Repository.WorkingTree
+  alias Xgit.Util.FileUtils
   alias Xgit.Util.ParseDecimal
   alias Xgit.Util.UnzipStream
 
@@ -271,16 +273,20 @@ defmodule Xgit.Repository.OnDisk do
   end
 
   @impl true
-  def handle_get_object(%{git_dir: git_dir} = state, object_id) do
-    # Currently only checks for loose objects.
-    # TO DO: Look for object in packs.
-    # https://github.com/elixir-git/xgit/issues/52
-
-    case find_loose_object(git_dir, object_id) do
+  def handle_get_object(state, object_id) do
+    case get_object_imp(state, object_id) do
       %Object{} = object -> {:ok, object, state}
       {:error, :not_found} -> {:error, :not_found, state}
       {:error, :invalid_object} -> {:error, :invalid_object, state}
     end
+  end
+
+  defp get_object_imp(%{git_dir: git_dir} = _state, object_id) do
+    # Currently only checks for loose objects.
+    # TO DO: Look for object in packs.
+    # https://github.com/elixir-git/xgit/issues/52
+
+    find_loose_object(git_dir, object_id)
   end
 
   defp find_loose_object(git_dir, object_id) do
@@ -395,17 +401,71 @@ defmodule Xgit.Repository.OnDisk do
     do: IO.binwrite(file, :zlib.deflate(z, bytes, flush))
 
   @impl true
-  def handle_list_refs(state) do
-    cover {:error, :unimplemented, state}
+  def handle_list_refs(%{git_dir: git_dir} = state) do
+    refs_dir = Path.join(git_dir, "refs")
+
+    # TO DO: Add support for packed refs.
+
+    {:ok,
+     refs_dir
+     |> FileUtils.recursive_files!()
+     |> Task.async_stream(fn path -> ref_path_to_ref(git_dir, path) end)
+     |> Enum.map(&drop_ref_ok_tuple/1)
+     |> Enum.filter(& &1)
+     |> Enum.sort(), state}
+  end
+
+  defp ref_path_to_ref(git_dir, path),
+    do: File.open!(path, &read_ref_imp(String.replace_prefix(path, "#{git_dir}/", ""), &1))
+
+  defp drop_ref_ok_tuple({:ok, %Ref{} = value}), do: value
+  defp drop_ref_ok_tuple(_), do: nil
+
+  @impl true
+  def handle_put_ref(%{git_dir: git_dir} = state, %Ref{target: target} = ref, _opts) do
+    with {:object, %Object{} = object} <- {:object, get_object_imp(state, target)},
+         {:type, %{type: :commit}} <- {:type, object},
+         :ok <- put_ref_imp(git_dir, ref) do
+      cover {:ok, state}
+    else
+      {:object, {:error, :not_found}} -> cover {:error, :target_not_found, state}
+      {:type, _} -> cover {:error, :target_not_commit, state}
+      {:error, posix} -> cover {:error, posix, state}
+    end
+  end
+
+  defp put_ref_imp(git_dir, %Ref{name: name, target: target} = _ref) do
+    ref_path = Path.join(git_dir, name)
+    ref_dir = Path.dirname(ref_path)
+
+    with :ok <- File.mkdir_p(ref_dir) do
+      File.write(ref_path, "#{target}\n")
+    else
+      {:error, posix} -> cover {:error, posix}
+    end
   end
 
   @impl true
-  def handle_put_ref(state, _ref, _opts) do
-    cover {:error, :unimplemented, state}
+  def handle_get_ref(%{git_dir: git_dir} = state, name, _opts) do
+    ref_path = Path.join(git_dir, name)
+
+    case File.open(ref_path, [:read], &read_ref_imp(name, &1)) do
+      {:ok, %Ref{} = ref} -> cover {:ok, ref, state}
+      {:ok, reason} when is_atom(reason) -> cover {:error, reason, state}
+      {:error, :enoent} -> cover {:error, :not_found, state}
+      {:error, reason} -> cover {:error, reason, state}
+    end
   end
 
-  @impl true
-  def handle_get_ref(state, _name, _opts) do
-    cover {:error, :unimplemented, state}
+  defp read_ref_imp(name, iodevice) do
+    with target when is_binary(target) <-
+           IO.read(iodevice, 1024),
+         ref <- %Ref{name: name, target: String.trim(target)},
+         {:valid_ref?, true} <- {:valid_ref?, Ref.valid?(ref)} do
+      ref
+    else
+      {:valid_ref?, false} -> cover :invalid_ref
+      reason when is_atom(reason) -> cover reason
+    end
   end
 end
