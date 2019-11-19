@@ -232,7 +232,6 @@ defmodule Xgit.Repository do
     do: GenServer.call(repository, :list_refs)
 
   @doc ~S"""
-  Lists
   Lists all references in the repository.
 
   Called when `list_refs/1` is called.
@@ -296,6 +295,10 @@ defmodule Xgit.Repository do
   Writes or updates a reference in the repository.
 
   Called when `put_ref/3` is called.
+
+  The implementation must validate that the referenced object exists and is of
+  type `commit`. It does not need to validate that the reference is otherwise
+  valid.
 
   ## Return Value
 
