@@ -9,6 +9,8 @@ defmodule Xgit.Repository.OnDisk.RefTest do
   alias Xgit.Repository
   alias Xgit.Test.OnDiskRepoTestCase
 
+  import FolderDiff
+
   describe "ref APIs" do
     test "list_refs/1 null case" do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
@@ -245,6 +247,23 @@ defmodule Xgit.Repository.OnDisk.RefTest do
       """
 
       assert {^show_ref_output, 0} = System.cmd("git", ["show-ref"], cd: path)
+    end
+
+    test "put_ref/2 matches command-line output" do
+      %{xgit_path: xgit_path, xgit_repo: xgit_repo, parent_id: xgit_commit_id} =
+        OnDiskRepoTestCase.setup_with_valid_parent_commit!()
+
+      %{xgit_path: ref_path, parent_id: ref_commit_id} =
+        OnDiskRepoTestCase.setup_with_valid_parent_commit!()
+
+      {_, 0} = System.cmd("git", ["update-ref", "refs/heads/other", ref_commit_id], cd: ref_path)
+
+      :ok = Repository.put_ref(xgit_repo, %Ref{name: "refs/heads/other", target: xgit_commit_id})
+
+      assert_folders_are_equal(
+        Path.join([ref_path, ".git", "refs"]),
+        Path.join([xgit_path, ".git", "refs"])
+      )
     end
   end
 end
