@@ -214,7 +214,7 @@ defmodule Xgit.Repository do
   @typedoc ~S"""
   Error codes that can be returned by `list_refs/1`.
   """
-  @type list_refs_reason :: :tbd_no_known_errors_yet
+  @type list_refs_reason :: File.posix()
 
   @doc ~S"""
   Lists all references in the repository.
@@ -224,7 +224,7 @@ defmodule Xgit.Repository do
   `{:ok, refs}` if successful. `refs` will be a list of `Xgit.Core.Ref` structs.
   The sequence of the list is unspecified.
 
-  `{:error, reason}` if unable. TBD: Why might this fail?
+  `{:error, reason}` if unable. See `list_refs_reason`.
   """
   @spec list_refs(repository :: t) ::
           {:ok, refs :: [Ref.t()]} | {:error, reason :: list_refs_reason}
@@ -241,7 +241,8 @@ defmodule Xgit.Repository do
   Should return `{:ok, refs, state}` if read successfully. `refs` should be a list
   of `Xgit.Core.Ref` structs.
 
-  Should return `{:error, reason}` if unable. TBD: Why might this fail?
+  Should return `{:error, reason}` if unable. Currently only `File.posix` reasons
+  are expected.
   """
   @callback handle_list_refs(state :: any) ::
               {:ok, refs :: [Ref], state :: any}
