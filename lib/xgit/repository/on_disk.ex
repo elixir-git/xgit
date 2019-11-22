@@ -438,10 +438,12 @@ defmodule Xgit.Repository.OnDisk do
     ref_path = Path.join(git_dir, name)
     ref_dir = Path.dirname(ref_path)
 
-    with :ok <- File.mkdir_p(ref_dir) do
+    mkdir_result = File.mkdir_p(ref_dir)
+
+    if mkdir_result == :ok do
       File.write(ref_path, "#{target}\n")
     else
-      {:error, posix} -> cover {:error, posix}
+      cover mkdir_result
     end
   end
 
