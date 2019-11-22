@@ -11,6 +11,8 @@ defmodule Xgit.Repository.OnDisk.RefTest do
 
   import FolderDiff
 
+  @env OnDiskRepoTestCase.sample_commit_env()
+
   describe "ref APIs" do
     test "list_refs/1 null case" do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
@@ -62,7 +64,11 @@ defmodule Xgit.Repository.OnDisk.RefTest do
     test "get_ref/2 can read ref written by command-line git" do
       %{xgit_repo: repo, xgit_path: path} = OnDiskRepoTestCase.repo!()
 
-      assert {_, 0} = System.cmd("git", ["commit", "--allow-empty", "--message", "foo"], cd: path)
+      assert {_, 0} =
+               System.cmd("git", ["commit", "--allow-empty", "--message", "foo"],
+                 cd: path,
+                 env: @env
+               )
 
       {show_ref_output, 0} = System.cmd("git", ["show-ref", "master"], cd: path)
       {commit_id, _} = String.split_at(show_ref_output, 40)
