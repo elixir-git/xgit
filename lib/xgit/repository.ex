@@ -264,9 +264,9 @@ defmodule Xgit.Repository do
 
   Support for `old_value` (i.e. only replace if `old_value` matches).
 
-  Support for ref log.
+  Support for ref log. https://github.com/elixir-git/xgit/issues/224
 
-  Support for `--no-deref` option.
+  Support for `--no-deref` option. https://github.com/elixir-git/xgit/issues/224
 
   Support for `-d` option (delete ref).
 
@@ -371,7 +371,6 @@ defmodule Xgit.Repository do
   @callback handle_get_ref(state :: any, name :: String.t(), opts :: Keyword.t()) ::
               {:ok, ref :: Xgit.Core.Ref.t(), state :: any}
               | {:error, reason :: get_ref_reason, state :: any}
-
 
   # TO DO: Add a `pack_refs` function. https://github.com/elixir-git/xgit/issues/223
 

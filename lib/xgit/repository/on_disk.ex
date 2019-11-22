@@ -427,6 +427,7 @@ defmodule Xgit.Repository.OnDisk do
     with {:object, %Object{} = object} <- {:object, get_object_imp(state, target)},
          {:type, %{type: :commit}} <- {:type, object},
          :ok <- put_ref_imp(git_dir, ref) do
+      # TO DO: Update ref log if so requested. https://github.com/elixir-git/xgit/issues/224
       cover {:ok, state}
     else
       {:object, {:error, :not_found}} -> cover {:error, :target_not_found, state}
