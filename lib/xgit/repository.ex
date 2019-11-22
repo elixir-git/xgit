@@ -372,6 +372,9 @@ defmodule Xgit.Repository do
               {:ok, ref :: Xgit.Core.Ref.t(), state :: any}
               | {:error, reason :: get_ref_reason, state :: any}
 
+
+  # TO DO: Add a `pack_refs` function. https://github.com/elixir-git/xgit/issues/223
+
   @impl true
   def handle_call(:valid_repository?, _from, state), do: {:reply, :valid_repository, state}
 

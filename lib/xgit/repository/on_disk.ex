@@ -405,6 +405,7 @@ defmodule Xgit.Repository.OnDisk do
     refs_dir = Path.join(git_dir, "refs")
 
     # TO DO: Add support for packed refs.
+    # https://github.com/elixir-git/xgit/issues/223
 
     {:ok,
      refs_dir
