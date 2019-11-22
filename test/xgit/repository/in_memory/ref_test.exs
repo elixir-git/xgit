@@ -25,6 +25,16 @@ defmodule Xgit.Repository.InMemory.RefTest do
       assert {:error, :invalid_name} = Repository.get_ref(repo, "refs/../../heads/master")
     end
 
+    test "put_ref/2: invalid reference" do
+      {:ok, repo} = InMemory.start_link()
+
+      assert {:error, :invalid_ref} =
+               Repository.put_ref(repo, %Ref{
+                 name: "refs/heads/master",
+                 target: "532ad3cb2518ad13a91e717998a26a6028df062"
+               })
+    end
+
     test "put_ref/2: error object must exist" do
       {:ok, repo} = InMemory.start_link()
 
