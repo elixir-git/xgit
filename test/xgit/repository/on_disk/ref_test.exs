@@ -60,8 +60,7 @@ defmodule Xgit.Repository.OnDisk.RefTest do
     end
 
     test "get_ref/2 can read ref written by command-line git" do
-      %{xgit_repo: repo, xgit_path: path} =
-        OnDiskRepoTestCase.repo!("/Users/scouten/Desktop/get_ref")
+      %{xgit_repo: repo, xgit_path: path} = OnDiskRepoTestCase.repo!()
 
       assert {_, 0} = System.cmd("git", ["commit", "--allow-empty", "--message", "foo"], cd: path)
 
