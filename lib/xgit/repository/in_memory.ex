@@ -94,13 +94,8 @@ defmodule Xgit.Repository.InMemory do
 
   defp old_target_matches?(refs, %{name: name} = _new_ref, :new), do: not Map.has_key?(refs, name)
 
-  defp old_target_matches?(refs, %{name: name} = _new_ref, old_target) do
-    with %Ref{target: ^old_target} <- Map.get(refs, name) do
-      true
-    else
-      _ -> false
-    end
-  end
+  defp old_target_matches?(refs, %{name: name} = _new_ref, old_target),
+    do: match?(%Ref{target: ^old_target}, Map.get(refs, name))
 
   @impl true
   def handle_get_ref(%{refs: refs} = state, name, _opts) do
