@@ -423,12 +423,12 @@ defmodule Xgit.Repository.OnDisk do
   defp drop_ref_ok_tuple(_), do: nil
 
   @impl true
-  def handle_put_ref(%{git_dir: git_dir} = state, %Ref{target: target} = ref, opts) do
+  def handle_put_ref(%{git_dir: git_dir} = state, %Ref{name: name, target: target} = ref, opts) do
     with {:object, %Object{} = object} <- {:object, get_object_imp(state, target)},
          {:type, %{type: :commit}} <- {:type, object},
          {:old_target_matches?, true} <-
            {:old_target_matches?,
-            old_target_matches?(git_dir, ref, Keyword.get(opts, :old_target))},
+            old_target_matches?(git_dir, name, Keyword.get(opts, :old_target))},
          :ok <- put_ref_imp(git_dir, ref) do
       # TO DO: Update ref log if so requested. https://github.com/elixir-git/xgit/issues/224
       cover {:ok, state}
@@ -440,16 +440,16 @@ defmodule Xgit.Repository.OnDisk do
     end
   end
 
-  defp old_target_matches?(_git_dir, _new_ref, nil), do: cover(true)
+  defp old_target_matches?(_git_dir, _name, nil), do: cover(true)
 
-  defp old_target_matches?(git_dir, %{name: name} = _new_ref, :new) do
+  defp old_target_matches?(git_dir, name, :new) do
     case get_ref_imp(git_dir, name) do
       {:ok, _ref} -> cover false
       _ -> cover true
     end
   end
 
-  defp old_target_matches?(git_dir, %{name: name} = _new_ref, old_target) do
+  defp old_target_matches?(git_dir, name, old_target) do
     case get_ref_imp(git_dir, name) do
       {:ok, %Ref{target: ^old_target}} -> cover true
       _ -> false
@@ -467,6 +467,26 @@ defmodule Xgit.Repository.OnDisk do
     else
       cover mkdir_result
     end
+  end
+
+  @impl true
+  def handle_delete_ref(%{git_dir: git_dir} = state, name, opts) do
+    with {:old_target_matches?, true} <-
+           {:old_target_matches?,
+            old_target_matches?(git_dir, name, Keyword.get(opts, :old_target))},
+         :ok <- delete_ref_imp(git_dir, name) do
+      # TO DO: Update ref log if so requested. https://github.com/elixir-git/xgit/issues/224
+      cover {:ok, state}
+    else
+      {:old_target_matches?, _} -> cover {:error, :old_target_not_matched, state}
+      {:error, :enoent} -> cover {:ok, state}
+      {:error, _posix} -> cover {:error, :cant_delete_file, state}
+    end
+  end
+
+  defp delete_ref_imp(git_dir, name) do
+    ref_path = Path.join(git_dir, name)
+    File.rm(ref_path)
   end
 
   @impl true

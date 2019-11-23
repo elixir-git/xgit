@@ -275,8 +275,6 @@ defmodule Xgit.Repository do
 
   Support for `--no-deref` option. https://github.com/elixir-git/xgit/issues/226
 
-  Support for `-d` option (delete ref). https://github.com/elixir-git/xgit/issues/227
-
   ## Return Value
 
   `:ok` if written successfully.
@@ -322,7 +320,7 @@ defmodule Xgit.Repository do
   Should return `{:ok, state}` if written successfully.
 
   Should return `{:error, :cant_create_file}` if unable to create the storage for
-  the loose object.
+  the ref.
 
   Should return `{:error, :target_not_found}` if the target object does not
   exist in the repository.
@@ -335,6 +333,70 @@ defmodule Xgit.Repository do
   """
   @callback handle_put_ref(state :: any, ref :: Ref.t(), old_target: ObjectId.t()) ::
               {:ok, state :: any} | {:error, reason :: put_ref_reason, state :: any}
+
+  @typedoc ~S"""
+  Error codes that can be returned by `delete_ref/3`.
+  """
+  @type delete_ref_reason :: :invalid_ref | :cant_delete_file | :old_target_not_matched
+
+  @doc ~S"""
+  Deletes a reference from the repository.
+
+  ## Options
+
+  `old_target`: If present, a ref with this name must already exist and the `target`
+  value must match the object ID provided in this option.
+
+  ## TO DO
+
+  Support for ref log. https://github.com/elixir-git/xgit/issues/224
+
+  Support for `--no-deref` option. https://github.com/elixir-git/xgit/issues/226
+
+  ## Return Value
+
+  `:ok` if deleted successfully or the reference did not exist.
+
+  `{:error, :invalid_ref}` if `name` is not a valid ref name.
+
+  `{:error, :cant_delete_file}` if unable to delete the storage for the reference.
+
+  `{:error, :old_target_not_matched}` if `old_target` was specified and the target ref points
+  to a different object ID or did not exist.
+  """
+  @spec delete_ref(repository :: t, name :: Ref.name(), old_value: ObjectId.t()) ::
+          :ok | {:error, reason :: delete_ref_reason}
+  def delete_ref(repository, name, opts \\ [])
+      when is_pid(repository) and is_binary(name) and is_list(opts) do
+    if Ref.valid_name?(name) do
+      GenServer.call(repository, {:delete_ref, name, opts})
+    else
+      cover {:error, :invalid_ref}
+    end
+  end
+
+  @doc ~S"""
+  Deletes a reference in the repository.
+
+  Called when `delete_ref/3` is called.
+
+  ## Options
+
+  `old_target`: If present, a ref with this name must already exist and the `target`
+  value must match the object ID provided in this option.
+
+  ## Return Value
+
+  Should return `{:ok, state}` if deleted successfully or the ref did not exist.
+
+  Should return `{:error, :cant_delete_file}` if unable to delete the storage for
+  the ref.
+
+  Should return `{:error, :old_target_not_matched}` if `old_target` was specified and the
+  target ref points to a different object ID or the ref did not exist.
+  """
+  @callback handle_delete_ref(state :: any, name :: Ref.name(), old_target: ObjectId.t()) ::
+              {:ok, state :: any} | {:error, reason :: delete_ref_reason, state :: any}
 
   @typedoc ~S"""
   Error codes that can be returned by `get_ref/2`.
@@ -424,6 +486,9 @@ defmodule Xgit.Repository do
 
   def handle_call({:put_ref, %Ref{} = ref, opts}, _from, state),
     do: delegate_call_to(state, :handle_put_ref, [ref, opts])
+
+  def handle_call({:delete_ref, name, opts}, _from, state),
+    do: delegate_call_to(state, :handle_delete_ref, [name, opts])
 
   def handle_call({:get_ref, name, opts}, _from, state),
     do: delegate_call_to(state, :handle_get_ref, [name, opts])
