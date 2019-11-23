@@ -12,6 +12,7 @@ defmodule Xgit.Repository.InMemory do
 
   alias Xgit.Core.ContentSource
   alias Xgit.Core.Object
+  alias Xgit.Core.Ref
 
   @doc ~S"""
   Start an in-memory git repository.
@@ -28,7 +29,7 @@ defmodule Xgit.Repository.InMemory do
   def start_link(opts \\ []), do: Repository.start_link(__MODULE__, opts, opts)
 
   @impl true
-  def init(opts) when is_list(opts), do: cover({:ok, %{loose_objects: %{}}})
+  def init(opts) when is_list(opts), do: cover({:ok, %{loose_objects: %{}, refs: %{}}})
 
   @impl true
   def handle_has_all_object_ids?(%{loose_objects: objects} = state, object_ids) do
@@ -37,15 +38,19 @@ defmodule Xgit.Repository.InMemory do
   end
 
   @impl true
-  def handle_get_object(%{loose_objects: objects} = state, object_id) do
+  def handle_get_object(state, object_id) do
+    case get_object_imp(state, object_id) do
+      %Object{} = object -> cover {:ok, object, state}
+      nil -> cover {:error, :not_found, state}
+    end
+  end
+
+  defp get_object_imp(%{loose_objects: objects} = _state, object_id) do
     # Currently only checks for loose objects.
     # TO DO: Look for object in packs.
     # https://github.com/elixir-git/xgit/issues/52
 
-    case Map.get(objects, object_id) do
-      %Object{} = object -> {:ok, object, state}
-      nil -> {:error, :not_found, state}
-    end
+    Map.get(objects, object_id)
   end
 
   @impl true
@@ -65,4 +70,28 @@ defmodule Xgit.Repository.InMemory do
 
   defp maybe_read_object_content(%Object{content: content} = object),
     do: %{object | content: content |> ContentSource.stream() |> Enum.concat()}
+
+  @impl true
+  def handle_list_refs(%{refs: refs} = state) do
+    cover {:ok, refs |> Map.values() |> Enum.sort(), state}
+  end
+
+  @impl true
+  def handle_put_ref(%{refs: refs} = state, %Ref{target: target} = ref, _opts) do
+    with {:object, %Object{} = object} <- {:object, get_object_imp(state, target)},
+         {:type, %{type: :commit}} <- {:type, object} do
+      cover {:ok, %{state | refs: Map.put(refs, ref.name, ref)}}
+    else
+      {:object, nil} -> cover {:error, :target_not_found, state}
+      {:type, _} -> cover {:error, :target_not_commit, state}
+    end
+  end
+
+  @impl true
+  def handle_get_ref(%{refs: refs} = state, name, _opts) do
+    case Map.get(refs, name) do
+      %Ref{} = ref -> cover {:ok, ref, state}
+      nil -> cover {:error, :not_found, state}
+    end
+  end
 end

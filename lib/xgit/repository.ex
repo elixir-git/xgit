@@ -32,6 +32,7 @@ defmodule Xgit.Repository do
 
   alias Xgit.Core.Object
   alias Xgit.Core.ObjectId
+  alias Xgit.Core.Ref
   alias Xgit.Repository.WorkingTree
 
   require Logger
@@ -175,7 +176,6 @@ defmodule Xgit.Repository do
   @typedoc ~S"""
   Error codes that can be returned by `put_loose_object/2`.
   """
-
   @type put_loose_object_reason :: :cant_create_file | :object_exists
 
   @doc ~S"""
@@ -211,6 +211,170 @@ defmodule Xgit.Repository do
   @callback handle_put_loose_object(state :: any, object :: Object.t()) ::
               {:ok, state :: any} | {:error, reason :: put_loose_object_reason, state :: any}
 
+  @typedoc ~S"""
+  Error codes that can be returned by `list_refs/1`.
+  """
+  @type list_refs_reason :: File.posix()
+
+  @doc ~S"""
+  Lists all references in the repository.
+
+  ## Return Value
+
+  `{:ok, refs}` if successful. `refs` will be a list of `Xgit.Core.Ref` structs.
+  The sequence of the list is unspecified.
+
+  `{:error, reason}` if unable. See `list_refs_reason`.
+  """
+  @spec list_refs(repository :: t) ::
+          {:ok, refs :: [Ref.t()]} | {:error, reason :: list_refs_reason}
+  def list_refs(repository) when is_pid(repository),
+    do: GenServer.call(repository, :list_refs)
+
+  @doc ~S"""
+  Lists all references in the repository.
+
+  Called when `list_refs/1` is called.
+
+  ## Return Value
+
+  Should return `{:ok, refs, state}` if read successfully. `refs` should be a list
+  of `Xgit.Core.Ref` structs.
+
+  Should return `{:error, reason}` if unable. Currently only `File.posix` reasons
+  are expected.
+  """
+  @callback handle_list_refs(state :: any) ::
+              {:ok, refs :: [Ref], state :: any}
+              | {:error, reason :: list_refs_reason, state :: any}
+
+  @typedoc ~S"""
+  Error codes that can be returned by `put_ref/2`.
+  """
+
+  @type put_ref_reason ::
+          :invalid_ref | :cant_create_file | :target_not_found | :target_not_commit
+
+  @doc ~S"""
+  Writes or updates a reference in the repository.
+
+  If any existing reference exists with this name, it will be replaced.
+
+  ## TO DO
+
+  Support for `old_value` (i.e. only replace if `old_value` matches).
+  https://github.com/elixir-git/xgit/issues/225
+
+  Support for ref log. https://github.com/elixir-git/xgit/issues/224
+
+  Support for `--no-deref` option. https://github.com/elixir-git/xgit/issues/226
+
+  Support for `-d` option (delete ref). https://github.com/elixir-git/xgit/issues/227
+
+  ## Return Value
+
+  `:ok` if written successfully.
+
+  `{:error, :invalid_ref}` if the `Xgit.Core.Ref` structure is invalid.
+
+  `{:error, :cant_create_file}` if unable to create the storage for the reference.
+
+  `{:error, :target_not_found}` if the target object does not exist in the repository.
+
+  `{:error, :target_not_commit}` if the target object is not of type `commit`.
+  """
+  @spec put_ref(repository :: t, ref :: Ref.t(), opts :: Keyword.t()) ::
+          :ok | {:error, reason :: put_ref_reason}
+  def put_ref(repository, %Ref{} = ref, opts \\ []) when is_pid(repository) and is_list(opts) do
+    if Ref.valid?(ref) do
+      GenServer.call(repository, {:put_ref, ref, []})
+    else
+      cover {:error, :invalid_ref}
+    end
+  end
+
+  @doc ~S"""
+  Writes or updates a reference in the repository.
+
+  Called when `put_ref/3` is called.
+
+  The implementation must validate that the referenced object exists and is of
+  type `commit`. It does not need to validate that the reference is otherwise
+  valid.
+
+  ## Return Value
+
+  Should return `{:ok, state}` if written successfully.
+
+  Should return `{:error, :cant_create_file}` if unable to create the storage for
+  the loose object.
+
+  Should return `{:error, :target_not_found}` if the target object does not
+  exist in the repository.
+
+  Should return `{:error, :target_not_commit}` if the target object is not
+  of type `commit`.
+  """
+  @callback handle_put_ref(state :: any, ref :: Ref.t(), opts :: Keyword.t()) ::
+              {:ok, state :: any} | {:error, reason :: put_ref_reason, state :: any}
+
+  @typedoc ~S"""
+  Error codes that can be returned by `get_ref/2`.
+  """
+  @type get_ref_reason :: :invalid_name | :not_found
+
+  @doc ~S"""
+  Reads a reference from the repository.
+
+  If any existing reference exists with this name, it will be returned.
+
+  ## Parameters
+
+  `name` is the name of the reference to be found. It must be a valid name
+  as per `Xgit.Core.Ref.valid_name?/1`.
+
+  ## TO DO
+
+  Dereference? https://github.com/elixir-git/xgit/issues/228
+
+  ## Return Value
+
+  `{:ok, ref}` if the reference was found successfully. `ref` will be an
+  `Xgit.Core.Ref` struct.
+
+  `{:error, :invalid_name}` if `name` is not a valid ref name.
+
+  `{:error, :not_found}` if no such reference exists.
+  """
+  @spec get_ref(repository :: t, name :: String.t(), opts :: Keyword.t()) ::
+          {:ok, ref :: Ref.t()} | {:error, reason :: get_ref_reason}
+  def get_ref(repository, name, opts \\ [])
+      when is_pid(repository) and is_binary(name) and is_list(opts) do
+    if Ref.valid_name?(name) do
+      GenServer.call(repository, {:get_ref, name, []})
+    else
+      cover {:error, :invalid_name}
+    end
+  end
+
+  @doc ~S"""
+  Reads a reference from the repository.
+
+  Called when `get_ref/3` is called.
+
+  ## Return Value
+
+  Should return `{:ok, ref, state}` if the reference was found successfully.
+  `ref` must be an `Xgit.Core.Ref` struct.
+
+  Should return `{:error, :not_found, state}` if no such reference exists.
+  """
+  @callback handle_get_ref(state :: any, name :: String.t(), opts :: Keyword.t()) ::
+              {:ok, ref :: Xgit.Core.Ref.t(), state :: any}
+              | {:error, reason :: get_ref_reason, state :: any}
+
+  # TO DO: Add a `pack_refs` function. https://github.com/elixir-git/xgit/issues/223
+
   @impl true
   def handle_call(:valid_repository?, _from, state), do: {:reply, :valid_repository, state}
 
@@ -236,6 +400,15 @@ defmodule Xgit.Repository do
 
   def handle_call({:put_loose_object, %Object{} = object}, _from, state),
     do: delegate_call_to(state, :handle_put_loose_object, [object])
+
+  def handle_call(:list_refs, _from, state),
+    do: delegate_call_to(state, :handle_list_refs, [])
+
+  def handle_call({:put_ref, %Ref{} = ref, opts}, _from, state),
+    do: delegate_call_to(state, :handle_put_ref, [ref, opts])
+
+  def handle_call({:get_ref, name, opts}, _from, state),
+    do: delegate_call_to(state, :handle_get_ref, [name, opts])
 
   def handle_call(message, _from, state) do
     Logger.warn("Repository received unrecognized call #{inspect(message)}")
