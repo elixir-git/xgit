@@ -263,12 +263,13 @@ defmodule Xgit.Repository do
   ## TO DO
 
   Support for `old_value` (i.e. only replace if `old_value` matches).
+  https://github.com/elixir-git/xgit/issues/225
 
   Support for ref log. https://github.com/elixir-git/xgit/issues/224
 
-  Support for `--no-deref` option. https://github.com/elixir-git/xgit/issues/224
+  Support for `--no-deref` option. https://github.com/elixir-git/xgit/issues/226
 
-  Support for `-d` option (delete ref).
+  Support for `-d` option (delete ref). https://github.com/elixir-git/xgit/issues/227
 
   ## Return Value
 
@@ -334,7 +335,7 @@ defmodule Xgit.Repository do
 
   ## TO DO
 
-  Dereference?
+  Dereference? https://github.com/elixir-git/xgit/issues/228
 
   ## Return Value
 
