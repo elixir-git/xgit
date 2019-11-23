@@ -15,6 +15,11 @@ defmodule Xgit.Core.Ref do
   alias Xgit.Core.ObjectId
 
   @typedoc ~S"""
+  Name of a ref (typically `refs/heads/master` or similar).
+  """
+  @type name :: String.t()
+
+  @typedoc ~S"""
   Target for a ref. Can be either an `Xgit.Core.ObjectId` or a string of the form
   `"ref: refs/..."`.
   """
@@ -31,7 +36,7 @@ defmodule Xgit.Core.Ref do
     (`ref: refs/heads/master` or similar) to another reference
   """
   @type t :: %__MODULE__{
-          name: String.t(),
+          name: name(),
           target: target()
         }
 
@@ -56,7 +61,7 @@ defmodule Xgit.Core.Ref do
   `refspec?`: Set to `true` to allow a single `*` in the pattern. (Similar to
   `--refspec-pattern` option.)
   """
-  @spec valid?(ref :: any, allow_one_level?: boolean) :: boolean
+  @spec valid?(ref :: any, allow_one_level?: boolean, refspec?: boolean) :: boolean
   def valid?(ref, opts \\ [])
 
   def valid?(%__MODULE__{name: name, target: target}, opts)
