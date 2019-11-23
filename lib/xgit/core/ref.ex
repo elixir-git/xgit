@@ -15,6 +15,12 @@ defmodule Xgit.Core.Ref do
   alias Xgit.Core.ObjectId
 
   @typedoc ~S"""
+  Target for a ref. Can be either an `Xgit.Core.ObjectId` or a string of the form
+  `"ref: refs/..."`.
+  """
+  @type target :: ObjectId.t() | String.t()
+
+  @typedoc ~S"""
   This struct describes a single reference stored or about to be stored in a git
   repository.
 
@@ -26,7 +32,7 @@ defmodule Xgit.Core.Ref do
   """
   @type t :: %__MODULE__{
           name: String.t(),
-          target: ObjectId.t() | String.t()
+          target: target()
         }
 
   @enforce_keys [:name, :target]
