@@ -443,4 +443,155 @@ defmodule Xgit.Repository.OnDisk.RefTest do
       assert {:ok, [^master_ref]} = Repository.list_refs(repo)
     end
   end
+
+  describe "delete_ref/3" do
+    test "removes an existing ref" do
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
+
+      {:ok, commit_id_master} =
+        HashObject.run('shhh... not really a commit',
+          repo: repo,
+          type: :commit,
+          validate?: false,
+          write?: true
+        )
+
+      master_ref = %Ref{
+        name: "refs/heads/master",
+        target: commit_id_master
+      }
+
+      assert :ok = Repository.put_ref(repo, master_ref)
+
+      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+
+      assert :ok = Repository.delete_ref(repo, "refs/heads/master")
+
+      assert {:error, :not_found} = Repository.get_ref(repo, "refs/heads/master")
+      assert {:ok, []} = Repository.list_refs(repo)
+    end
+
+    test "quietly 'succeeds' if ref didn't exist" do
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
+
+      assert {:ok, []} = Repository.list_refs(repo)
+
+      assert :ok = Repository.delete_ref(repo, "refs/heads/master")
+
+      assert {:error, :not_found} = Repository.get_ref(repo, "refs/heads/master")
+      assert {:ok, []} = Repository.list_refs(repo)
+    end
+
+    test "error if name invalid" do
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
+
+      assert {:ok, []} = Repository.list_refs(repo)
+
+      assert {:error, :invalid_ref} = Repository.delete_ref(repo, "refs")
+
+      assert {:error, :not_found} = Repository.get_ref(repo, "refs/heads/master")
+      assert {:ok, []} = Repository.list_refs(repo)
+    end
+
+    test ":old_target matches existing ref" do
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
+
+      {:ok, commit_id_master} =
+        HashObject.run('shhh... not really a commit',
+          repo: repo,
+          type: :commit,
+          validate?: false,
+          write?: true
+        )
+
+      master_ref = %Ref{
+        name: "refs/heads/master",
+        target: commit_id_master
+      }
+
+      assert :ok = Repository.put_ref(repo, master_ref)
+
+      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+
+      assert :ok = Repository.delete_ref(repo, "refs/heads/master", old_target: commit_id_master)
+
+      assert {:error, :not_found} = Repository.get_ref(repo, "refs/heads/master")
+      assert {:ok, []} = Repository.list_refs(repo)
+    end
+
+    test "doesn't remove ref if :old_target doesn't match" do
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
+
+      {:ok, commit_id_master} =
+        HashObject.run('shhh... not really a commit',
+          repo: repo,
+          type: :commit,
+          validate?: false,
+          write?: true
+        )
+
+      master_ref = %Ref{
+        name: "refs/heads/master",
+        target: commit_id_master
+      }
+
+      assert :ok = Repository.put_ref(repo, master_ref)
+
+      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+
+      assert {:error, :old_target_not_matched} =
+               Repository.delete_ref(repo, "refs/heads/master",
+                 old_target: "bec43c416143e6b8bf9a3b559260185757e1386b"
+               )
+
+      assert {:ok, ^master_ref} = Repository.get_ref(repo, "refs/heads/master")
+      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+    end
+
+    test "error if :old_target specified and no ref exists" do
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
+
+      assert {:ok, []} = Repository.list_refs(repo)
+
+      assert {:error, :old_target_not_matched} =
+               Repository.delete_ref(repo, "refs/heads/master",
+                 old_target: "bec43c416143e6b8bf9a3b559260185757e1386b"
+               )
+
+      assert {:error, :not_found} = Repository.get_ref(repo, "refs/heads/master")
+      assert {:ok, []} = Repository.list_refs(repo)
+    end
+
+    test "{:error, :cant_delete_file}" do
+      %{xgit_repo: repo, xgit_path: path} = OnDiskRepoTestCase.repo!()
+
+      bogus_ref_path = Path.join(path, ".git/refs/heads/bogus")
+
+      File.mkdir_p!(bogus_ref_path)
+
+      assert {:error, :cant_delete_file} = Repository.delete_ref(repo, "refs/heads/bogus")
+
+      assert File.dir?(bogus_ref_path)
+    end
+
+    test "deletion is seen by command-line git" do
+      %{xgit_repo: repo, xgit_path: path} = OnDiskRepoTestCase.repo!()
+
+      assert {_, 0} =
+               System.cmd("git", ["commit", "--allow-empty", "--message", "foo"],
+                 cd: path,
+                 env: @env
+               )
+
+      {show_ref_output, 0} = System.cmd("git", ["show-ref", "master"], cd: path)
+      {commit_id, _} = String.split_at(show_ref_output, 40)
+
+      assert {_, 0} = System.cmd("git", ["update-ref", "refs/heads/other", commit_id], cd: path)
+      assert {_, 0} = System.cmd("git", ["show-ref", "refs/heads/other"], cd: path)
+
+      assert :ok = Repository.delete_ref(repo, "refs/heads/other")
+
+      assert {_, 1} = System.cmd("git", ["show-ref", "refs/heads/other"], cd: path)
+    end
+  end
 end

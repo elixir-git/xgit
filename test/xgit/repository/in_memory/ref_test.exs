@@ -274,4 +274,123 @@ defmodule Xgit.Repository.InMemory.RefTest do
       assert {:ok, [^master_ref]} = Repository.list_refs(repo)
     end
   end
+
+  describe "delete_ref/3" do
+    test "removes an existing ref" do
+      {:ok, repo} = InMemory.start_link()
+
+      {:ok, commit_id_master} =
+        HashObject.run('shhh... not really a commit',
+          repo: repo,
+          type: :commit,
+          validate?: false,
+          write?: true
+        )
+
+      master_ref = %Ref{
+        name: "refs/heads/master",
+        target: commit_id_master
+      }
+
+      assert :ok = Repository.put_ref(repo, master_ref)
+
+      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+
+      assert :ok = Repository.delete_ref(repo, "refs/heads/master")
+
+      assert {:error, :not_found} = Repository.get_ref(repo, "refs/heads/master")
+      assert {:ok, []} = Repository.list_refs(repo)
+    end
+
+    test "quietly 'succeeds' if ref didn't exist" do
+      {:ok, repo} = InMemory.start_link()
+
+      assert {:ok, []} = Repository.list_refs(repo)
+
+      assert :ok = Repository.delete_ref(repo, "refs/heads/master")
+
+      assert {:error, :not_found} = Repository.get_ref(repo, "refs/heads/master")
+      assert {:ok, []} = Repository.list_refs(repo)
+    end
+
+    test "error if name invalid" do
+      {:ok, repo} = InMemory.start_link()
+
+      assert {:ok, []} = Repository.list_refs(repo)
+
+      assert {:error, :invalid_ref} = Repository.delete_ref(repo, "refs")
+
+      assert {:error, :not_found} = Repository.get_ref(repo, "refs/heads/master")
+      assert {:ok, []} = Repository.list_refs(repo)
+    end
+
+    test ":old_target matches existing ref" do
+      {:ok, repo} = InMemory.start_link()
+
+      {:ok, commit_id_master} =
+        HashObject.run('shhh... not really a commit',
+          repo: repo,
+          type: :commit,
+          validate?: false,
+          write?: true
+        )
+
+      master_ref = %Ref{
+        name: "refs/heads/master",
+        target: commit_id_master
+      }
+
+      assert :ok = Repository.put_ref(repo, master_ref)
+
+      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+
+      assert :ok = Repository.delete_ref(repo, "refs/heads/master", old_target: commit_id_master)
+
+      assert {:error, :not_found} = Repository.get_ref(repo, "refs/heads/master")
+      assert {:ok, []} = Repository.list_refs(repo)
+    end
+
+    test "doesn't remove ref if :old_target doesn't match" do
+      {:ok, repo} = InMemory.start_link()
+
+      {:ok, commit_id_master} =
+        HashObject.run('shhh... not really a commit',
+          repo: repo,
+          type: :commit,
+          validate?: false,
+          write?: true
+        )
+
+      master_ref = %Ref{
+        name: "refs/heads/master",
+        target: commit_id_master
+      }
+
+      assert :ok = Repository.put_ref(repo, master_ref)
+
+      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+
+      assert {:error, :old_target_not_matched} =
+               Repository.delete_ref(repo, "refs/heads/master",
+                 old_target: "bec43c416143e6b8bf9a3b559260185757e1386b"
+               )
+
+      assert {:ok, ^master_ref} = Repository.get_ref(repo, "refs/heads/master")
+      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+    end
+
+    test "error if :old_target specified and no ref exists" do
+      {:ok, repo} = InMemory.start_link()
+
+      assert {:ok, []} = Repository.list_refs(repo)
+
+      assert {:error, :old_target_not_matched} =
+               Repository.delete_ref(repo, "refs/heads/master",
+                 old_target: "bec43c416143e6b8bf9a3b559260185757e1386b"
+               )
+
+      assert {:error, :not_found} = Repository.get_ref(repo, "refs/heads/master")
+      assert {:ok, []} = Repository.list_refs(repo)
+    end
+  end
 end
