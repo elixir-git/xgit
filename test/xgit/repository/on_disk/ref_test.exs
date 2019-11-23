@@ -270,5 +270,177 @@ defmodule Xgit.Repository.OnDisk.RefTest do
         Path.join([xgit_path, ".git", "refs"])
       )
     end
+
+    test "put_ref: :old_target (correct match)" do
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
+
+      {:ok, commit_id_master} =
+        HashObject.run('shhh... not really a commit',
+          repo: repo,
+          type: :commit,
+          validate?: false,
+          write?: true
+        )
+
+      master_ref = %Ref{
+        name: "refs/heads/master",
+        target: commit_id_master
+      }
+
+      assert :ok = Repository.put_ref(repo, master_ref)
+      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+
+      {:ok, commit_id2_master} =
+        HashObject.run('shhh... another not commit',
+          repo: repo,
+          type: :commit,
+          validate?: false,
+          write?: true
+        )
+
+      master_ref2 = %Ref{
+        name: "refs/heads/master",
+        target: commit_id2_master
+      }
+
+      assert :ok = Repository.put_ref(repo, master_ref2, old_target: commit_id_master)
+      assert {:ok, [^master_ref2]} = Repository.list_refs(repo)
+    end
+
+    test "put_ref: :old_target (incorrect match)" do
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
+
+      {:ok, commit_id_master} =
+        HashObject.run('shhh... not really a commit',
+          repo: repo,
+          type: :commit,
+          validate?: false,
+          write?: true
+        )
+
+      master_ref = %Ref{
+        name: "refs/heads/master",
+        target: commit_id_master
+      }
+
+      assert :ok = Repository.put_ref(repo, master_ref)
+      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+
+      {:ok, commit_id2_master} =
+        HashObject.run('shhh... another not commit',
+          repo: repo,
+          type: :commit,
+          validate?: false,
+          write?: true
+        )
+
+      master_ref2 = %Ref{
+        name: "refs/heads/master",
+        target: commit_id2_master
+      }
+
+      assert {:error, :old_target_not_matched} =
+               Repository.put_ref(repo, master_ref2,
+                 old_target: "2075df9dff2b5a10ad417586b4edde66af849bad"
+               )
+
+      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+    end
+
+    test "put_ref: :old_target (does not exist)" do
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
+
+      {:ok, commit_id_master} =
+        HashObject.run('shhh... not really a commit',
+          repo: repo,
+          type: :commit,
+          validate?: false,
+          write?: true
+        )
+
+      master_ref = %Ref{
+        name: "refs/heads/master",
+        target: commit_id_master
+      }
+
+      assert :ok = Repository.put_ref(repo, master_ref)
+      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+
+      {:ok, commit_id2_master} =
+        HashObject.run('shhh... another not commit',
+          repo: repo,
+          type: :commit,
+          validate?: false,
+          write?: true
+        )
+
+      master_ref2 = %Ref{
+        name: "refs/heads/master2",
+        target: commit_id2_master
+      }
+
+      assert {:error, :old_target_not_matched} =
+               Repository.put_ref(repo, master_ref2, old_target: commit_id_master)
+
+      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+    end
+
+    test "put_ref: :old_target = :new" do
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
+
+      {:ok, commit_id_master} =
+        HashObject.run('shhh... not really a commit',
+          repo: repo,
+          type: :commit,
+          validate?: false,
+          write?: true
+        )
+
+      master_ref = %Ref{
+        name: "refs/heads/master",
+        target: commit_id_master
+      }
+
+      assert :ok = Repository.put_ref(repo, master_ref, old_target: :new)
+      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+    end
+
+    test "put_ref: :old_target = :new, but target does exist" do
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
+
+      {:ok, commit_id_master} =
+        HashObject.run('shhh... not really a commit',
+          repo: repo,
+          type: :commit,
+          validate?: false,
+          write?: true
+        )
+
+      master_ref = %Ref{
+        name: "refs/heads/master",
+        target: commit_id_master
+      }
+
+      assert :ok = Repository.put_ref(repo, master_ref)
+      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+
+      {:ok, commit_id2_master} =
+        HashObject.run('shhh... another not commit',
+          repo: repo,
+          type: :commit,
+          validate?: false,
+          write?: true
+        )
+
+      master_ref2 = %Ref{
+        name: "refs/heads/master",
+        target: commit_id2_master
+      }
+
+      assert {:error, :old_target_not_matched} =
+               Repository.put_ref(repo, master_ref2, old_target: :new)
+
+      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+    end
   end
 end

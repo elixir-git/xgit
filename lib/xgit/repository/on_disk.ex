@@ -423,16 +423,36 @@ defmodule Xgit.Repository.OnDisk do
   defp drop_ref_ok_tuple(_), do: nil
 
   @impl true
-  def handle_put_ref(%{git_dir: git_dir} = state, %Ref{target: target} = ref, _opts) do
+  def handle_put_ref(%{git_dir: git_dir} = state, %Ref{target: target} = ref, opts) do
     with {:object, %Object{} = object} <- {:object, get_object_imp(state, target)},
          {:type, %{type: :commit}} <- {:type, object},
+         {:old_target_matches?, true} <-
+           {:old_target_matches?,
+            old_target_matches?(git_dir, ref, Keyword.get(opts, :old_target))},
          :ok <- put_ref_imp(git_dir, ref) do
       # TO DO: Update ref log if so requested. https://github.com/elixir-git/xgit/issues/224
       cover {:ok, state}
     else
       {:object, {:error, :not_found}} -> cover {:error, :target_not_found, state}
       {:type, _} -> cover {:error, :target_not_commit, state}
+      {:old_target_matches?, _} -> cover {:error, :old_target_not_matched, state}
       {:error, posix} -> cover {:error, posix, state}
+    end
+  end
+
+  defp old_target_matches?(_git_dir, _new_ref, nil), do: cover(true)
+
+  defp old_target_matches?(git_dir, %{name: name} = _new_ref, :new) do
+    case get_ref_imp(git_dir, name) do
+      {:ok, _ref} -> cover false
+      _ -> cover true
+    end
+  end
+
+  defp old_target_matches?(git_dir, %{name: name} = _new_ref, old_target) do
+    case get_ref_imp(git_dir, name) do
+      {:ok, %Ref{target: ^old_target}} -> cover true
+      _ -> false
     end
   end
 
@@ -451,13 +471,20 @@ defmodule Xgit.Repository.OnDisk do
 
   @impl true
   def handle_get_ref(%{git_dir: git_dir} = state, name, _opts) do
+    case get_ref_imp(git_dir, name) do
+      {:ok, ref} -> cover {:ok, ref, state}
+      {:error, reason} -> cover {:error, reason, state}
+    end
+  end
+
+  defp get_ref_imp(git_dir, name) do
     ref_path = Path.join(git_dir, name)
 
     case File.open(ref_path, [:read], &read_ref_imp(name, &1)) do
-      {:ok, %Ref{} = ref} -> cover {:ok, ref, state}
-      {:ok, reason} when is_atom(reason) -> cover {:error, reason, state}
-      {:error, :enoent} -> cover {:error, :not_found, state}
-      {:error, reason} -> cover {:error, reason, state}
+      {:ok, %Ref{} = ref} -> cover {:ok, ref}
+      {:ok, reason} when is_atom(reason) -> cover {:error, reason}
+      {:error, :enoent} -> cover {:error, :not_found}
+      {:error, reason} -> cover {:error, reason}
     end
   end
 
