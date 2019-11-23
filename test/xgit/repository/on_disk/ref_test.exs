@@ -83,7 +83,7 @@ defmodule Xgit.Repository.OnDisk.RefTest do
       assert {:ok, ^other_ref} = Repository.get_ref(repo, "refs/heads/other")
     end
 
-    test "put_ref/2 object must exist" do
+    test "put_ref/3 object must exist" do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       assert {:error, :target_not_found} =
@@ -96,7 +96,7 @@ defmodule Xgit.Repository.OnDisk.RefTest do
     @test_content 'test content\n'
     @test_content_id "d670460b4b4aece5915caf5c68d12f560a9fe3e4"
 
-    test "put_ref/2 object exists, but is not a commit" do
+    test "put_ref/3 object exists, but is not a commit" do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       object = %Object{type: :blob, content: @test_content, size: 13, id: @test_content_id}
@@ -109,7 +109,7 @@ defmodule Xgit.Repository.OnDisk.RefTest do
                })
     end
 
-    test "put_ref/2 posix error (dir where file should be)" do
+    test "put_ref/3 posix error (dir where file should be)" do
       %{xgit_repo: repo, xgit_path: xgit_path} = OnDiskRepoTestCase.repo!()
 
       File.mkdir_p!(Path.join(xgit_path, ".git/refs/heads/master"))
@@ -129,7 +129,7 @@ defmodule Xgit.Repository.OnDisk.RefTest do
                })
     end
 
-    test "put_ref/2 posix error (file where dir should be)" do
+    test "put_ref/3 posix error (file where dir should be)" do
       %{xgit_repo: repo, xgit_path: xgit_path} = OnDiskRepoTestCase.repo!()
 
       File.write!(Path.join(xgit_path, ".git/refs/heads/sub"), "oops, not a directory")
@@ -149,7 +149,7 @@ defmodule Xgit.Repository.OnDisk.RefTest do
                })
     end
 
-    test "put_ref/2 followed by list and get" do
+    test "put_ref/3 followed by list and get" do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
@@ -213,7 +213,7 @@ defmodule Xgit.Repository.OnDisk.RefTest do
       assert {:ok, [^master_ref]} = Repository.list_refs(repo)
     end
 
-    test "put_ref/2 can be read by command-line git" do
+    test "put_ref/3 can be read by command-line git" do
       %{xgit_repo: repo, xgit_path: path} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
@@ -254,7 +254,7 @@ defmodule Xgit.Repository.OnDisk.RefTest do
       assert {^show_ref_output, 0} = System.cmd("git", ["show-ref"], cd: path)
     end
 
-    test "put_ref/2 matches command-line output" do
+    test "put_ref/3 matches command-line output" do
       %{xgit_path: xgit_path, xgit_repo: xgit_repo, parent_id: xgit_commit_id} =
         OnDiskRepoTestCase.setup_with_valid_parent_commit!()
 

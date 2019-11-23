@@ -249,9 +249,8 @@ defmodule Xgit.Repository do
               | {:error, reason :: list_refs_reason, state :: any}
 
   @typedoc ~S"""
-  Error codes that can be returned by `put_ref/2`.
+  Error codes that can be returned by `put_ref/3`.
   """
-
   @type put_ref_reason ::
           :invalid_ref
           | :cant_create_file
