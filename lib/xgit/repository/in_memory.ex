@@ -40,8 +40,8 @@ defmodule Xgit.Repository.InMemory do
   @impl true
   def handle_get_object(state, object_id) do
     case get_object_imp(state, object_id) do
-      %Object{} = object -> {:ok, object, state}
-      nil -> {:error, :not_found, state}
+      %Object{} = object -> cover {:ok, object, state}
+      nil -> cover {:error, :not_found, state}
     end
   end
 
