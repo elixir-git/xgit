@@ -573,5 +573,25 @@ defmodule Xgit.Repository.OnDisk.RefTest do
 
       assert File.dir?(bogus_ref_path)
     end
+
+    test "deletion is seen by command-line git" do
+      %{xgit_repo: repo, xgit_path: path} = OnDiskRepoTestCase.repo!()
+
+      assert {_, 0} =
+               System.cmd("git", ["commit", "--allow-empty", "--message", "foo"],
+                 cd: path,
+                 env: @env
+               )
+
+      {show_ref_output, 0} = System.cmd("git", ["show-ref", "master"], cd: path)
+      {commit_id, _} = String.split_at(show_ref_output, 40)
+
+      assert {_, 0} = System.cmd("git", ["update-ref", "refs/heads/other", commit_id], cd: path)
+      assert {_, 0} = System.cmd("git", ["show-ref", "refs/heads/other"], cd: path)
+
+      assert :ok = Repository.delete_ref(repo, "refs/heads/other")
+
+      assert {_, 1} = System.cmd("git", ["show-ref", "refs/heads/other"], cd: path)
+    end
   end
 end
