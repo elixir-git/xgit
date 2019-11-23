@@ -77,13 +77,28 @@ defmodule Xgit.Repository.InMemory do
   end
 
   @impl true
-  def handle_put_ref(%{refs: refs} = state, %Ref{target: target} = ref, _opts) do
+  def handle_put_ref(%{refs: refs} = state, %Ref{target: target} = ref, opts) do
     with {:object, %Object{} = object} <- {:object, get_object_imp(state, target)},
-         {:type, %{type: :commit}} <- {:type, object} do
+         {:type, %{type: :commit}} <- {:type, object},
+         {:old_target_matches?, true} <-
+           {:old_target_matches?, old_target_matches?(refs, ref, Keyword.get(opts, :old_target))} do
       cover {:ok, %{state | refs: Map.put(refs, ref.name, ref)}}
     else
       {:object, nil} -> cover {:error, :target_not_found, state}
       {:type, _} -> cover {:error, :target_not_commit, state}
+      {:old_target_matches?, _} -> cover {:error, :old_target_not_matched, state}
+    end
+  end
+
+  defp old_target_matches?(_refs, _new_ref, nil), do: cover(true)
+
+  defp old_target_matches?(refs, %{name: name} = _new_ref, :new), do: not Map.has_key?(refs, name)
+
+  defp old_target_matches?(refs, %{name: name} = _new_ref, old_target) do
+    with %Ref{target: ^old_target} <- Map.get(refs, name) do
+      true
+    else
+      _ -> false
     end
   end
 

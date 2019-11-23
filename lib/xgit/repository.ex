@@ -253,17 +253,24 @@ defmodule Xgit.Repository do
   """
 
   @type put_ref_reason ::
-          :invalid_ref | :cant_create_file | :target_not_found | :target_not_commit
+          :invalid_ref
+          | :cant_create_file
+          | :target_not_found
+          | :target_not_commit
+          | :old_target_not_matched
 
   @doc ~S"""
   Writes or updates a reference in the repository.
 
   If any existing reference exists with this name, it will be replaced.
 
-  ## TO DO
+  ## Options
 
-  Support for `old_value` (i.e. only replace if `old_value` matches).
-  https://github.com/elixir-git/xgit/issues/225
+  `old_target`: If present, a ref with this name must already exist and the `target`
+  value must match the object ID provided in this option. (There is a special value `:new`
+  which instead requires that the named ref must **not** exist.)
+
+  ## TO DO
 
   Support for ref log. https://github.com/elixir-git/xgit/issues/224
 
@@ -282,12 +289,15 @@ defmodule Xgit.Repository do
   `{:error, :target_not_found}` if the target object does not exist in the repository.
 
   `{:error, :target_not_commit}` if the target object is not of type `commit`.
+
+  `{:error, :old_target_not_matched}` if `old_target` was specified and the target ref points
+  to a different object ID.
   """
-  @spec put_ref(repository :: t, ref :: Ref.t(), opts :: Keyword.t()) ::
+  @spec put_ref(repository :: t, ref :: Ref.t(), old_value: ObjectId.t()) ::
           :ok | {:error, reason :: put_ref_reason}
   def put_ref(repository, %Ref{} = ref, opts \\ []) when is_pid(repository) and is_list(opts) do
     if Ref.valid?(ref) do
-      GenServer.call(repository, {:put_ref, ref, []})
+      GenServer.call(repository, {:put_ref, ref, opts})
     else
       cover {:error, :invalid_ref}
     end
@@ -302,6 +312,12 @@ defmodule Xgit.Repository do
   type `commit`. It does not need to validate that the reference is otherwise
   valid.
 
+  ## Options
+
+  `old_target`: If present, a ref with this name must already exist and the `target`
+  value must match the object ID provided in this option. (There is a special value `:new`
+  which instead requires that the named ref must **not** exist.)
+
   ## Return Value
 
   Should return `{:ok, state}` if written successfully.
@@ -314,8 +330,11 @@ defmodule Xgit.Repository do
 
   Should return `{:error, :target_not_commit}` if the target object is not
   of type `commit`.
+
+  Should return `{:error, :old_target_not_matched}` if `old_target` was specified and the
+  target ref points to a different object ID.
   """
-  @callback handle_put_ref(state :: any, ref :: Ref.t(), opts :: Keyword.t()) ::
+  @callback handle_put_ref(state :: any, ref :: Ref.t(), old_target: ObjectId.t()) ::
               {:ok, state :: any} | {:error, reason :: put_ref_reason, state :: any}
 
   @typedoc ~S"""
