@@ -34,14 +34,16 @@ defmodule Xgit.Core.Ref do
   * `:name`: the name of the reference (typically `refs/heads/master` or similar)
   * `:target`: the object ID currently marked by this reference or a symbolic link
     (`ref: refs/heads/master` or similar) to another reference
+  * `:link_target`: the name of another reference which is targeted by this ref
   """
   @type t :: %__MODULE__{
           name: name(),
-          target: target()
+          target: target(),
+          link_target: name()
         }
 
   @enforce_keys [:name, :target]
-  defstruct [:name, :target]
+  defstruct [:name, :target, :link_target]
 
   @doc ~S"""
   Return `true` if the string describes a valid reference name.
@@ -64,17 +66,22 @@ defmodule Xgit.Core.Ref do
   @spec valid?(ref :: any, allow_one_level?: boolean, refspec?: boolean) :: boolean
   def valid?(ref, opts \\ [])
 
-  def valid?(%__MODULE__{name: name, target: target}, opts)
+  def valid?(%__MODULE__{name: name, target: target} = ref, opts)
       when is_binary(name) and is_binary(target)
       when is_list(opts) do
     valid_name?(
       name,
       Keyword.get(opts, :allow_one_level?, false),
       Keyword.get(opts, :refspec?, false)
-    ) && valid_target?(target)
+    ) && valid_target?(target) &&
+      valid_name_or_nil?(Map.get(ref, :link_target))
   end
 
   def valid?(_, _opts), do: cover(false)
+
+  defp valid_name_or_nil?(nil), do: cover(true)
+  defp valid_name_or_nil?("refs/" <> _ = target_name), do: cover(valid_name?(target_name))
+  defp valid_name_or_nil?(_), do: cover(false)
 
   defp valid_name?("@", _, _), do: cover(false)
   defp valid_name?("HEAD", _, _), do: cover(true)
