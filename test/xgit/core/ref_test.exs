@@ -4,7 +4,10 @@ defmodule Xgit.Core.RefTest do
   alias Xgit.Core.Ref
 
   defp assert_valid_name(name, opts \\ []) do
-    assert {_, 0} = System.cmd("git", check_ref_format_args(name, opts))
+    unless name == "HEAD" do
+      assert {_, 0} = System.cmd("git", check_ref_format_args(name, opts))
+    end
+
     assert Ref.valid?(%Ref{name: name, target: "155b7b4b7a6b798725df04a6cfcfb1aa042f0834"}, opts)
 
     if Enum.empty?(opts) && String.starts_with?(name, "refs/") do
@@ -39,6 +42,11 @@ defmodule Xgit.Core.RefTest do
   describe "valid?/1 name" do
     # From documentation for git check-ref-format
     # (https://git-scm.com/docs/git-check-ref-format):
+
+    test "HEAD" do
+      assert_valid_name("HEAD")
+      refute_valid_name("HEADx")
+    end
 
     # "Git imposes the following rules on how references are named:"
 
