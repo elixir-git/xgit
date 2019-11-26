@@ -91,13 +91,26 @@ defmodule Xgit.Repository.InMemory do
   def handle_put_ref(%{refs: refs} = state, %Ref{name: name, target: target} = ref, opts) do
     with {:object, %Object{} = object} <- {:object, get_object_imp(state, target)},
          {:type, %{type: :commit}} <- {:type, object},
+         {:deref, new_name} <- {:deref, deref_sym_link(state, name)},
+         ref <- %{ref | name: new_name},
          {:old_target_matches?, true} <-
            {:old_target_matches?, old_target_matches?(refs, name, Keyword.get(opts, :old_target))} do
-      cover {:ok, %{state | refs: Map.put(refs, name, ref)}}
+      cover {:ok, %{state | refs: Map.put(refs, new_name, ref)}}
     else
       {:object, nil} -> cover {:error, :target_not_found, state}
       {:type, _} -> cover {:error, :target_not_commit, state}
+      {:deref, nil} -> cover {:error, :invalid_ref, state}
       {:old_target_matches?, _} -> cover {:error, :old_target_not_matched, state}
+    end
+  end
+
+  defp deref_sym_link(%{refs: refs} = state, ref_name) do
+    case Map.get(refs, ref_name) do
+      %Ref{target: "ref: " <> link_target} when link_target != ref_name ->
+        deref_sym_link(state, link_target)
+
+      _ ->
+        ref_name
     end
   end
 
@@ -118,10 +131,28 @@ defmodule Xgit.Repository.InMemory do
   end
 
   @impl true
-  def handle_get_ref(%{refs: refs} = state, name, _opts) do
-    case Map.get(refs, name) do
-      %Ref{} = ref -> cover {:ok, ref, state}
-      nil -> cover {:error, :not_found, state}
+  def handle_get_ref(state, name, opts) do
+    case get_ref_imp(state, name, Keyword.get(opts, :follow_link?, true)) do
+      %Ref{name: ^name} = ref ->
+        cover {:ok, ref, state}
+
+      %Ref{name: link_target} = ref ->
+        cover {:ok, %{ref | link_target: link_target, name: name}, state}
+
+      nil ->
+        cover {:error, :not_found, state}
     end
   end
+
+  defp get_ref_imp(%{refs: refs} = state, name, true = _follow_link?) do
+    case Map.get(refs, name) do
+      %Ref{target: "ref: " <> link_target} when link_target != name ->
+        get_ref_imp(state, link_target, true)
+
+      x ->
+        x
+    end
+  end
+
+  defp get_ref_imp(%{refs: refs} = _state, name, _follow_link), do: Map.get(refs, name)
 end

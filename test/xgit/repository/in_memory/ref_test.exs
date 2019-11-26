@@ -14,7 +14,9 @@ defmodule Xgit.Repository.InMemory.RefTest do
       {:ok, repo} = InMemory.start_link()
 
       assert {:ok, %Xgit.Core.Ref{name: "HEAD", target: "ref: refs/heads/master"}} =
-               Repository.get_ref(repo, "HEAD")
+               Repository.get_ref(repo, "HEAD", follow_link?: false)
+
+      assert {:error, :not_found} = Repository.get_ref(repo, "HEAD", follow_link?: true)
     end
 
     test "list_refs/1 null case" do
@@ -107,6 +109,40 @@ defmodule Xgit.Repository.InMemory.RefTest do
       assert {:ok, ^other_ref} = Repository.get_ref(repo, "refs/heads/other")
 
       assert {:ok, [^master_ref, ^other_ref]} = Repository.list_refs(repo)
+    end
+
+    test "put_ref targeting HEAD reference" do
+      {:ok, repo} = InMemory.start_link()
+
+      {:ok, commit_id_master} =
+        HashObject.run('shhh... not really a commit',
+          repo: repo,
+          type: :commit,
+          validate?: false,
+          write?: true
+        )
+
+      head_ref = %Ref{
+        name: "HEAD",
+        target: commit_id_master
+      }
+
+      master_ref = %Ref{
+        name: "refs/heads/master",
+        target: commit_id_master
+      }
+
+      master_ref_via_head = %Ref{
+        name: "HEAD",
+        target: commit_id_master,
+        link_target: "refs/heads/master"
+      }
+
+      assert :ok = Repository.put_ref(repo, head_ref)
+
+      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+      assert {:ok, ^master_ref} = Repository.get_ref(repo, "refs/heads/master")
+      assert {:ok, ^master_ref_via_head} = Repository.get_ref(repo, "HEAD")
     end
 
     test "put_ref: :old_target (correct match)" do
