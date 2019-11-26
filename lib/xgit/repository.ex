@@ -430,12 +430,15 @@ defmodule Xgit.Repository do
           {:ok, ref :: Ref.t()} | {:error, reason :: get_ref_reason}
   def get_ref(repository, name, opts \\ [])
       when is_pid(repository) and is_binary(name) and is_list(opts) do
-    if Ref.valid_name?(name) do
+    if valid_ref_name?(name) do
       GenServer.call(repository, {:get_ref, name, []})
     else
       cover {:error, :invalid_name}
     end
   end
+
+  defp valid_ref_name?("HEAD"), do: cover(true)
+  defp valid_ref_name?(name), do: Ref.valid_name?(name)
 
   @doc ~S"""
   Reads a reference from the repository.

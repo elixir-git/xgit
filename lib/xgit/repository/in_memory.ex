@@ -29,7 +29,15 @@ defmodule Xgit.Repository.InMemory do
   def start_link(opts \\ []), do: Repository.start_link(__MODULE__, opts, opts)
 
   @impl true
-  def init(opts) when is_list(opts), do: cover({:ok, %{loose_objects: %{}, refs: %{}}})
+  def init(opts) when is_list(opts) do
+    cover(
+      {:ok,
+       %{
+         loose_objects: %{},
+         refs: %{"HEAD" => %Ref{name: "HEAD", target: "ref: refs/heads/master"}}
+       }}
+    )
+  end
 
   @impl true
   def handle_has_all_object_ids?(%{loose_objects: objects} = state, object_ids) do
@@ -73,8 +81,11 @@ defmodule Xgit.Repository.InMemory do
 
   @impl true
   def handle_list_refs(%{refs: refs} = state) do
-    cover {:ok, refs |> Map.values() |> Enum.sort(), state}
+    cover {:ok, refs |> Map.values() |> Enum.filter(&heads_only/1) |> Enum.sort(), state}
   end
+
+  defp heads_only(%Ref{name: "refs/heads/" <> _}), do: cover(true)
+  defp heads_only(_), do: cover(false)
 
   @impl true
   def handle_put_ref(%{refs: refs} = state, %Ref{name: name, target: target} = ref, opts) do

@@ -10,6 +10,13 @@ defmodule Xgit.Repository.InMemory.RefTest do
   alias Xgit.Repository.InMemory
 
   describe "ref APIs" do
+    test "default repo contains HEAD reference" do
+      {:ok, repo} = InMemory.start_link()
+
+      assert {:ok, %Xgit.Core.Ref{name: "HEAD", target: "ref: refs/heads/master"}} =
+               Repository.get_ref(repo, "HEAD")
+    end
+
     test "list_refs/1 null case" do
       {:ok, repo} = InMemory.start_link()
       assert {:ok, []} = Repository.list_refs(repo)
