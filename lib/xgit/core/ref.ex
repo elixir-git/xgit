@@ -77,6 +77,7 @@ defmodule Xgit.Core.Ref do
   def valid?(_, _opts), do: cover(false)
 
   defp valid_name?("@", _, _), do: cover(false)
+  defp valid_name?("HEAD", _, _), do: cover(true)
 
   defp valid_name?(name, true, false) do
     all_components_valid?(name) && not Regex.match?(~r/[\x00-\x20\\\?\[:^\x7E\x7F]/, name) &&
