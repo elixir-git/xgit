@@ -178,6 +178,43 @@ defmodule Xgit.Core.RefTest do
     end
   end
 
+  describe "valid?/1 link_target" do
+    defp assert_valid_link_target(link_target) do
+      assert Ref.valid?(%Ref{
+               name: "refs/heads/master",
+               target: "fd1ca70f4d329c6ee9e47f3bbef65a3884236f08",
+               link_target: link_target
+             })
+    end
+
+    defp refute_valid_link_target(link_target) do
+      refute Ref.valid?(%Ref{
+               name: "refs/heads/master",
+               target: "fd1ca70f4d329c6ee9e47f3bbef65a3884236f08",
+               link_target: link_target
+             })
+    end
+
+    test "object ID" do
+      refute_valid_link_target("1234567890abcdef12341234567890abcdef1234")
+    end
+
+    test "nil" do
+      assert_valid_link_target(nil)
+    end
+
+    test "valid ref name" do
+      assert_valid_link_target("refs/heads/master")
+      refute_valid_link_target("")
+      refute_valid_link_target("refs")
+    end
+
+    test "ref must point inside of refs/ hierarchy" do
+      refute_valid_link_target("refsxyz/heads/master")
+      refute_valid_link_target("rex/heads/master")
+    end
+  end
+
   test "valid?/1 not a Ref" do
     refute Ref.valid?("refs/heads/master")
     refute Ref.valid?(42)
