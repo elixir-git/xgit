@@ -290,7 +290,7 @@ defmodule Xgit.Repository do
   `{:error, :old_target_not_matched}` if `old_target` was specified and the target ref points
   to a different object ID.
   """
-  @spec put_ref(repository :: t, ref :: Ref.t(), old_value: ObjectId.t()) ::
+  @spec put_ref(repository :: t, ref :: Ref.t(), old_target: ObjectId.t()) ::
           :ok | {:error, reason :: put_ref_reason}
   def put_ref(repository, %Ref{} = ref, opts \\ []) when is_pid(repository) and is_list(opts) do
     if Ref.valid?(ref) do
@@ -364,7 +364,7 @@ defmodule Xgit.Repository do
   `{:error, :old_target_not_matched}` if `old_target` was specified and the target ref points
   to a different object ID or did not exist.
   """
-  @spec delete_ref(repository :: t, name :: Ref.name(), old_value: ObjectId.t()) ::
+  @spec delete_ref(repository :: t, name :: Ref.name(), old_target: ObjectId.t()) ::
           :ok | {:error, reason :: delete_ref_reason}
   def delete_ref(repository, name, opts \\ [])
       when is_pid(repository) and is_binary(name) and is_list(opts) do
