@@ -426,9 +426,11 @@ defmodule Xgit.Repository.OnDisk do
   def handle_put_ref(%{git_dir: git_dir} = state, %Ref{name: name, target: target} = ref, opts) do
     with {:object, %Object{} = object} <- {:object, get_object_imp(state, target)},
          {:type, %{type: :commit}} <- {:type, object},
+         {:deref, new_name} <- {:deref, deref_sym_link(git_dir, name)},
+         ref <- %{ref | name: new_name},
          {:old_target_matches?, true} <-
            {:old_target_matches?,
-            old_target_matches?(git_dir, name, Keyword.get(opts, :old_target))},
+            old_target_matches?(git_dir, new_name, Keyword.get(opts, :old_target))},
          :ok <- put_ref_imp(git_dir, ref) do
       # TO DO: Update ref log if so requested. https://github.com/elixir-git/xgit/issues/224
       cover {:ok, state}
@@ -440,17 +442,27 @@ defmodule Xgit.Repository.OnDisk do
     end
   end
 
+  defp deref_sym_link(git_dir, ref_name) do
+    case get_ref_imp(git_dir, ref_name, false) do
+      {:ok, %Ref{target: "ref: " <> link_target}} when link_target != ref_name ->
+        deref_sym_link(git_dir, link_target)
+
+      _ ->
+        ref_name
+    end
+  end
+
   defp old_target_matches?(_git_dir, _name, nil), do: cover(true)
 
   defp old_target_matches?(git_dir, name, :new) do
-    case get_ref_imp(git_dir, name) do
+    case get_ref_imp(git_dir, name, false) do
       {:ok, _ref} -> cover false
       _ -> cover true
     end
   end
 
   defp old_target_matches?(git_dir, name, old_target) do
-    case get_ref_imp(git_dir, name) do
+    case get_ref_imp(git_dir, name, false) do
       {:ok, %Ref{target: ^old_target}} -> cover true
       _ -> false
     end
@@ -490,14 +502,30 @@ defmodule Xgit.Repository.OnDisk do
   end
 
   @impl true
-  def handle_get_ref(%{git_dir: git_dir} = state, name, _opts) do
-    case get_ref_imp(git_dir, name) do
-      {:ok, ref} -> cover {:ok, ref, state}
-      {:error, reason} -> cover {:error, reason, state}
+  def handle_get_ref(%{git_dir: git_dir} = state, name, opts) do
+    case get_ref_imp(git_dir, name, Keyword.get(opts, :follow_link?, true)) do
+      {:ok, %Ref{name: ^name} = ref} ->
+        cover {:ok, ref, state}
+
+      {:ok, %Ref{name: link_target} = ref} ->
+        cover {:ok, %{ref | link_target: link_target, name: name}, state}
+
+      {:error, reason} ->
+        cover {:error, reason, state}
     end
   end
 
-  defp get_ref_imp(git_dir, name) do
+  defp get_ref_imp(git_dir, name, true = _follow_link?) do
+    case get_ref_imp(git_dir, name, false) do
+      {:ok, %Ref{target: "ref: " <> link_target}} when link_target != name ->
+        get_ref_imp(git_dir, link_target, true)
+
+      x ->
+        x
+    end
+  end
+
+  defp get_ref_imp(git_dir, name, _follow_link?) do
     ref_path = Path.join(git_dir, name)
 
     case File.open(ref_path, [:read], &read_ref_imp(name, &1)) do
