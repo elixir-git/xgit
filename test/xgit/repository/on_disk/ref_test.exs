@@ -14,6 +14,15 @@ defmodule Xgit.Repository.OnDisk.RefTest do
   @env OnDiskRepoTestCase.sample_commit_env()
 
   describe "ref APIs" do
+    test "default repo contains HEAD reference" do
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
+
+      assert {:ok, %Xgit.Core.Ref{name: "HEAD", target: "ref: refs/heads/master"}} =
+               Repository.get_ref(repo, "HEAD", follow_link?: false)
+
+      assert {:error, :not_found} = Repository.get_ref(repo, "HEAD", follow_link?: true)
+    end
+
     test "list_refs/1 null case" do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
       assert {:ok, []} = Repository.list_refs(repo)
@@ -188,6 +197,40 @@ defmodule Xgit.Repository.OnDisk.RefTest do
       assert {:ok, ^other_ref} = Repository.get_ref(repo, "refs/heads/other")
 
       assert {:ok, [^master_ref, ^other_ref]} = Repository.list_refs(repo)
+    end
+
+    test "put_ref targeting HEAD reference" do
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
+
+      {:ok, commit_id_master} =
+        HashObject.run('shhh... not really a commit',
+          repo: repo,
+          type: :commit,
+          validate?: false,
+          write?: true
+        )
+
+      head_ref = %Ref{
+        name: "HEAD",
+        target: commit_id_master
+      }
+
+      master_ref = %Ref{
+        name: "refs/heads/master",
+        target: commit_id_master
+      }
+
+      master_ref_via_head = %Ref{
+        name: "HEAD",
+        target: commit_id_master,
+        link_target: "refs/heads/master"
+      }
+
+      assert :ok = Repository.put_ref(repo, head_ref)
+
+      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+      assert {:ok, ^master_ref} = Repository.get_ref(repo, "refs/heads/master")
+      assert {:ok, ^master_ref_via_head} = Repository.get_ref(repo, "HEAD")
     end
 
     test "list_refs/1 skips malformed file" do

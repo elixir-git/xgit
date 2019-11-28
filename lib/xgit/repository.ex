@@ -413,9 +413,13 @@ defmodule Xgit.Repository do
   `name` is the name of the reference to be found. It must be a valid name
   as per `Xgit.Core.Ref.valid_name?/1`.
 
+  ## Options
+
+  `follow_link?`: (default: `true`) `true` to follow symbolic refs
+
   ## TO DO
 
-  Dereference? https://github.com/elixir-git/xgit/issues/228
+  Dereference tags? https://github.com/elixir-git/xgit/issues/228
 
   ## Return Value
 
@@ -426,12 +430,12 @@ defmodule Xgit.Repository do
 
   `{:error, :not_found}` if no such reference exists.
   """
-  @spec get_ref(repository :: t, name :: String.t(), opts :: Keyword.t()) ::
+  @spec get_ref(repository :: t, name :: String.t(), follow_link?: boolean) ::
           {:ok, ref :: Ref.t()} | {:error, reason :: get_ref_reason}
   def get_ref(repository, name, opts \\ [])
       when is_pid(repository) and is_binary(name) and is_list(opts) do
     if valid_ref_name?(name) do
-      GenServer.call(repository, {:get_ref, name, []})
+      GenServer.call(repository, {:get_ref, name, opts})
     else
       cover {:error, :invalid_name}
     end
@@ -445,6 +449,10 @@ defmodule Xgit.Repository do
 
   Called when `get_ref/3` is called.
 
+  ## Options
+
+  `follow_link?`: (default: `true`) `true` to follow symbolic refs
+
   ## Return Value
 
   Should return `{:ok, ref, state}` if the reference was found successfully.
@@ -452,7 +460,7 @@ defmodule Xgit.Repository do
 
   Should return `{:error, :not_found, state}` if no such reference exists.
   """
-  @callback handle_get_ref(state :: any, name :: String.t(), opts :: Keyword.t()) ::
+  @callback handle_get_ref(state :: any, name :: String.t(), follow_link?: boolean) ::
               {:ok, ref :: Xgit.Core.Ref.t(), state :: any}
               | {:error, reason :: get_ref_reason, state :: any}
 
