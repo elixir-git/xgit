@@ -13,7 +13,7 @@ defmodule Xgit.Plumbing.UpdateRef do
   alias Xgit.Repository
 
   @typedoc ~S"""
-  Reason codes that can be returned by `run/2`.
+  Reason codes that can be returned by `run/4`.
   """
   @type reason :: :invalid_repository | Repository.put_ref_reason()
 
