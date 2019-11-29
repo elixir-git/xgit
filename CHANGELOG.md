@@ -1,5 +1,21 @@
 # Changelog for v0.x Series
 
+## v0.4.0
+
+_28 November 2019_
+
+* **Implement `Xgit.Plumbing.UpdateRef`.** (#242) This is an API equivalent to `git update-ref`.
+* [API BREAKING] Add reference operations to `Xgit.Repository` interface. (#222, #230, #231, #233, #236, #238, #239)
+* Run `mix credo` and `mix format --check-formatted` separately. (#221)
+* Avoid the `mix deps.get` and `mix deps.compile` steps via cache. (#220)
+* Start using GitHub actions to build PRs. (#215, #218)
+* Switch from Coveralls to CodeCov. (#216)
+* `TrailingHashDevice` test frequently times out. Give it more time. (#217)
+* Move all the implementation details for `Xgit.Repository.OnDisk` into a single file. (#214)
+* Implement `Xgit.Util.FileUtils.recursive_files!/1`. (#213)
+* Implement `Xgit.Core.Ref`. (#211, #212, #229, #232, #235, #237, #240)
+* Bump excoveralls from 0.11.2 to 0.12.1 (#210, #234)
+
 ## v0.3.0
 
 _19 October 2019_
