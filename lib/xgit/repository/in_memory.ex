@@ -99,7 +99,6 @@ defmodule Xgit.Repository.InMemory do
     else
       {:object, nil} -> cover {:error, :target_not_found, state}
       {:type, _} -> cover {:error, :target_not_commit, state}
-      {:deref, nil} -> cover {:error, :invalid_ref, state}
       {:old_target_matches?, _} -> cover {:error, :old_target_not_matched, state}
     end
   end
