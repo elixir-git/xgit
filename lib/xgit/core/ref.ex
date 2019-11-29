@@ -39,7 +39,7 @@ defmodule Xgit.Core.Ref do
   @type t :: %__MODULE__{
           name: name(),
           target: target(),
-          link_target: name()
+          link_target: name() | nil
         }
 
   @enforce_keys [:name, :target]
