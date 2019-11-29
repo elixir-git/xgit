@@ -37,6 +37,11 @@ defmodule Xgit.Plumbing.UpdateRef do
   value must match the object ID provided in this option. (There is a special value `:new`
   which instead requires that the named ref must **not** exist.)
 
+  ## TO DO
+
+  Follow symbolic links, but only if they start with `refs/`.
+  (https://github.com/elixir-git/xgit/issues/241)
+
   ## Return Value
 
   `:ok` if written successfully.
