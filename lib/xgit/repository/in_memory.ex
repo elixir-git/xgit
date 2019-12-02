@@ -89,17 +89,27 @@ defmodule Xgit.Repository.InMemory do
 
   @impl true
   def handle_put_ref(%{refs: refs} = state, %Ref{name: name, target: target} = ref, opts) do
-    with {:object, %Object{} = object} <- {:object, get_object_imp(state, target)},
-         {:type, %{type: :commit}} <- {:type, object},
+    with :ok <- verify_target(state, target),
          {:deref, new_name} <- {:deref, deref_sym_link(state, name)},
          ref <- %{ref | name: new_name},
          {:old_target_matches?, true} <-
            {:old_target_matches?, old_target_matches?(refs, name, Keyword.get(opts, :old_target))} do
       cover {:ok, %{state | refs: Map.put(refs, new_name, ref)}}
     else
-      {:object, nil} -> cover {:error, :target_not_found, state}
-      {:type, _} -> cover {:error, :target_not_commit, state}
+      {:error, reason} -> cover {:error, reason, state}
       {:old_target_matches?, _} -> cover {:error, :old_target_not_matched, state}
+    end
+  end
+
+  defp verify_target(_state, "ref: " <> _), do: cover(:ok)
+
+  defp verify_target(state, target) do
+    with {:object, %Object{} = object} <- {:object, get_object_imp(state, target)},
+         {:type, %{type: :commit}} <- {:type, object} do
+      :ok
+    else
+      {:object, nil} -> cover {:error, :target_not_found}
+      {:type, _} -> cover {:error, :target_not_commit}
     end
   end
 

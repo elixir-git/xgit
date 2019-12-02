@@ -2,13 +2,16 @@ defmodule Xgit.Repository.Test.RefTest do
   @moduledoc false
 
   # Not normally part of the public API, but available for implementors of
-  # Xgit.Repository. Tests the callbacks related to `Xgit.Core.Ref` to ensure
-  # correct implementation of the core contracts. Other tests may be necessary
-  # to ensure interop. (For example, the on-disk repository test code adds
-  # more tests to ensure correct interop with command-line git.)
+  # `Xgit.Repository` behaviour modules. Tests the callbacks related to
+  # `Xgit.Core.Ref` to ensure correct implementation of the core contracts.
+  # Other tests may be necessary to ensure interop. (For example, the on-disk
+  # repository test code adds more tests to ensure correct interop with
+  # command-line git.)
 
   # Users of this module must provide a `setup` callback that provides a
-  # `repo` instance.
+  # `repo` member. This repository may be of any type, but should be "empty."
+  # An empty repo has the same data structures as an on-disk repo created
+  # via `git init` in a previously-empty directory.
 
   import Xgit.Util.SharedTestCase
 
@@ -45,7 +48,7 @@ defmodule Xgit.Repository.Test.RefTest do
     end
 
     describe "put_ref/3 (shared)" do
-      test "invalid reference", %{repo: repo} do
+      test "error: invalid reference", %{repo: repo} do
         assert {:error, :invalid_ref} =
                  Repository.put_ref(repo, %Ref{
                    name: "refs/heads/master",
@@ -53,12 +56,23 @@ defmodule Xgit.Repository.Test.RefTest do
                  })
       end
 
-      test "error object must exist", %{repo: repo} do
+      test "error: object must exist", %{repo: repo} do
         assert {:error, :target_not_found} =
                  Repository.put_ref(repo, %Ref{
                    name: "refs/heads/master",
                    target: "532ad3cb2518ad13a91e717998a26a6028df0623"
                  })
+      end
+
+      test "target reference need not exist", %{repo: repo} do
+        assert :ok =
+                 Repository.put_ref(repo, %Ref{
+                   name: "refs/heads/mumble",
+                   target: "ref: refs/heads/other"
+                 })
+
+        assert {:ok, %Xgit.Core.Ref{name: "refs/heads/mumble", target: "ref: refs/heads/other"}} =
+                 Repository.get_ref(repo, "refs/heads/mumble", follow_link?: false)
       end
 
       test "object exists, but is not a commit", %{repo: repo} do

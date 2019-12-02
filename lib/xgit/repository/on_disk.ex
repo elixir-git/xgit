@@ -424,8 +424,7 @@ defmodule Xgit.Repository.OnDisk do
 
   @impl true
   def handle_put_ref(%{git_dir: git_dir} = state, %Ref{name: name, target: target} = ref, opts) do
-    with {:object, %Object{} = object} <- {:object, get_object_imp(state, target)},
-         {:type, %{type: :commit}} <- {:type, object},
+    with :ok <- verify_target(state, target),
          {:deref, new_name} <- {:deref, deref_sym_link(git_dir, name)},
          ref <- %{ref | name: new_name},
          {:old_target_matches?, true} <-
@@ -435,10 +434,21 @@ defmodule Xgit.Repository.OnDisk do
       # TO DO: Update ref log if so requested. https://github.com/elixir-git/xgit/issues/224
       cover {:ok, state}
     else
-      {:object, {:error, :not_found}} -> cover {:error, :target_not_found, state}
-      {:type, _} -> cover {:error, :target_not_commit, state}
+      {:error, reason} -> cover {:error, reason, state}
       {:old_target_matches?, _} -> cover {:error, :old_target_not_matched, state}
       {:error, posix} -> cover {:error, posix, state}
+    end
+  end
+
+  defp verify_target(_state, "ref: " <> _), do: cover(:ok)
+
+  defp verify_target(state, target) do
+    with {:object, %Object{} = object} <- {:object, get_object_imp(state, target)},
+         {:type, %{type: :commit}} <- {:type, object} do
+      :ok
+    else
+      {:object, {:error, :not_found}} -> cover {:error, :target_not_found}
+      {:type, _} -> cover {:error, :target_not_commit}
     end
   end
 
