@@ -1,7 +1,5 @@
 defmodule Xgit.Repository.OnDisk.RefTest do
-  # We test all of the Ref-related tests together.
-
-  use ExUnit.Case, async: true
+  use Xgit.Repository.Test.RefTest, async: true
 
   alias Xgit.Core.Object
   alias Xgit.Core.Ref
@@ -11,68 +9,35 @@ defmodule Xgit.Repository.OnDisk.RefTest do
 
   import FolderDiff
 
+  setup do
+    %{xgit_repo: repo, xgit_path: path} = OnDiskRepoTestCase.repo!()
+    %{repo: repo, path: path}
+  end
+
   @env OnDiskRepoTestCase.sample_commit_env()
 
-  describe "ref APIs" do
-    test "default repo contains HEAD reference" do
-      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
-
-      assert {:ok, %Xgit.Core.Ref{name: "HEAD", target: "ref: refs/heads/master"}} =
-               Repository.get_ref(repo, "HEAD", follow_link?: false)
-
-      assert {:error, :not_found} = Repository.get_ref(repo, "HEAD", follow_link?: true)
-    end
-
-    test "list_refs/1 null case" do
-      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
-      assert {:ok, []} = Repository.list_refs(repo)
-    end
-
-    test "get_ref/2 not_found case" do
-      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
-      assert {:error, :not_found} = Repository.get_ref(repo, "refs/heads/master")
-    end
-
-    test "get_ref/2 invalid_name case" do
-      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
-      assert {:error, :invalid_name} = Repository.get_ref(repo, "refs/../../heads/master")
-    end
-
-    test "get_ref/2 invalid ref (malformed file)" do
-      %{xgit_repo: repo, xgit_path: xgit_path} = OnDiskRepoTestCase.repo!()
-
-      File.write!(Path.join(xgit_path, ".git/refs/heads/master"), "not a SHA-1 hash")
-
+  describe "get_ref/2" do
+    test "invalid ref (malformed file)", %{repo: repo, path: path} do
+      File.write!(Path.join(path, ".git/refs/heads/master"), "not a SHA-1 hash")
       assert {:error, :invalid_ref} = Repository.get_ref(repo, "refs/heads/master")
     end
 
-    test "get_ref/2 invalid ref (dir, not file)" do
-      %{xgit_repo: repo, xgit_path: xgit_path} = OnDiskRepoTestCase.repo!()
-
-      File.mkdir_p!(Path.join(xgit_path, ".git/refs/heads/master"))
-
+    test "invalid ref (dir, not file)", %{repo: repo, path: path} do
+      File.mkdir_p!(Path.join(path, ".git/refs/heads/master"))
       assert {:error, :eisdir} = Repository.get_ref(repo, "refs/heads/master")
     end
 
-    test "get_ref/2 invalid ref (empty file)" do
-      %{xgit_repo: repo, xgit_path: xgit_path} = OnDiskRepoTestCase.repo!()
-
-      File.write!(Path.join(xgit_path, ".git/refs/heads/master"), "")
-
+    test "invalid ref (empty file)", %{repo: repo, path: path} do
+      File.write!(Path.join(path, ".git/refs/heads/master"), "")
       assert {:error, :eof} = Repository.get_ref(repo, "refs/heads/master")
     end
 
-    test "get_ref/2 posix error" do
-      %{xgit_repo: repo, xgit_path: xgit_path} = OnDiskRepoTestCase.repo!()
-
-      File.mkdir_p!(Path.join(xgit_path, ".git/refs/heads/master"))
-
+    test "posix error", %{repo: repo, path: path} do
+      File.mkdir_p!(Path.join(path, ".git/refs/heads/master"))
       assert {:error, :eisdir} = Repository.get_ref(repo, "refs/heads/master")
     end
 
-    test "get_ref/2 can read ref written by command-line git" do
-      %{xgit_repo: repo, xgit_path: path} = OnDiskRepoTestCase.repo!()
-
+    test "can read ref written by command-line git", %{repo: repo, path: path} do
       assert {_, 0} =
                System.cmd("git", ["commit", "--allow-empty", "--message", "foo"],
                  cd: path,
@@ -91,37 +56,11 @@ defmodule Xgit.Repository.OnDisk.RefTest do
 
       assert {:ok, ^other_ref} = Repository.get_ref(repo, "refs/heads/other")
     end
+  end
 
-    test "put_ref/3 object must exist" do
-      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
-
-      assert {:error, :target_not_found} =
-               Repository.put_ref(repo, %Ref{
-                 name: "refs/heads/master",
-                 target: "532ad3cb2518ad13a91e717998a26a6028df0623"
-               })
-    end
-
-    @test_content 'test content\n'
-    @test_content_id "d670460b4b4aece5915caf5c68d12f560a9fe3e4"
-
-    test "put_ref/3 object exists, but is not a commit" do
-      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
-
-      object = %Object{type: :blob, content: @test_content, size: 13, id: @test_content_id}
-      :ok = Repository.put_loose_object(repo, object)
-
-      assert {:error, :target_not_commit} =
-               Repository.put_ref(repo, %Ref{
-                 name: "refs/heads/master",
-                 target: @test_content_id
-               })
-    end
-
-    test "put_ref/3 posix error (dir where file should be)" do
-      %{xgit_repo: repo, xgit_path: xgit_path} = OnDiskRepoTestCase.repo!()
-
-      File.mkdir_p!(Path.join(xgit_path, ".git/refs/heads/master"))
+  describe "put_ref/3" do
+    test "posix error (dir where file should be)", %{repo: repo, path: path} do
+      File.mkdir_p!(Path.join(path, ".git/refs/heads/master"))
 
       {:ok, commit_id_master} =
         HashObject.run('shhh... not really a commit',
@@ -138,10 +77,8 @@ defmodule Xgit.Repository.OnDisk.RefTest do
                })
     end
 
-    test "put_ref/3 posix error (file where dir should be)" do
-      %{xgit_repo: repo, xgit_path: xgit_path} = OnDiskRepoTestCase.repo!()
-
-      File.write!(Path.join(xgit_path, ".git/refs/heads/sub"), "oops, not a directory")
+    test "posix error (file where dir should be)", %{repo: repo, path: path} do
+      File.write!(Path.join(path, ".git/refs/heads/sub"), "oops, not a directory")
 
       {:ok, commit_id_master} =
         HashObject.run('shhh... not really a commit',
@@ -158,107 +95,7 @@ defmodule Xgit.Repository.OnDisk.RefTest do
                })
     end
 
-    test "put_ref/3 followed by list and get" do
-      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
-
-      {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
-          repo: repo,
-          type: :commit,
-          validate?: false,
-          write?: true
-        )
-
-      master_ref = %Ref{
-        name: "refs/heads/master",
-        target: commit_id_master
-      }
-
-      assert :ok = Repository.put_ref(repo, master_ref)
-
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
-
-      {:ok, commit_id_other} =
-        HashObject.run('shhh... another fake commit',
-          repo: repo,
-          type: :commit,
-          validate?: false,
-          write?: true
-        )
-
-      other_ref = %Ref{
-        name: "refs/heads/other",
-        target: commit_id_other
-      }
-
-      assert :ok = Repository.put_ref(repo, other_ref)
-
-      assert {:ok, ^master_ref} = Repository.get_ref(repo, "refs/heads/master")
-      assert {:ok, ^other_ref} = Repository.get_ref(repo, "refs/heads/other")
-
-      assert {:ok, [^master_ref, ^other_ref]} = Repository.list_refs(repo)
-    end
-
-    test "put_ref targeting HEAD reference" do
-      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
-
-      {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
-          repo: repo,
-          type: :commit,
-          validate?: false,
-          write?: true
-        )
-
-      head_ref = %Ref{
-        name: "HEAD",
-        target: commit_id_master
-      }
-
-      master_ref = %Ref{
-        name: "refs/heads/master",
-        target: commit_id_master
-      }
-
-      master_ref_via_head = %Ref{
-        name: "HEAD",
-        target: commit_id_master,
-        link_target: "refs/heads/master"
-      }
-
-      assert :ok = Repository.put_ref(repo, head_ref)
-
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
-      assert {:ok, ^master_ref} = Repository.get_ref(repo, "refs/heads/master")
-      assert {:ok, ^master_ref_via_head} = Repository.get_ref(repo, "HEAD")
-    end
-
-    test "list_refs/1 skips malformed file" do
-      %{xgit_repo: repo, xgit_path: xgit_path} = OnDiskRepoTestCase.repo!()
-
-      {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
-          repo: repo,
-          type: :commit,
-          validate?: false,
-          write?: true
-        )
-
-      master_ref = %Ref{
-        name: "refs/heads/master",
-        target: commit_id_master
-      }
-
-      assert :ok = Repository.put_ref(repo, master_ref)
-
-      File.write!(Path.join(xgit_path, ".git/refs/heads/other"), "not a SHA-1 hash")
-
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
-    end
-
-    test "put_ref/3 can be read by command-line git" do
-      %{xgit_repo: repo, xgit_path: path} = OnDiskRepoTestCase.repo!()
-
+    test "result can be read by command-line git", %{repo: repo, path: path} do
       {:ok, commit_id_master} =
         HashObject.run('shhh... not really a commit',
           repo: repo,
@@ -297,7 +134,7 @@ defmodule Xgit.Repository.OnDisk.RefTest do
       assert {^show_ref_output, 0} = System.cmd("git", ["show-ref"], cd: path)
     end
 
-    test "put_ref/3 matches command-line output" do
+    test "result matches command-line output" do
       %{xgit_path: xgit_path, xgit_repo: xgit_repo, parent_id: xgit_commit_id} =
         OnDiskRepoTestCase.setup_with_valid_parent_commit!()
 
@@ -313,45 +150,11 @@ defmodule Xgit.Repository.OnDisk.RefTest do
         Path.join([xgit_path, ".git", "refs"])
       )
     end
+  end
 
-    test "put_ref: :old_target (correct match)" do
-      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
-
-      {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
-          repo: repo,
-          type: :commit,
-          validate?: false,
-          write?: true
-        )
-
-      master_ref = %Ref{
-        name: "refs/heads/master",
-        target: commit_id_master
-      }
-
-      assert :ok = Repository.put_ref(repo, master_ref)
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
-
-      {:ok, commit_id2_master} =
-        HashObject.run('shhh... another not commit',
-          repo: repo,
-          type: :commit,
-          validate?: false,
-          write?: true
-        )
-
-      master_ref2 = %Ref{
-        name: "refs/heads/master",
-        target: commit_id2_master
-      }
-
-      assert :ok = Repository.put_ref(repo, master_ref2, old_target: commit_id_master)
-      assert {:ok, [^master_ref2]} = Repository.list_refs(repo)
-    end
-
-    test "put_ref: :old_target (incorrect match)" do
-      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
+  describe "list_refs/1" do
+    test "skips malformed file" do
+      %{xgit_repo: repo, xgit_path: xgit_path} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
         HashObject.run('shhh... not really a commit',
@@ -367,247 +170,15 @@ defmodule Xgit.Repository.OnDisk.RefTest do
       }
 
       assert :ok = Repository.put_ref(repo, master_ref)
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
 
-      {:ok, commit_id2_master} =
-        HashObject.run('shhh... another not commit',
-          repo: repo,
-          type: :commit,
-          validate?: false,
-          write?: true
-        )
-
-      master_ref2 = %Ref{
-        name: "refs/heads/master",
-        target: commit_id2_master
-      }
-
-      assert {:error, :old_target_not_matched} =
-               Repository.put_ref(repo, master_ref2,
-                 old_target: "2075df9dff2b5a10ad417586b4edde66af849bad"
-               )
-
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
-    end
-
-    test "put_ref: :old_target (does not exist)" do
-      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
-
-      {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
-          repo: repo,
-          type: :commit,
-          validate?: false,
-          write?: true
-        )
-
-      master_ref = %Ref{
-        name: "refs/heads/master",
-        target: commit_id_master
-      }
-
-      assert :ok = Repository.put_ref(repo, master_ref)
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
-
-      {:ok, commit_id2_master} =
-        HashObject.run('shhh... another not commit',
-          repo: repo,
-          type: :commit,
-          validate?: false,
-          write?: true
-        )
-
-      master_ref2 = %Ref{
-        name: "refs/heads/master2",
-        target: commit_id2_master
-      }
-
-      assert {:error, :old_target_not_matched} =
-               Repository.put_ref(repo, master_ref2, old_target: commit_id_master)
-
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
-    end
-
-    test "put_ref: :old_target = :new" do
-      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
-
-      {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
-          repo: repo,
-          type: :commit,
-          validate?: false,
-          write?: true
-        )
-
-      master_ref = %Ref{
-        name: "refs/heads/master",
-        target: commit_id_master
-      }
-
-      assert :ok = Repository.put_ref(repo, master_ref, old_target: :new)
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
-    end
-
-    test "put_ref: :old_target = :new, but target does exist" do
-      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
-
-      {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
-          repo: repo,
-          type: :commit,
-          validate?: false,
-          write?: true
-        )
-
-      master_ref = %Ref{
-        name: "refs/heads/master",
-        target: commit_id_master
-      }
-
-      assert :ok = Repository.put_ref(repo, master_ref)
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
-
-      {:ok, commit_id2_master} =
-        HashObject.run('shhh... another not commit',
-          repo: repo,
-          type: :commit,
-          validate?: false,
-          write?: true
-        )
-
-      master_ref2 = %Ref{
-        name: "refs/heads/master",
-        target: commit_id2_master
-      }
-
-      assert {:error, :old_target_not_matched} =
-               Repository.put_ref(repo, master_ref2, old_target: :new)
+      File.write!(Path.join(xgit_path, ".git/refs/heads/other"), "not a SHA-1 hash")
 
       assert {:ok, [^master_ref]} = Repository.list_refs(repo)
     end
   end
 
   describe "delete_ref/3" do
-    test "removes an existing ref" do
-      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
-
-      {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
-          repo: repo,
-          type: :commit,
-          validate?: false,
-          write?: true
-        )
-
-      master_ref = %Ref{
-        name: "refs/heads/master",
-        target: commit_id_master
-      }
-
-      assert :ok = Repository.put_ref(repo, master_ref)
-
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
-
-      assert :ok = Repository.delete_ref(repo, "refs/heads/master")
-
-      assert {:error, :not_found} = Repository.get_ref(repo, "refs/heads/master")
-      assert {:ok, []} = Repository.list_refs(repo)
-    end
-
-    test "quietly 'succeeds' if ref didn't exist" do
-      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
-
-      assert {:ok, []} = Repository.list_refs(repo)
-
-      assert :ok = Repository.delete_ref(repo, "refs/heads/master")
-
-      assert {:error, :not_found} = Repository.get_ref(repo, "refs/heads/master")
-      assert {:ok, []} = Repository.list_refs(repo)
-    end
-
-    test "error if name invalid" do
-      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
-
-      assert {:ok, []} = Repository.list_refs(repo)
-
-      assert {:error, :invalid_ref} = Repository.delete_ref(repo, "refs")
-
-      assert {:error, :not_found} = Repository.get_ref(repo, "refs/heads/master")
-      assert {:ok, []} = Repository.list_refs(repo)
-    end
-
-    test ":old_target matches existing ref" do
-      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
-
-      {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
-          repo: repo,
-          type: :commit,
-          validate?: false,
-          write?: true
-        )
-
-      master_ref = %Ref{
-        name: "refs/heads/master",
-        target: commit_id_master
-      }
-
-      assert :ok = Repository.put_ref(repo, master_ref)
-
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
-
-      assert :ok = Repository.delete_ref(repo, "refs/heads/master", old_target: commit_id_master)
-
-      assert {:error, :not_found} = Repository.get_ref(repo, "refs/heads/master")
-      assert {:ok, []} = Repository.list_refs(repo)
-    end
-
-    test "doesn't remove ref if :old_target doesn't match" do
-      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
-
-      {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
-          repo: repo,
-          type: :commit,
-          validate?: false,
-          write?: true
-        )
-
-      master_ref = %Ref{
-        name: "refs/heads/master",
-        target: commit_id_master
-      }
-
-      assert :ok = Repository.put_ref(repo, master_ref)
-
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
-
-      assert {:error, :old_target_not_matched} =
-               Repository.delete_ref(repo, "refs/heads/master",
-                 old_target: "bec43c416143e6b8bf9a3b559260185757e1386b"
-               )
-
-      assert {:ok, ^master_ref} = Repository.get_ref(repo, "refs/heads/master")
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
-    end
-
-    test "error if :old_target specified and no ref exists" do
-      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
-
-      assert {:ok, []} = Repository.list_refs(repo)
-
-      assert {:error, :old_target_not_matched} =
-               Repository.delete_ref(repo, "refs/heads/master",
-                 old_target: "bec43c416143e6b8bf9a3b559260185757e1386b"
-               )
-
-      assert {:error, :not_found} = Repository.get_ref(repo, "refs/heads/master")
-      assert {:ok, []} = Repository.list_refs(repo)
-    end
-
-    test "{:error, :cant_delete_file}" do
-      %{xgit_repo: repo, xgit_path: path} = OnDiskRepoTestCase.repo!()
-
+    test "{:error, :cant_delete_file}", %{repo: repo, path: path} do
       bogus_ref_path = Path.join(path, ".git/refs/heads/bogus")
 
       File.mkdir_p!(bogus_ref_path)
@@ -617,9 +188,7 @@ defmodule Xgit.Repository.OnDisk.RefTest do
       assert File.dir?(bogus_ref_path)
     end
 
-    test "deletion is seen by command-line git" do
-      %{xgit_repo: repo, xgit_path: path} = OnDiskRepoTestCase.repo!()
-
+    test "deletion is seen by command-line git", %{repo: repo, path: path} do
       assert {_, 0} =
                System.cmd("git", ["commit", "--allow-empty", "--message", "foo"],
                  cd: path,
