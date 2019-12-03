@@ -436,7 +436,6 @@ defmodule Xgit.Repository.OnDisk do
     else
       {:error, reason} -> cover {:error, reason, state}
       {:old_target_matches?, _} -> cover {:error, :old_target_not_matched, state}
-      {:error, posix} -> cover {:error, posix, state}
     end
   end
 
