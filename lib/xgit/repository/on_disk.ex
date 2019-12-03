@@ -425,7 +425,8 @@ defmodule Xgit.Repository.OnDisk do
   @impl true
   def handle_put_ref(%{git_dir: git_dir} = state, %Ref{name: name, target: target} = ref, opts) do
     with :ok <- verify_target(state, target),
-         {:deref, new_name} <- {:deref, deref_sym_link(git_dir, name)},
+         {:deref, new_name} <-
+           {:deref, deref_sym_link(git_dir, name, Keyword.get(opts, :follow_link?, true))},
          ref <- %{ref | name: new_name},
          {:old_target_matches?, true} <-
            {:old_target_matches?,
@@ -451,15 +452,17 @@ defmodule Xgit.Repository.OnDisk do
     end
   end
 
-  defp deref_sym_link(git_dir, ref_name) do
+  defp deref_sym_link(git_dir, ref_name, true = _follow_link?) do
     case get_ref_imp(git_dir, ref_name, false) do
       {:ok, %Ref{target: "ref: " <> link_target}} when link_target != ref_name ->
-        deref_sym_link(git_dir, link_target)
+        deref_sym_link(git_dir, link_target, true)
 
       _ ->
         ref_name
     end
   end
+
+  defp deref_sym_link(_git_dir, ref_name, _follow_link?), do: cover(ref_name)
 
   defp old_target_matches?(_git_dir, _name, nil), do: cover(true)
 

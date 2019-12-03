@@ -90,7 +90,8 @@ defmodule Xgit.Repository.InMemory do
   @impl true
   def handle_put_ref(%{refs: refs} = state, %Ref{name: name, target: target} = ref, opts) do
     with :ok <- verify_target(state, target),
-         {:deref, new_name} <- {:deref, deref_sym_link(state, name)},
+         {:deref, new_name} <-
+           {:deref, deref_sym_link(state, name, Keyword.get(opts, :follow_link?, true))},
          ref <- %{ref | name: new_name},
          {:old_target_matches?, true} <-
            {:old_target_matches?, old_target_matches?(refs, name, Keyword.get(opts, :old_target))} do
@@ -113,15 +114,17 @@ defmodule Xgit.Repository.InMemory do
     end
   end
 
-  defp deref_sym_link(%{refs: refs} = state, ref_name) do
+  defp deref_sym_link(%{refs: refs} = state, ref_name, true = _follow_link?) do
     case Map.get(refs, ref_name) do
       %Ref{target: "ref: " <> link_target} when link_target != ref_name ->
-        deref_sym_link(state, link_target)
+        deref_sym_link(state, link_target, true)
 
       _ ->
         ref_name
     end
   end
+
+  defp deref_sym_link(_state, ref_name, _follow_link?), do: cover(ref_name)
 
   defp old_target_matches?(_refs, _name, nil), do: cover(true)
 

@@ -265,6 +265,8 @@ defmodule Xgit.Repository do
 
   ## Options
 
+  `follow_link?`: (default: `true`) `true` to follow symbolic refs
+
   `old_target`: If present, a ref with this name must already exist and the `target`
   value must match the object ID provided in this option. (There is a special value `:new`
   which instead requires that the named ref must **not** exist.)
@@ -290,7 +292,7 @@ defmodule Xgit.Repository do
   `{:error, :old_target_not_matched}` if `old_target` was specified and the target ref points
   to a different object ID.
   """
-  @spec put_ref(repository :: t, ref :: Ref.t(), old_target: ObjectId.t()) ::
+  @spec put_ref(repository :: t, ref :: Ref.t(), follow_link?: boolean, old_target: ObjectId.t()) ::
           :ok | {:error, reason :: put_ref_reason}
   def put_ref(repository, %Ref{} = ref, opts \\ []) when is_pid(repository) and is_list(opts) do
     if Ref.valid?(ref) do
@@ -310,6 +312,8 @@ defmodule Xgit.Repository do
   valid.
 
   ## Options
+
+  `follow_link?`: (default: `true`) `true` to follow symbolic refs
 
   `old_target`: If present, a ref with this name must already exist and the `target`
   value must match the object ID provided in this option. (There is a special value `:new`
@@ -331,7 +335,10 @@ defmodule Xgit.Repository do
   Should return `{:error, :old_target_not_matched}` if `old_target` was specified and the
   target ref points to a different object ID.
   """
-  @callback handle_put_ref(state :: any, ref :: Ref.t(), old_target: ObjectId.t()) ::
+  @callback handle_put_ref(state :: any, ref :: Ref.t(),
+              follow_link?: boolean,
+              old_target: ObjectId.t()
+            ) ::
               {:ok, state :: any} | {:error, reason :: put_ref_reason, state :: any}
 
   @typedoc ~S"""
@@ -348,6 +355,8 @@ defmodule Xgit.Repository do
   value must match the object ID provided in this option.
 
   ## TO DO
+
+  `follow_link?` option. https://github.com/elixir-git/xgit/issues/249
 
   Support for ref log. https://github.com/elixir-git/xgit/issues/224
 
