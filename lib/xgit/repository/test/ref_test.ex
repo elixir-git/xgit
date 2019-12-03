@@ -157,6 +157,56 @@ defmodule Xgit.Repository.Test.RefTest do
         assert {:ok, ^master_ref_via_head} = Repository.get_ref(repo, "HEAD")
       end
 
+      test "can replace an existing object ID ref with a symbolic ref", %{repo: repo} do
+        {:ok, commit_id} =
+          HashObject.run('shhh... not really a commit',
+            repo: repo,
+            type: :commit,
+            validate?: false,
+            write?: true
+          )
+
+        foo_ref = %Ref{
+          name: "refs/heads/foo",
+          target: commit_id
+        }
+
+        assert :ok = Repository.put_ref(repo, foo_ref)
+
+        assert {:ok, [^foo_ref]} = Repository.list_refs(repo)
+
+        foo_ref2 = %Ref{
+          name: "refs/heads/foo",
+          target: "ref: refs/heads/master"
+        }
+
+        assert :ok = Repository.put_ref(repo, foo_ref2)
+
+        assert {:ok, ^foo_ref2} = Repository.get_ref(repo, "refs/heads/foo", follow_link?: false)
+        assert {:ok, [^foo_ref2]} = Repository.list_refs(repo)
+      end
+
+      test "can retarget a symbolic ref by using follow_link?: false", %{repo: repo} do
+        foo_ref = %Ref{
+          name: "refs/heads/foo",
+          target: "ref: refs/heads/master"
+        }
+
+        assert :ok = Repository.put_ref(repo, foo_ref)
+
+        assert {:ok, [^foo_ref]} = Repository.list_refs(repo)
+
+        foo_ref2 = %Ref{
+          name: "refs/heads/foo",
+          target: "ref: refs/heads/other"
+        }
+
+        assert :ok = Repository.put_ref(repo, foo_ref2, follow_link?: false)
+
+        assert {:ok, ^foo_ref2} = Repository.get_ref(repo, "refs/heads/foo", follow_link?: false)
+        assert {:ok, [^foo_ref2]} = Repository.list_refs(repo)
+      end
+
       test ":old_target option (correct match)", %{repo: repo} do
         {:ok, commit_id_master} =
           HashObject.run('shhh... not really a commit',
