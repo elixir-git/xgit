@@ -150,6 +150,36 @@ defmodule Xgit.Repository.OnDisk.RefTest do
         Path.join([xgit_path, ".git", "refs"])
       )
     end
+
+    test "result matches command-line output (follow_link?: false)" do
+      %{xgit_path: xgit_path, xgit_repo: xgit_repo} = OnDiskRepoTestCase.repo!()
+      %{xgit_path: ref_path} = OnDiskRepoTestCase.repo!()
+
+      {_, 0} =
+        System.cmd("git", ["symbolic-ref", "refs/heads/link", "refs/heads/other"], cd: ref_path)
+
+      {_, 0} =
+        System.cmd("git", ["symbolic-ref", "refs/heads/link", "refs/heads/blah"], cd: ref_path)
+
+      :ok =
+        Repository.put_ref(
+          xgit_repo,
+          %Ref{name: "refs/heads/link", target: "ref: refs/heads/other"},
+          follow_link?: false
+        )
+
+      :ok =
+        Repository.put_ref(
+          xgit_repo,
+          %Ref{name: "refs/heads/link", target: "ref: refs/heads/blah"},
+          follow_link?: false
+        )
+
+      assert_folders_are_equal(
+        Path.join([ref_path, ".git", "refs"]),
+        Path.join([xgit_path, ".git", "refs"])
+      )
+    end
   end
 
   describe "list_refs/1" do
