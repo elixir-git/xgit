@@ -1,5 +1,15 @@
 # Changelog for v0.x Series
 
+## v0.5.0
+
+_05 December 2019_
+
+* **Implement `Xgit.Plumbing.SymbolicRef.Put`. (#252) This is an API analogue to the 2-argument form of `git symbolic-ref`.
+* [API BREAKING] `Xgit.Repository.put_ref/4`: Add `:follow_link?` option. (#250)
+* `Xgit.Repository.put_ref/4`: Should not fail if creating a sym ref to a non-existent ref. (#247)
+* Share the code for ref-related tests in `Xgit.Repository` implementations. (#246)
+* `Xgit.Repository.InMemory`: Remove a line of code that is unreachable. (#245)
+
 ## v0.4.0
 
 _28 November 2019_
