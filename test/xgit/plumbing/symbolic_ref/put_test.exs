@@ -1,8 +1,6 @@
 defmodule Xgit.Plumbing.SymbolicRef.PutTest do
   use ExUnit.Case, async: true
 
-  # alias Xgit.Core.Object
-  # alias Xgit.Core.ObjectId
   alias Xgit.Core.Ref
   alias Xgit.Plumbing.HashObject
   alias Xgit.Plumbing.SymbolicRef.Put
@@ -12,8 +10,6 @@ defmodule Xgit.Plumbing.SymbolicRef.PutTest do
 
   import FolderDiff
 
-  # @env OnDiskRepoTestCase.sample_commit_env()
-
   describe "run/4" do
     test "happy path: target ref does not exist" do
       %{xgit_path: path, xgit_repo: repo} = OnDiskRepoTestCase.repo!()
@@ -22,9 +18,6 @@ defmodule Xgit.Plumbing.SymbolicRef.PutTest do
 
       assert {"refs/heads/nope\n", 0} = System.cmd("git", ["symbolic-ref", "HEAD"], cd: path)
     end
-
-    # @test_content 'test content\n'
-    # @test_content_id "d670460b4b4aece5915caf5c68d12f560a9fe3e4"
 
     test "error: posix error (dir where file should be)" do
       %{xgit_repo: repo, xgit_path: xgit_path} = OnDiskRepoTestCase.repo!()
