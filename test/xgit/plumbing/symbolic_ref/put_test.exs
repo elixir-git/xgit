@@ -118,7 +118,7 @@ defmodule Xgit.Plumbing.SymbolicRef.PutTest do
     test "error: repository invalid (PID, but not repo)" do
       {:ok, not_repo} = GenServer.start_link(NotValid, nil)
 
-      assert {:error, :invalid_repository} = UpdateRef.run(not_repo, "HEAD", "refs/heads/master")
+      assert {:error, :invalid_repository} = Put.run(not_repo, "HEAD", "refs/heads/master")
     end
   end
 end
