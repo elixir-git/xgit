@@ -15,6 +15,7 @@ defmodule Xgit.Repository.Plumbing do
   import Xgit.Util.ForceCoverage
 
   alias Xgit.Core.ContentSource
+  alias Xgit.Core.DirCache
   alias Xgit.Core.DirCache.Entry, as: DirCacheEntry
   alias Xgit.Core.FilePath
   alias Xgit.Core.Object
@@ -23,6 +24,7 @@ defmodule Xgit.Repository.Plumbing do
   alias Xgit.Plumbing.Util.WorkingTreeOpt
   alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
+  alias Xgit.Repository.WorkingTree.ParseIndexFile
 
   ## --- Objects ---
 
@@ -345,4 +347,84 @@ defmodule Xgit.Repository.Plumbing do
   defp valid_remove?(_), do: cover(false)
 
   defp map_remove_entry(name), do: cover({name, :all})
+
+
+  @typedoc ~S"""
+  Reason codes that can be returned by `write_tree/2`.
+  """
+  @type write_tree_reason ::
+          :invalid_repository
+          | :bare
+          | DirCache.to_tree_objects_reason()
+          | Storage.put_loose_object_reason()
+          | WorkingTree.write_tree_reason()
+          | ParseIndexFile.from_iodevice_reason()
+
+  @doc ~S"""
+  Translates the current working tree, as reflected in its index file, to one or more
+  tree objects.
+
+  The working tree must be in a fully-merged state.
+
+  Analogous to [`git write-tree`](https://git-scm.com/docs/git-write-tree).
+
+  ## Parameters
+
+  `repository` is the `Xgit.Repository.Storage` (PID) to search for the object.
+
+  ## Options
+
+  `:missing_ok?`: `true` to ignore any objects that are referenced by the index
+  file that are not present in the object database. Normally this would be an error.
+
+  `:prefix`: (`Xgit.Core.FilePath`) if present, returns the `object_id` for the tree at
+  the given subdirectory. If not present, writes a tree corresponding to the root.
+  (The entire tree is written in either case.)
+
+  ## Return Value
+
+  `{:ok, object_id}` with the object ID for the tree that was generated. (If the exact tree
+  specified by the index already existed, it will return that existing tree's ID.)
+
+  `{:error, :invalid_repository}` if `repository` doesn't represent a valid
+  `Xgit.Repository.Storage` process.
+
+  `{:error, :bare}` if `repository` doesn't have a working tree.
+
+  Reason codes may also come from the following functions:
+
+  * `Xgit.Core.DirCache.to_tree_objects/2`
+  * `Xgit.Repository.Storage.put_loose_object/2`
+  * `Xgit.Repository.Storage.WorkingTree.write_tree/2`
+  * `Xgit.Repository.WorkingTree.ParseIndexFile.from_iodevice/1`
+  """
+  @spec write_tree(repository :: Storage.t(), missing_ok?: boolean, prefix: FilePath.t()) ::
+          {:ok, object_id :: ObjectId.t()}
+          | {:error, reason :: write_tree_reason}
+  def write_tree(repository, opts \\ []) when is_pid(repository) do
+    with {:ok, working_tree} <- WorkingTreeOpt.get(repository),
+         _ <- validate_write_tree_options(opts) do
+      cover WorkingTree.write_tree(working_tree, opts)
+    else
+      {:error, reason} -> cover {:error, reason}
+    end
+  end
+
+  defp validate_write_tree_options(opts) do
+    missing_ok? = Keyword.get(opts, :missing_ok?, false)
+
+    unless is_boolean(missing_ok?) do
+      raise ArgumentError,
+            "Xgit.Repository.Plumbing.write_tree/2: missing_ok? #{inspect(missing_ok?)} is invalid"
+    end
+
+    prefix = Keyword.get(opts, :prefix, [])
+
+    unless prefix == [] or FilePath.valid?(prefix) do
+      raise ArgumentError,
+            "Xgit.Repository.Plumbing.write_tree/2: prefix #{inspect(prefix)} is invalid (should be a charlist, not a String)"
+    end
+
+    {missing_ok?, prefix}
+  end
 end

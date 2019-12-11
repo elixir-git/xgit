@@ -1,9 +1,8 @@
-defmodule Xgit.Plumbing.WriteTreeTest do
+defmodule Xgit.Repository.Plumbing.WriteTreeTest do
   use Xgit.GitInitTestCase, async: true
 
   alias Xgit.Core.DirCache.Entry
   alias Xgit.GitInitTestCase
-  alias Xgit.Plumbing.WriteTree
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Plumbing
   alias Xgit.Repository.Storage
@@ -56,9 +55,9 @@ defmodule Xgit.Plumbing.WriteTreeTest do
                  [{0o100644, "7919e8900c3af541535472aebd56d44222b7b3a3", 'hello.txt'}]
                )
 
-      assert {:ok, xgit_object_id} = WriteTree.run(repo, missing_ok?: true)
+      assert {:ok, xgit_object_id} = Plumbing.write_tree(repo, missing_ok?: true)
 
-      assert {:ok, ^xgit_object_id} = WriteTree.run(repo, missing_ok?: true)
+      assert {:ok, ^xgit_object_id} = Plumbing.write_tree(repo, missing_ok?: true)
     end
 
     test "happy path: one blob nested one level" do
@@ -343,7 +342,7 @@ defmodule Xgit.Plumbing.WriteTreeTest do
         [{0o100644, "7919e8900c3af541535472aebd56d44222b7b3a3", 'hello.txt'}]
       )
 
-      assert {:error, :objects_missing} = WriteTree.run(repo)
+      assert {:error, :objects_missing} = Plumbing.write_tree(repo)
     end
 
     test "prefix doesn't exist" do
@@ -383,13 +382,13 @@ defmodule Xgit.Plumbing.WriteTreeTest do
         )
 
       assert {:error, :prefix_not_found} =
-               WriteTree.run(repo, missing_ok?: true, prefix: 'no/such/prefix')
+               Plumbing.write_tree(repo, missing_ok?: true, prefix: 'no/such/prefix')
     end
 
     test "error: invalid repo" do
       {:ok, not_repo} = GenServer.start_link(NotValid, nil)
 
-      assert {:error, :invalid_repository} = WriteTree.run(not_repo, missing_ok?: true)
+      assert {:error, :invalid_repository} = Plumbing.write_tree(not_repo, missing_ok?: true)
     end
 
     test "error: invalid dir cache" do
@@ -402,7 +401,7 @@ defmodule Xgit.Plumbing.WriteTreeTest do
 
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
-      assert {:error, :invalid_format} = WriteTree.run(repo, missing_ok?: true)
+      assert {:error, :invalid_format} = Plumbing.write_tree(repo, missing_ok?: true)
     end
 
     test "error: :missing_ok? invalid" do
@@ -412,9 +411,9 @@ defmodule Xgit.Plumbing.WriteTreeTest do
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       assert_raise ArgumentError,
-                   ~s(Xgit.Plumbing.WriteTree.run/2: missing_ok? "sure" is invalid),
+                   ~s(Xgit.Plumbing.Plumbing.write_tree/2: missing_ok? "sure" is invalid),
                    fn ->
-                     WriteTree.run(repo, missing_ok?: "sure")
+                     Plumbing.write_tree(repo, missing_ok?: "sure")
                    end
     end
 
@@ -453,7 +452,7 @@ defmodule Xgit.Plumbing.WriteTreeTest do
           []
         )
 
-      assert {:error, :incomplete_merge} = WriteTree.run(repo, missing_ok?: true)
+      assert {:error, :incomplete_merge} = Plumbing.write_tree(repo, missing_ok?: true)
     end
 
     test "error: can't write tree object" do
@@ -469,7 +468,7 @@ defmodule Xgit.Plumbing.WriteTreeTest do
       File.rm_rf!(objects_path)
       File.write!(objects_path, "not a directory")
 
-      assert {:error, :cant_create_file} = WriteTree.run(repo, missing_ok?: true)
+      assert {:error, :cant_create_file} = Plumbing.write_tree(repo, missing_ok?: true)
     end
 
     test "error: :prefix invalid" do
@@ -479,9 +478,9 @@ defmodule Xgit.Plumbing.WriteTreeTest do
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       assert_raise ArgumentError,
-                   ~s[Xgit.Plumbing.WriteTree.run/2: prefix "a/b/c" is invalid (should be a charlist, not a String)],
+                   ~s[Xgit.Plumbing.Plumbing.write_tree/2: prefix "a/b/c" is invalid (should be a charlist, not a String)],
                    fn ->
-                     WriteTree.run(repo, prefix: "a/b/c")
+                     Plumbing.write_tree(repo, prefix: "a/b/c")
                    end
     end
 
@@ -506,7 +505,7 @@ defmodule Xgit.Plumbing.WriteTreeTest do
 
       xgit_fn.(repo)
 
-      assert {:ok, xgit_object_id} = WriteTree.run(repo, opts)
+      assert {:ok, xgit_object_id} = Plumbing.write_tree(repo, opts)
 
       assert_folders_are_equal(
         Path.join([ref, ".git", "objects"]),
