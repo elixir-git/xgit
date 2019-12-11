@@ -3,7 +3,6 @@ defmodule Xgit.Plumbing.WriteTreeTest do
 
   alias Xgit.Core.DirCache.Entry
   alias Xgit.GitInitTestCase
-  alias Xgit.Plumbing.UpdateIndex.CacheInfo
   alias Xgit.Plumbing.WriteTree
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Plumbing
@@ -36,7 +35,7 @@ defmodule Xgit.Plumbing.WriteTreeTest do
         end,
         fn xgit_repo ->
           assert :ok =
-                   CacheInfo.run(
+                   Plumbing.update_index_cache_info(
                      xgit_repo,
                      [{0o100644, "7919e8900c3af541535472aebd56d44222b7b3a3", 'hello.txt'}]
                    )
@@ -52,7 +51,7 @@ defmodule Xgit.Plumbing.WriteTreeTest do
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       assert :ok =
-               CacheInfo.run(
+               Plumbing.update_index_cache_info(
                  repo,
                  [{0o100644, "7919e8900c3af541535472aebd56d44222b7b3a3", 'hello.txt'}]
                )
@@ -81,7 +80,7 @@ defmodule Xgit.Plumbing.WriteTreeTest do
         end,
         fn xgit_repo ->
           assert :ok =
-                   CacheInfo.run(
+                   Plumbing.update_index_cache_info(
                      xgit_repo,
                      [{0o100644, "7fa62716fc68733db4c769fe678295cf4cf5b336", 'a/b'}]
                    )
@@ -165,31 +164,31 @@ defmodule Xgit.Plumbing.WriteTreeTest do
         end,
         fn xgit_repo ->
           assert :ok =
-                   CacheInfo.run(
+                   Plumbing.update_index_cache_info(
                      xgit_repo,
                      [{0o100644, "7fa62716fc68733db4c769fe678295cf4cf5b336", 'a/a/b'}]
                    )
 
           assert :ok =
-                   CacheInfo.run(
+                   Plumbing.update_index_cache_info(
                      xgit_repo,
                      [{0o100644, "0f717230e297de82d0f8d761143dc1e1145c6bd5", 'a/b/c'}]
                    )
 
           assert :ok =
-                   CacheInfo.run(
+                   Plumbing.update_index_cache_info(
                      xgit_repo,
                      [{0o100644, "ff287368514462578ba6406d366113953539cbf1", 'a/b/d'}]
                    )
 
           assert :ok =
-                   CacheInfo.run(
+                   Plumbing.update_index_cache_info(
                      xgit_repo,
                      [{0o100644, "de588889c4d62aaf3ef3bd90be38fa239be2f5d1", 'a/c/x'}]
                    )
 
           assert :ok =
-                   CacheInfo.run(
+                   Plumbing.update_index_cache_info(
                      xgit_repo,
                      [{0o100755, "7919e8900c3af541535472aebd56d44222b7b3a3", 'other.txt'}]
                    )
@@ -273,31 +272,31 @@ defmodule Xgit.Plumbing.WriteTreeTest do
         end,
         fn xgit_repo ->
           assert :ok =
-                   CacheInfo.run(
+                   Plumbing.update_index_cache_info(
                      xgit_repo,
                      [{0o100644, "7fa62716fc68733db4c769fe678295cf4cf5b336", 'a/a/b'}]
                    )
 
           assert :ok =
-                   CacheInfo.run(
+                   Plumbing.update_index_cache_info(
                      xgit_repo,
                      [{0o100644, "0f717230e297de82d0f8d761143dc1e1145c6bd5", 'a/b/c'}]
                    )
 
           assert :ok =
-                   CacheInfo.run(
+                   Plumbing.update_index_cache_info(
                      xgit_repo,
                      [{0o100644, "ff287368514462578ba6406d366113953539cbf1", 'a/b/d'}]
                    )
 
           assert :ok =
-                   CacheInfo.run(
+                   Plumbing.update_index_cache_info(
                      xgit_repo,
                      [{0o100644, "de588889c4d62aaf3ef3bd90be38fa239be2f5d1", 'a/c/x'}]
                    )
 
           assert :ok =
-                   CacheInfo.run(
+                   Plumbing.update_index_cache_info(
                      xgit_repo,
                      [{0o100755, "7919e8900c3af541535472aebd56d44222b7b3a3", 'other.txt'}]
                    )
@@ -326,7 +325,7 @@ defmodule Xgit.Plumbing.WriteTreeTest do
         end,
         fn xgit_repo ->
           {:ok, object_id} = Plumbing.hash_object("test content\n", repo: xgit_repo, write?: true)
-          :ok = CacheInfo.run(xgit_repo, [{0o100644, object_id, 'a/b'}])
+          :ok = Plumbing.update_index_cache_info(xgit_repo, [{0o100644, object_id, 'a/b'}])
         end
       )
     end
@@ -339,7 +338,7 @@ defmodule Xgit.Plumbing.WriteTreeTest do
 
       :ok
 
-      CacheInfo.run(
+      Plumbing.update_index_cache_info(
         repo,
         [{0o100644, "7919e8900c3af541535472aebd56d44222b7b3a3", 'hello.txt'}]
       )
@@ -354,31 +353,31 @@ defmodule Xgit.Plumbing.WriteTreeTest do
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       :ok =
-        CacheInfo.run(
+        Plumbing.update_index_cache_info(
           repo,
           [{0o100644, "7fa62716fc68733db4c769fe678295cf4cf5b336", 'a/a/b'}]
         )
 
       :ok =
-        CacheInfo.run(
+        Plumbing.update_index_cache_info(
           repo,
           [{0o100644, "0f717230e297de82d0f8d761143dc1e1145c6bd5", 'a/b/c'}]
         )
 
       :ok =
-        CacheInfo.run(
+        Plumbing.update_index_cache_info(
           repo,
           [{0o100644, "ff287368514462578ba6406d366113953539cbf1", 'a/b/d'}]
         )
 
       :ok =
-        CacheInfo.run(
+        Plumbing.update_index_cache_info(
           repo,
           [{0o100644, "de588889c4d62aaf3ef3bd90be38fa239be2f5d1", 'a/c/x'}]
         )
 
       :ok =
-        CacheInfo.run(
+        Plumbing.update_index_cache_info(
           repo,
           [{0o100755, "7919e8900c3af541535472aebd56d44222b7b3a3", 'other.txt'}]
         )

@@ -5,9 +5,9 @@ defmodule Xgit.Plumbing.ReadTreeTest do
   alias Xgit.Core.DirCache.Entry
   alias Xgit.GitInitTestCase
   alias Xgit.Plumbing.ReadTree
-  alias Xgit.Plumbing.UpdateIndex.CacheInfo
   alias Xgit.Repository.InMemory
   alias Xgit.Repository.OnDisk
+  alias Xgit.Repository.Plumbing
   alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
   alias Xgit.Test.OnDiskRepoTestCase
@@ -387,7 +387,7 @@ defmodule Xgit.Plumbing.ReadTreeTest do
     test "missing_ok? error" do
       %{xgit_path: xgit_path, xgit_repo: xgit_repo} = OnDiskRepoTestCase.repo!()
 
-      CacheInfo.run(
+      Plumbing.update_index_cache_info(
         xgit_repo,
         [{0o100644, "7919e8900c3af541535472aebd56d44222b7b3a3", 'hello.txt'}]
       )
@@ -401,7 +401,7 @@ defmodule Xgit.Plumbing.ReadTreeTest do
     test "missing_ok? error (defaulted)" do
       %{xgit_path: xgit_path, xgit_repo: xgit_repo} = OnDiskRepoTestCase.repo!()
 
-      CacheInfo.run(
+      Plumbing.update_index_cache_info(
         xgit_repo,
         [{0o100644, "7919e8900c3af541535472aebd56d44222b7b3a3", 'hello.txt'}]
       )

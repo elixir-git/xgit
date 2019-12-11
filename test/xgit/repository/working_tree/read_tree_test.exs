@@ -4,8 +4,8 @@ defmodule Xgit.Repository.WorkingTree.ReadTreeTest do
   alias Xgit.Core.DirCache
   alias Xgit.Core.DirCache.Entry
   alias Xgit.GitInitTestCase
-  alias Xgit.Plumbing.UpdateIndex.CacheInfo
   alias Xgit.Repository.OnDisk
+  alias Xgit.Repository.Plumbing
   alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
 
@@ -362,7 +362,7 @@ defmodule Xgit.Repository.WorkingTree.ReadTreeTest do
 
       :ok
 
-      CacheInfo.run(
+      Plumbing.update_index_cache_info(
         repo,
         [{0o100644, "7919e8900c3af541535472aebd56d44222b7b3a3", 'hello.txt'}]
       )
