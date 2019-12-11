@@ -1,6 +1,7 @@
 defmodule Xgit.Repository.OnDisk do
   @moduledoc ~S"""
-  Implementation of `Xgit.Repository` that stores content on the local file system.
+  Implementation of `Xgit.Repository.Storage` that stores content on the
+  local file system.
 
   _IMPORTANT NOTE:_ This is intended as a reference implementation largely
   for testing purposes and may not necessarily handle all of the edge cases that
@@ -9,7 +10,7 @@ defmodule Xgit.Repository.OnDisk do
   That said, it does intentionally use the same `.git` folder format as command-line
   `git` so that results may be compared for similar operations.
   """
-  use Xgit.Repository
+  use Xgit.Repository.Storage
 
   import Xgit.Util.ForceCoverage
 
@@ -24,7 +25,7 @@ defmodule Xgit.Repository.OnDisk do
   @doc ~S"""
   Start an on-disk git repository.
 
-  Use the functions in `Xgit.Repository` to interact with this repository process.
+  Use the functions in `Xgit.Repository.Storage` to interact with this repository process.
 
   An `Xgit.Repository.WorkingTree` will be automatically created and attached
   to this repository.
@@ -46,9 +47,9 @@ defmodule Xgit.Repository.OnDisk do
   @spec start_link(work_dir: Path.t()) :: GenServer.on_start()
   def start_link(opts) do
     with {:ok, work_dir} <- get_work_dir_opt(opts),
-         {:ok, repo} <- Repository.start_link(__MODULE__, work_dir, opts),
+         {:ok, repo} <- Storage.start_link(__MODULE__, work_dir, opts),
          {:ok, working_tree} <- WorkingTree.start_link(repo, work_dir),
-         :ok <- Repository.set_default_working_tree(repo, working_tree) do
+         :ok <- Storage.set_default_working_tree(repo, working_tree) do
       cover {:ok, repo}
     else
       err -> err

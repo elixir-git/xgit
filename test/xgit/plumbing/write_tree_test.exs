@@ -6,8 +6,8 @@ defmodule Xgit.Plumbing.WriteTreeTest do
   alias Xgit.Plumbing.HashObject
   alias Xgit.Plumbing.UpdateIndex.CacheInfo
   alias Xgit.Plumbing.WriteTree
-  alias Xgit.Repository
   alias Xgit.Repository.OnDisk
+  alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
 
   import FolderDiff
@@ -445,7 +445,7 @@ defmodule Xgit.Plumbing.WriteTreeTest do
       :ok = OnDisk.create(xgit)
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
-      working_tree = Repository.default_working_tree(repo)
+      working_tree = Storage.default_working_tree(repo)
 
       :ok =
         WorkingTree.update_dir_cache(
@@ -463,7 +463,7 @@ defmodule Xgit.Plumbing.WriteTreeTest do
       :ok = OnDisk.create(xgit)
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
-      working_tree = Repository.default_working_tree(repo)
+      working_tree = Storage.default_working_tree(repo)
       :ok = WorkingTree.update_dir_cache(working_tree, [@valid_entry], [])
 
       objects_path = Path.join([xgit, ".git", "objects"])

@@ -13,7 +13,7 @@ defmodule Xgit.Plumbing.CommitTree do
   alias Xgit.Core.ObjectId
   alias Xgit.Core.PersonIdent
   alias Xgit.Core.Tree
-  alias Xgit.Repository
+  alias Xgit.Repository.Storage
 
   @typedoc ~S"""
   Reason codes that can be returned by `run/2`.
@@ -26,7 +26,7 @@ defmodule Xgit.Plumbing.CommitTree do
           | :invalid_message
           | :invalid_author
           | :invalid_committer
-          | Repository.put_loose_object_reason()
+          | Storage.put_loose_object_reason()
 
   @doc ~S"""
   Creates a new commit object based on the provided tree object and parent commits.
@@ -37,7 +37,7 @@ defmodule Xgit.Plumbing.CommitTree do
 
   ## Parameters
 
-  `repository` is the `Xgit.Repository` (PID) to search for the object.
+  `repository` is the `Xgit.Repository.Storage` (PID) to search for the object.
 
   ## Options
 
@@ -57,7 +57,7 @@ defmodule Xgit.Plumbing.CommitTree do
   `{:ok, object_id}` with the object ID for the commit that was generated.
 
   `{:error, :invalid_repository}` if `repository` doesn't represent a valid
-  `Xgit.Repository` process.
+  `Xgit.Repository.Storage` process.
 
   `{:error, :invalid_tree}` if the `:tree` option refers to a tree that
   does not exist.
@@ -73,9 +73,9 @@ defmodule Xgit.Plumbing.CommitTree do
 
   `{:error, :invalid_committer}` if the `:committer` option isn't a valid `PersonIdent` struct.
 
-  Reason codes may also come from `Xgit.Repository.put_loose_object/2`.
+  Reason codes may also come from `Xgit.Repository.Storage.put_loose_object/2`.
   """
-  @spec run(repository :: Repository.t(),
+  @spec run(repository :: Storage.t(),
           tree: ObjectId.t(),
           parents: [ObjectId.t()],
           message: [byte],
@@ -85,12 +85,12 @@ defmodule Xgit.Plumbing.CommitTree do
           {:ok, object_id :: ObjectId.t()}
           | {:error, reason :: reason}
   def run(repository, opts \\ []) when is_pid(repository) do
-    with {:repository_valid?, true} <- {:repository_valid?, Repository.valid?(repository)},
+    with {:repository_valid?, true} <- {:repository_valid?, Storage.valid?(repository)},
          {_tree, _parents, _message, _author, _committer} = verified_args <-
            validate_options(repository, opts),
          commit <- make_commit(verified_args),
          %{id: id} = object <- Commit.to_object(commit),
-         :ok <- Repository.put_loose_object(repository, object) do
+         :ok <- Storage.put_loose_object(repository, object) do
       cover {:ok, id}
     else
       {:repository_valid?, _} -> cover {:error, :invalid_repository}
@@ -113,7 +113,7 @@ defmodule Xgit.Plumbing.CommitTree do
 
   defp validate_tree(repository, tree_id) do
     with true <- ObjectId.valid?(tree_id),
-         {:ok, %Object{id: id} = object} <- Repository.get_object(repository, tree_id),
+         {:ok, %Object{id: id} = object} <- Storage.get_object(repository, tree_id),
          {:ok, _tree} <- Tree.from_object(object) do
       cover {:ok, id}
     else
@@ -135,7 +135,7 @@ defmodule Xgit.Plumbing.CommitTree do
 
   defp commit_id_valid?(repository, parent_id) do
     with true <- ObjectId.valid?(parent_id),
-         {:ok, %Object{type: :commit}} <- Repository.get_object(repository, parent_id) do
+         {:ok, %Object{type: :commit}} <- Storage.get_object(repository, parent_id) do
       cover true
     else
       _ -> cover false

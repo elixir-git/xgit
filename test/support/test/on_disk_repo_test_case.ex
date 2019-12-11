@@ -20,7 +20,7 @@ defmodule Xgit.Test.OnDiskRepoTestCase do
   @spec repo!(path :: Path.t() | nil) :: %{
           tmp_dir: Path.t(),
           xgit_path: Path.t(),
-          xgit_repo: Repository.t()
+          xgit_repo: Storage.t()
         }
   def repo!(path \\ nil)
 
@@ -66,7 +66,7 @@ defmodule Xgit.Test.OnDiskRepoTestCase do
   @spec setup_with_valid_tree!(path :: Path.t() | nil) :: %{
           tmp_dir: Path.t(),
           xgit_path: Path.t(),
-          xgit_repo: Repository.t(),
+          xgit_repo: Storage.t(),
           tree_id: binary()
         }
   def setup_with_valid_tree!(path \\ nil) do
@@ -130,7 +130,7 @@ defmodule Xgit.Test.OnDiskRepoTestCase do
   @spec setup_with_valid_parent_commit!(path :: Path.t() | nil) :: %{
           tmp_dir: Path.t(),
           xgit_path: Path.t(),
-          xgit_repo: Repository.t(),
+          xgit_repo: Storage.t(),
           tree_id: String.t(),
           parent_id: String.t()
         }

@@ -12,7 +12,7 @@ defmodule Xgit.Plumbing.WriteTree do
   alias Xgit.Core.FilePath
   alias Xgit.Core.ObjectId
   alias Xgit.Plumbing.Util.WorkingTreeOpt
-  alias Xgit.Repository
+  alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
   alias Xgit.Repository.WorkingTree.ParseIndexFile
 
@@ -25,7 +25,7 @@ defmodule Xgit.Plumbing.WriteTree do
           | WorkingTree.write_tree_reason()
           | DirCache.to_tree_objects_reason()
           | ParseIndexFile.from_iodevice_reason()
-          | Repository.put_loose_object_reason()
+          | Storage.put_loose_object_reason()
 
   @doc ~S"""
   Translates the current working tree, as reflected in its index file, to one or more
@@ -35,7 +35,7 @@ defmodule Xgit.Plumbing.WriteTree do
 
   ## Parameters
 
-  `repository` is the `Xgit.Repository` (PID) to search for the object.
+  `repository` is the `Xgit.Repository.Storage` (PID) to search for the object.
 
   ## Options
 
@@ -52,18 +52,18 @@ defmodule Xgit.Plumbing.WriteTree do
   specified by the index already existed, it will return that existing tree's ID.)
 
   `{:error, :invalid_repository}` if `repository` doesn't represent a valid
-  `Xgit.Repository` process.
+  `Xgit.Repository.Storage` process.
 
   `{:error, :bare}` if `repository` doesn't have a working tree.
 
   Reason codes may also come from the following functions:
 
   * `Xgit.Core.DirCache.to_tree_objects/2`
-  * `Xgit.Repository.put_loose_object/2`
-  * `Xgit.Repository.WorkingTree.write_tree/2`
+  * `Xgit.Repository.Storage.put_loose_object/2`
+  * `Xgit.Repository.Storage.WorkingTree.write_tree/2`
   * `Xgit.Repository.WorkingTree.ParseIndexFile.from_iodevice/1`
   """
-  @spec run(repository :: Repository.t(), missing_ok?: boolean, prefix: FilePath.t()) ::
+  @spec run(repository :: Storage.t(), missing_ok?: boolean, prefix: FilePath.t()) ::
           {:ok, object_id :: ObjectId.t()}
           | {:error, reason :: reason}
   def run(repository, opts \\ []) when is_pid(repository) do

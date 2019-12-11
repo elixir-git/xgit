@@ -6,9 +6,9 @@ defmodule Xgit.Plumbing.ReadTreeTest do
   alias Xgit.GitInitTestCase
   alias Xgit.Plumbing.ReadTree
   alias Xgit.Plumbing.UpdateIndex.CacheInfo
-  alias Xgit.Repository
   alias Xgit.Repository.InMemory
   alias Xgit.Repository.OnDisk
+  alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
   alias Xgit.Test.OnDiskRepoTestCase
 
@@ -113,7 +113,7 @@ defmodule Xgit.Plumbing.ReadTreeTest do
 
       assert :ok = ReadTree.run(repo, :empty)
 
-      working_tree = Repository.default_working_tree(repo)
+      working_tree = Storage.default_working_tree(repo)
       assert {:ok, dir_cache} = WorkingTree.dir_cache(working_tree)
     end
 
@@ -490,7 +490,7 @@ defmodule Xgit.Plumbing.ReadTreeTest do
 
       assert :ok = ReadTree.run(repo, tree_object_id, opts)
 
-      working_tree = Repository.default_working_tree(repo)
+      working_tree = Storage.default_working_tree(repo)
       assert {:ok, dir_cache} = WorkingTree.dir_cache(working_tree)
 
       dir_cache

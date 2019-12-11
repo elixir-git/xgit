@@ -6,7 +6,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
   alias Xgit.Core.Ref
   alias Xgit.Plumbing.HashObject
   alias Xgit.Plumbing.UpdateRef
-  alias Xgit.Repository
+  alias Xgit.Repository.Storage
   alias Xgit.Test.OnDiskRepoTestCase
 
   import FolderDiff
@@ -32,7 +32,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       object = %Object{type: :blob, content: @test_content, size: 13, id: @test_content_id}
-      :ok = Repository.put_loose_object(repo, object)
+      :ok = Storage.put_loose_object(repo, object)
 
       assert {:error, :target_not_commit} =
                UpdateRef.run(repo, "refs/heads/master", @test_content_id)
@@ -88,7 +88,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
 
       assert :ok = UpdateRef.run(repo, "refs/heads/master", commit_id_master)
 
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+      assert {:ok, [^master_ref]} = Storage.list_refs(repo)
 
       {:ok, commit_id_other} =
         HashObject.run('shhh... another fake commit',
@@ -105,10 +105,10 @@ defmodule Xgit.Plumbing.UpdateRefTest do
 
       assert :ok = UpdateRef.run(repo, "refs/heads/other", commit_id_other)
 
-      assert {:ok, ^master_ref} = Repository.get_ref(repo, "refs/heads/master")
-      assert {:ok, ^other_ref} = Repository.get_ref(repo, "refs/heads/other")
+      assert {:ok, ^master_ref} = Storage.get_ref(repo, "refs/heads/master")
+      assert {:ok, ^other_ref} = Storage.get_ref(repo, "refs/heads/other")
 
-      assert {:ok, [^master_ref, ^other_ref]} = Repository.list_refs(repo)
+      assert {:ok, [^master_ref, ^other_ref]} = Storage.list_refs(repo)
     end
 
     test "follows HEAD reference" do
@@ -135,9 +135,9 @@ defmodule Xgit.Plumbing.UpdateRefTest do
 
       assert :ok = UpdateRef.run(repo, "HEAD", commit_id_master)
 
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
-      assert {:ok, ^master_ref} = Repository.get_ref(repo, "refs/heads/master")
-      assert {:ok, ^master_ref_via_head} = Repository.get_ref(repo, "HEAD")
+      assert {:ok, [^master_ref]} = Storage.list_refs(repo)
+      assert {:ok, ^master_ref} = Storage.get_ref(repo, "refs/heads/master")
+      assert {:ok, ^master_ref_via_head} = Storage.get_ref(repo, "HEAD")
     end
 
     test "result can be read by command-line git" do
@@ -205,7 +205,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       }
 
       assert :ok = UpdateRef.run(repo, "refs/heads/master", commit_id_master)
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+      assert {:ok, [^master_ref]} = Storage.list_refs(repo)
 
       {:ok, commit_id2_master} =
         HashObject.run('shhh... another not commit',
@@ -225,7 +225,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
                  old_target: commit_id_master
                )
 
-      assert {:ok, [^master_ref2]} = Repository.list_refs(repo)
+      assert {:ok, [^master_ref2]} = Storage.list_refs(repo)
     end
 
     test ":old_target (incorrect match)" do
@@ -245,7 +245,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       }
 
       assert :ok = UpdateRef.run(repo, "refs/heads/master", commit_id_master)
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+      assert {:ok, [^master_ref]} = Storage.list_refs(repo)
 
       {:ok, commit_id2_master} =
         HashObject.run('shhh... another not commit',
@@ -260,7 +260,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
                  old_target: "2075df9dff2b5a10ad417586b4edde66af849bad"
                )
 
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+      assert {:ok, [^master_ref]} = Storage.list_refs(repo)
     end
 
     test ":old_target (does not exist)" do
@@ -280,7 +280,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       }
 
       assert :ok = UpdateRef.run(repo, "refs/heads/master", commit_id_master)
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+      assert {:ok, [^master_ref]} = Storage.list_refs(repo)
 
       {:ok, commit_id2_master} =
         HashObject.run('shhh... another not commit',
@@ -295,7 +295,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
                  old_target: commit_id_master
                )
 
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+      assert {:ok, [^master_ref]} = Storage.list_refs(repo)
     end
 
     test ":old_target = :new" do
@@ -315,7 +315,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       }
 
       assert :ok = UpdateRef.run(repo, "refs/heads/master", commit_id_master, old_target: :new)
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+      assert {:ok, [^master_ref]} = Storage.list_refs(repo)
     end
 
     test ":old_target = :new, but target does exist" do
@@ -335,7 +335,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       }
 
       assert :ok = UpdateRef.run(repo, "refs/heads/master", commit_id_master)
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+      assert {:ok, [^master_ref]} = Storage.list_refs(repo)
 
       {:ok, commit_id2_master} =
         HashObject.run('shhh... another not commit',
@@ -348,7 +348,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       assert {:error, :old_target_not_matched} =
                UpdateRef.run(repo, "refs/heads/master", commit_id2_master, old_target: :new)
 
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+      assert {:ok, [^master_ref]} = Storage.list_refs(repo)
     end
 
     test "target 0000 removes an existing ref" do
@@ -369,34 +369,34 @@ defmodule Xgit.Plumbing.UpdateRefTest do
 
       assert :ok = UpdateRef.run(repo, "refs/heads/master", commit_id_master)
 
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+      assert {:ok, [^master_ref]} = Storage.list_refs(repo)
 
       assert :ok = UpdateRef.run(repo, "refs/heads/master", ObjectId.zero())
 
-      assert {:error, :not_found} = Repository.get_ref(repo, "refs/heads/master")
-      assert {:ok, []} = Repository.list_refs(repo)
+      assert {:error, :not_found} = Storage.get_ref(repo, "refs/heads/master")
+      assert {:ok, []} = Storage.list_refs(repo)
     end
 
     test "target 0000 quietly 'succeeds' if ref didn't exist" do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
-      assert {:ok, []} = Repository.list_refs(repo)
+      assert {:ok, []} = Storage.list_refs(repo)
 
       assert :ok = UpdateRef.run(repo, "refs/heads/master", ObjectId.zero())
 
-      assert {:error, :not_found} = Repository.get_ref(repo, "refs/heads/master")
-      assert {:ok, []} = Repository.list_refs(repo)
+      assert {:error, :not_found} = Storage.get_ref(repo, "refs/heads/master")
+      assert {:ok, []} = Storage.list_refs(repo)
     end
 
     test "target 0000 error if name invalid" do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
-      assert {:ok, []} = Repository.list_refs(repo)
+      assert {:ok, []} = Storage.list_refs(repo)
 
       assert {:error, :invalid_ref} = UpdateRef.run(repo, "refs", ObjectId.zero())
 
-      assert {:error, :not_found} = Repository.get_ref(repo, "refs/heads/master")
-      assert {:ok, []} = Repository.list_refs(repo)
+      assert {:error, :not_found} = Storage.get_ref(repo, "refs/heads/master")
+      assert {:ok, []} = Storage.list_refs(repo)
     end
 
     test "delete :old_target matches existing ref" do
@@ -417,15 +417,15 @@ defmodule Xgit.Plumbing.UpdateRefTest do
 
       assert :ok = UpdateRef.run(repo, "refs/heads/master", commit_id_master)
 
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+      assert {:ok, [^master_ref]} = Storage.list_refs(repo)
 
       assert :ok =
                UpdateRef.run(repo, "refs/heads/master", ObjectId.zero(),
                  old_target: commit_id_master
                )
 
-      assert {:error, :not_found} = Repository.get_ref(repo, "refs/heads/master")
-      assert {:ok, []} = Repository.list_refs(repo)
+      assert {:error, :not_found} = Storage.get_ref(repo, "refs/heads/master")
+      assert {:ok, []} = Storage.list_refs(repo)
     end
 
     test "delete doesn't remove ref if :old_target doesn't match" do
@@ -446,29 +446,29 @@ defmodule Xgit.Plumbing.UpdateRefTest do
 
       assert :ok = UpdateRef.run(repo, "refs/heads/master", commit_id_master)
 
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+      assert {:ok, [^master_ref]} = Storage.list_refs(repo)
 
       assert {:error, :old_target_not_matched} =
                UpdateRef.run(repo, "refs/heads/master", ObjectId.zero(),
                  old_target: "bec43c416143e6b8bf9a3b559260185757e1386b"
                )
 
-      assert {:ok, ^master_ref} = Repository.get_ref(repo, "refs/heads/master")
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+      assert {:ok, ^master_ref} = Storage.get_ref(repo, "refs/heads/master")
+      assert {:ok, [^master_ref]} = Storage.list_refs(repo)
     end
 
     test "delete error if :old_target specified and no ref exists" do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
-      assert {:ok, []} = Repository.list_refs(repo)
+      assert {:ok, []} = Storage.list_refs(repo)
 
       assert {:error, :old_target_not_matched} =
                UpdateRef.run(repo, "refs/heads/master", ObjectId.zero(),
                  old_target: "bec43c416143e6b8bf9a3b559260185757e1386b"
                )
 
-      assert {:error, :not_found} = Repository.get_ref(repo, "refs/heads/master")
-      assert {:ok, []} = Repository.list_refs(repo)
+      assert {:error, :not_found} = Storage.get_ref(repo, "refs/heads/master")
+      assert {:ok, []} = Storage.list_refs(repo)
     end
 
     test "delete {:error, :cant_delete_file}" do

@@ -5,7 +5,7 @@ defmodule Xgit.Core.DirCache do
 
   In Xgit, the `DirCache` structure is an abstract, in-memory data structure
   without any tie to a specific persistence mechanism. Persistence is implemented
-  by a specific implementation of the `Xgit.Repository` behaviour.
+  by a specific implementation of the `Xgit.Repository.Storage` behaviour.
 
   This content is commonly persisted on disk as an `index` file at the root of
   the git tree. The module `Xgit.Repository.WorkingTree.ParseIndexFile` can

@@ -5,8 +5,8 @@ defmodule Xgit.Core.CommitTest do
   alias Xgit.Core.Object
   alias Xgit.Core.PersonIdent
   alias Xgit.GitInitTestCase
-  alias Xgit.Repository
   alias Xgit.Repository.OnDisk
+  alias Xgit.Repository.Storage
   alias Xgit.Test.OnDiskRepoTestCase
 
   import FolderDiff
@@ -228,7 +228,7 @@ defmodule Xgit.Core.CommitTest do
 
       commit_id = String.trim(commit_id_str)
 
-      {:ok, commit_object} = Repository.get_object(repo, commit_id)
+      {:ok, commit_object} = Storage.get_object(repo, commit_id)
 
       assert {:ok,
               %Xgit.Core.Commit{
@@ -262,7 +262,7 @@ defmodule Xgit.Core.CommitTest do
 
       commit_id = String.trim(commit_id_str)
 
-      {:ok, commit_object} = Repository.get_object(repo, commit_id)
+      {:ok, commit_object} = Storage.get_object(repo, commit_id)
 
       assert {:ok,
               %Xgit.Core.Commit{
@@ -1081,7 +1081,7 @@ defmodule Xgit.Core.CommitTest do
       {output, 0} = System.cmd("git", ["write-tree", "--missing-ok"], cd: xgit)
       assert tree_content_id == String.trim(output)
 
-      :ok = Repository.put_loose_object(repo, xgit_commit_object)
+      :ok = Storage.put_loose_object(repo, xgit_commit_object)
 
       assert_folders_are_equal(
         Path.join([ref, ".git", "objects"]),

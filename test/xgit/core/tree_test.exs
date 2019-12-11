@@ -5,8 +5,8 @@ defmodule Xgit.Core.TreeTest do
   alias Xgit.Core.Tree
   alias Xgit.Core.Tree.Entry
   alias Xgit.GitInitTestCase
-  alias Xgit.Repository
   alias Xgit.Repository.OnDisk
+  alias Xgit.Repository.Storage
   alias Xgit.Test.OnDiskRepoTestCase
 
   import FolderDiff
@@ -78,7 +78,7 @@ defmodule Xgit.Core.TreeTest do
       {output, 0} = System.cmd("git", ["write-tree", "--missing-ok"], cd: xgit_path)
       tree_id = String.trim(output)
 
-      assert {:ok, %Object{} = object} = Repository.get_object(xgit_repo, tree_id)
+      assert {:ok, %Object{} = object} = Storage.get_object(xgit_repo, tree_id)
       assert {:ok, %Tree{entries: entries} = _tree} = Tree.from_object(object)
 
       entries
@@ -297,7 +297,7 @@ defmodule Xgit.Core.TreeTest do
       :ok = OnDisk.create(xgit)
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
-      :ok = Repository.put_loose_object(repo, tree_object)
+      :ok = Storage.put_loose_object(repo, tree_object)
 
       assert_folders_are_equal(
         Path.join([ref, ".git", "objects"]),

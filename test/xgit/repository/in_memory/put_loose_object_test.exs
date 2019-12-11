@@ -4,8 +4,8 @@ defmodule Xgit.Repository.InMemory.PutLooseObjectTest do
   alias Xgit.Core.ContentSource
   alias Xgit.Core.FileContentSource
   alias Xgit.Core.Object
-  alias Xgit.Repository
   alias Xgit.Repository.InMemory
+  alias Xgit.Repository.Storage
 
   describe "put_loose_object/2" do
     # Also tests corresonding cases of get_object/2.
@@ -16,9 +16,9 @@ defmodule Xgit.Repository.InMemory.PutLooseObjectTest do
       assert {:ok, repo} = InMemory.start_link()
 
       object = %Object{type: :blob, content: @test_content, size: 13, id: @test_content_id}
-      assert :ok = Repository.put_loose_object(repo, object)
+      assert :ok = Storage.put_loose_object(repo, object)
 
-      assert {:ok, ^object} = Repository.get_object(repo, @test_content_id)
+      assert {:ok, ^object} = Storage.get_object(repo, @test_content_id)
     end
 
     test "happy path: reads file into memory" do
@@ -38,7 +38,7 @@ defmodule Xgit.Repository.InMemory.PutLooseObjectTest do
 
       fcs = FileContentSource.new(path)
       object = %Object{type: :blob, content: fcs, size: ContentSource.length(fcs), id: content_id}
-      assert :ok = Repository.put_loose_object(repo, object)
+      assert :ok = Storage.put_loose_object(repo, object)
 
       content_as_binary = :binary.bin_to_list(content)
       content_size = byte_size(content)
@@ -49,7 +49,7 @@ defmodule Xgit.Repository.InMemory.PutLooseObjectTest do
                 content: ^content_as_binary,
                 size: ^content_size,
                 id: ^content_id
-              }} = Repository.get_object(repo, content_id)
+              }} = Storage.get_object(repo, content_id)
 
       assert Object.valid?(object)
     end
@@ -58,11 +58,11 @@ defmodule Xgit.Repository.InMemory.PutLooseObjectTest do
       assert {:ok, repo} = InMemory.start_link()
 
       object = %Object{type: :blob, content: @test_content, size: 13, id: @test_content_id}
-      assert :ok = Repository.put_loose_object(repo, object)
+      assert :ok = Storage.put_loose_object(repo, object)
 
-      assert {:error, :object_exists} = Repository.put_loose_object(repo, object)
+      assert {:error, :object_exists} = Storage.put_loose_object(repo, object)
 
-      assert {:ok, ^object} = Repository.get_object(repo, @test_content_id)
+      assert {:ok, ^object} = Storage.get_object(repo, @test_content_id)
       assert Object.valid?(object)
     end
   end

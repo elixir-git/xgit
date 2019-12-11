@@ -3,8 +3,9 @@ defmodule Xgit.Repository.WorkingTree do
   A working tree is an on-disk manifestation of a commit or pending commit in
   a git repository.
 
-  An `Xgit.Repository` may have a default working tree associated with it or
-  it may not. (Such a repository is often referred to as a "bare" repository.)
+  An `Xgit.Repository.Storage` may have a default working tree associated with it or
+  it may not. (A repository without a working tree is often referred to as a
+  "bare" repository.)
 
   More than one working tree may be associated with a repository, though this
   is not (currently) well-tested in Xgit.
@@ -26,7 +27,7 @@ defmodule Xgit.Repository.WorkingTree do
   alias Xgit.Core.Object
   alias Xgit.Core.ObjectId
   alias Xgit.Core.Tree
-  alias Xgit.Repository
+  alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree.ParseIndexFile
   alias Xgit.Repository.WorkingTree.WriteIndexFile
   alias Xgit.Util.TrailingHashDevice
@@ -43,7 +44,7 @@ defmodule Xgit.Repository.WorkingTree do
 
   ## Parameters
 
-  `repository` is the associated `Xgit.Repository` process.
+  `repository` is the associated `Xgit.Repository.Storage` process.
 
   `work_dir` is the root path for the working tree.
 
@@ -56,11 +57,11 @@ defmodule Xgit.Repository.WorkingTree do
   If the process is unable to create the working directory root, the response
   will be `{:error, {:mkdir, :eexist}}` (or perhaps a different posix error code).
   """
-  @spec start_link(repository :: Repository.t(), work_dir :: Path.t(), GenServer.options()) ::
+  @spec start_link(repository :: Storage.t(), work_dir :: Path.t(), GenServer.options()) ::
           GenServer.on_start()
   def start_link(repository, work_dir, options \\ [])
       when is_pid(repository) and is_binary(work_dir) and is_list(options) do
-    if Repository.valid?(repository) do
+    if Storage.valid?(repository) do
       GenServer.start_link(__MODULE__, {repository, work_dir}, options)
     else
       cover {:error, :invalid_repository}
@@ -227,8 +228,8 @@ defmodule Xgit.Repository.WorkingTree do
   """
   @type read_tree_reason ::
           :objects_missing
+          | Storage.get_object_reason()
           | Tree.from_object_reason()
-          | Repository.get_object_reason()
           | WriteIndexFile.to_iodevice_reason()
 
   @doc ~S"""
@@ -258,7 +259,7 @@ defmodule Xgit.Repository.WorkingTree do
   Reason codes may also come from the following functions:
 
   * `Xgit.Core.Tree.from_object/1`
-  * `Xgit.Repository.get_object/2`
+  * `Xgit.Repository.Storage.get_object/2`
   * `Xgit.Repository.WorkingTree.WriteIndexFile.to_iodevice/2`
 
   ## TO DO
@@ -317,7 +318,7 @@ defmodule Xgit.Repository.WorkingTree do
   end
 
   defp tree_to_dir_cache_entries(repository, object_id, prefix, acc) do
-    with {:ok, object} <- Repository.get_object(repository, object_id),
+    with {:ok, object} <- Storage.get_object(repository, object_id),
          {:ok, %Tree{entries: tree_entries} = _tree} <- Tree.from_object(object) do
       tree_entries_to_dir_cache_entries(repository, tree_entries, prefix, acc)
       # TO DO: A malformed tree could cause an infinite loop here.
@@ -377,7 +378,7 @@ defmodule Xgit.Repository.WorkingTree do
           | :prefix_not_found
           | DirCache.to_tree_objects_reason()
           | ParseIndexFile.from_iodevice_reason()
-          | Repository.put_loose_object_reason()
+          | Storage.put_loose_object_reason()
 
   @doc ~S"""
   Translates the current dir cache, as reflected in its index file, to one or more
@@ -411,7 +412,7 @@ defmodule Xgit.Repository.WorkingTree do
   Reason codes may also come from the following functions:
 
   * `Xgit.Core.DirCache.to_tree_objects/2`
-  * `Xgit.Repository.put_loose_object/2`
+  * `Xgit.Repository.Storage.put_loose_object/2`
   * `Xgit.Repository.WorkingTree.ParseIndexFile.from_iodevice/1`
   """
   @spec write_tree(working_tree :: t, missing_ok?: boolean, prefix: FilePath.t()) ::
@@ -466,7 +467,7 @@ defmodule Xgit.Repository.WorkingTree do
     entries
     |> Enum.chunk_every(100)
     |> Enum.all?(fn entries_chunk ->
-      Repository.has_all_object_ids?(
+      Storage.has_all_object_ids?(
         repository,
         Enum.map(entries_chunk, fn %{object_id: id} -> id end)
       )
@@ -478,7 +479,7 @@ defmodule Xgit.Repository.WorkingTree do
   defp write_all_objects(_repository, []), do: cover(:ok)
 
   defp write_all_objects(repository, [object | tail]) do
-    case Repository.put_loose_object(repository, object) do
+    case Storage.put_loose_object(repository, object) do
       :ok -> write_all_objects(repository, tail)
       {:error, :object_exists} -> write_all_objects(repository, tail)
       {:error, reason} -> cover {:error, reason}

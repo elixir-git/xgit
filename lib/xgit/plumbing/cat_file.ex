@@ -10,7 +10,7 @@ defmodule Xgit.Plumbing.CatFile do
 
   alias Xgit.Core.Object
   alias Xgit.Core.ObjectId
-  alias Xgit.Repository
+  alias Xgit.Repository.Storage
 
   @typedoc ~S"""
   Reason codes that can be returned by `run/2`.
@@ -23,7 +23,7 @@ defmodule Xgit.Plumbing.CatFile do
 
   ## Parameters
 
-  `repository` is the `Xgit.Repository` (PID) to search for the object.
+  `repository` is the `Xgit.Repository.Storage` (PID) to search for the object.
 
   `object_id` is a string identifying the object.
 
@@ -34,7 +34,7 @@ defmodule Xgit.Plumbing.CatFile do
   about the underlying git object.
 
   `{:error, :invalid_repository}` if `repository` doesn't represent a valid
-  `Xgit.Repository` process.
+  `Xgit.Repository.Storage` process.
 
   `{:error, :invalid_object_id}` if `object_id` can't be parsed as a valid git object ID.
 
@@ -42,14 +42,14 @@ defmodule Xgit.Plumbing.CatFile do
 
   `{:error, :invalid_object}` if object was found, but invalid.
   """
-  @spec run(repository :: Repository.t(), object_id :: ObjectId.t()) ::
+  @spec run(repository :: Storage.t(), object_id :: ObjectId.t()) ::
           {:ok, Object}
           | {:error, reason :: reason}
-          | {:error, reason :: Repository.get_object_reason()}
+          | {:error, reason :: Storage.get_object_reason()}
   def run(repository, object_id) when is_pid(repository) and is_binary(object_id) do
-    with {:repository_valid?, true} <- {:repository_valid?, Repository.valid?(repository)},
+    with {:repository_valid?, true} <- {:repository_valid?, Storage.valid?(repository)},
          {:object_id_valid?, true} <- {:object_id_valid?, ObjectId.valid?(object_id)} do
-      Repository.get_object(repository, object_id)
+      Storage.get_object(repository, object_id)
     else
       {:repository_valid?, false} -> cover {:error, :invalid_repository}
       {:object_id_valid?, false} -> cover {:error, :invalid_object_id}

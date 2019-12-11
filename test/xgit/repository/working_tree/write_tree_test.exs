@@ -4,8 +4,8 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
   alias Xgit.Core.DirCache.Entry
   alias Xgit.GitInitTestCase
   alias Xgit.Plumbing.HashObject
-  alias Xgit.Repository
   alias Xgit.Repository.OnDisk
+  alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
 
   import FolderDiff
@@ -33,7 +33,7 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
             )
         end,
         fn xgit_repo ->
-          working_tree = Repository.default_working_tree(xgit_repo)
+          working_tree = Storage.default_working_tree(xgit_repo)
 
           assert :ok =
                    WorkingTree.update_dir_cache(
@@ -72,7 +72,7 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
       :ok = OnDisk.create(xgit)
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
-      working_tree = Repository.default_working_tree(repo)
+      working_tree = Storage.default_working_tree(repo)
 
       assert :ok =
                WorkingTree.update_dir_cache(
@@ -124,7 +124,7 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
             )
         end,
         fn xgit_repo ->
-          working_tree = Repository.default_working_tree(xgit_repo)
+          working_tree = Storage.default_working_tree(xgit_repo)
 
           assert :ok =
                    WorkingTree.update_dir_cache(
@@ -231,7 +231,7 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
             )
         end,
         fn xgit_repo ->
-          working_tree = Repository.default_working_tree(xgit_repo)
+          working_tree = Storage.default_working_tree(xgit_repo)
 
           assert :ok =
                    WorkingTree.update_dir_cache(
@@ -446,7 +446,7 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
             )
         end,
         fn xgit_repo ->
-          working_tree = Repository.default_working_tree(xgit_repo)
+          working_tree = Storage.default_working_tree(xgit_repo)
 
           assert :ok =
                    WorkingTree.update_dir_cache(
@@ -609,7 +609,7 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
           # Ideally, this should not reach up-level to plumbing, but I'm cheating here today.
           {:ok, object_id} = HashObject.run("test content\n", repo: xgit_repo, write?: true)
 
-          working_tree = Repository.default_working_tree(xgit_repo)
+          working_tree = Storage.default_working_tree(xgit_repo)
 
           assert :ok =
                    WorkingTree.update_dir_cache(
@@ -649,7 +649,7 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
 
       :ok
 
-      working_tree = Repository.default_working_tree(repo)
+      working_tree = Storage.default_working_tree(repo)
 
       assert :ok =
                WorkingTree.update_dir_cache(
@@ -687,7 +687,7 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
       :ok = OnDisk.create(xgit)
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
-      working_tree = Repository.default_working_tree(repo)
+      working_tree = Storage.default_working_tree(repo)
 
       :ok =
         WorkingTree.update_dir_cache(
@@ -838,7 +838,7 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
 
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
-      working_tree = Repository.default_working_tree(repo)
+      working_tree = Storage.default_working_tree(repo)
 
       assert {:error, :invalid_format} = WorkingTree.write_tree(working_tree, missing_ok?: true)
     end
@@ -849,7 +849,7 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
       :ok = OnDisk.create(xgit)
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
-      working_tree = Repository.default_working_tree(repo)
+      working_tree = Storage.default_working_tree(repo)
 
       assert_raise ArgumentError,
                    ~s(Xgit.Repository.WorkingTree.write_tree/2: missing_ok? "sure" is invalid),
@@ -884,7 +884,7 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
       :ok = OnDisk.create(xgit)
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
-      working_tree = Repository.default_working_tree(repo)
+      working_tree = Storage.default_working_tree(repo)
 
       :ok =
         WorkingTree.update_dir_cache(
@@ -902,7 +902,7 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
       :ok = OnDisk.create(xgit)
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
-      working_tree = Repository.default_working_tree(repo)
+      working_tree = Storage.default_working_tree(repo)
       :ok = WorkingTree.update_dir_cache(working_tree, [@valid_entry], [])
 
       objects_path = Path.join([xgit, ".git", "objects"])
@@ -918,7 +918,7 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
       :ok = OnDisk.create(xgit)
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
-      working_tree = Repository.default_working_tree(repo)
+      working_tree = Storage.default_working_tree(repo)
 
       assert_raise ArgumentError,
                    ~s[Xgit.Repository.WorkingTree.write_tree/2: prefix "a/b/c" is invalid (should be a charlist, not a String)],
@@ -948,7 +948,7 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
 
       xgit_fn.(repo)
 
-      working_tree = Repository.default_working_tree(repo)
+      working_tree = Storage.default_working_tree(repo)
       assert {:ok, xgit_object_id} = WorkingTree.write_tree(working_tree, opts)
 
       assert_folders_are_equal(

@@ -4,8 +4,8 @@ defmodule Xgit.Repository.OnDisk.PutLooseObjectTest do
   alias Xgit.Core.ContentSource
   alias Xgit.Core.FileContentSource
   alias Xgit.Core.Object
-  alias Xgit.Repository
   alias Xgit.Repository.OnDisk
+  alias Xgit.Repository.Storage
 
   import FolderDiff
 
@@ -25,13 +25,13 @@ defmodule Xgit.Repository.OnDisk.PutLooseObjectTest do
       assert {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       object = %Object{type: :blob, content: @test_content, size: 13, id: @test_content_id}
-      assert :ok = Repository.put_loose_object(repo, object)
+      assert :ok = Storage.put_loose_object(repo, object)
 
       assert_folders_are_equal(ref, xgit)
 
       assert {:ok,
               %Object{type: :blob, content: content_read_back, size: 13, id: @test_content_id} =
-                object2} = Repository.get_object(repo, @test_content_id)
+                object2} = Storage.get_object(repo, @test_content_id)
 
       assert Object.valid?(object2)
 
@@ -62,7 +62,7 @@ defmodule Xgit.Repository.OnDisk.PutLooseObjectTest do
 
       fcs = FileContentSource.new(path)
       object = %Object{type: :blob, content: fcs, size: ContentSource.length(fcs), id: content_id}
-      assert :ok = Repository.put_loose_object(repo, object)
+      assert :ok = Storage.put_loose_object(repo, object)
 
       assert_folders_are_equal(ref, xgit)
     end
@@ -76,7 +76,7 @@ defmodule Xgit.Repository.OnDisk.PutLooseObjectTest do
       File.write!(objects_dir, "sand in the gears")
 
       object = %Object{type: :blob, content: @test_content, size: 13, id: @test_content_id}
-      assert {:error, :cant_create_file} = Repository.put_loose_object(repo, object)
+      assert {:error, :cant_create_file} = Storage.put_loose_object(repo, object)
     end
 
     test "error: object exists already", %{xgit: xgit} do
@@ -92,7 +92,7 @@ defmodule Xgit.Repository.OnDisk.PutLooseObjectTest do
       )
 
       object = %Object{type: :blob, content: @test_content, size: 13, id: @test_content_id}
-      assert {:error, :object_exists} = Repository.put_loose_object(repo, object)
+      assert {:error, :object_exists} = Storage.put_loose_object(repo, object)
     end
   end
 end

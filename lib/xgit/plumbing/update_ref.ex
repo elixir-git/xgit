@@ -10,12 +10,12 @@ defmodule Xgit.Plumbing.UpdateRef do
 
   alias Xgit.Core.ObjectId
   alias Xgit.Core.Ref
-  alias Xgit.Repository
+  alias Xgit.Repository.Storage
 
   @typedoc ~S"""
   Reason codes that can be returned by `run/4`.
   """
-  @type reason :: :invalid_repository | Repository.put_ref_reason()
+  @type reason :: :invalid_repository | Storage.put_ref_reason()
 
   @doc ~S"""
   Translates the current working tree, as reflected in its index file, to one or more
@@ -25,7 +25,7 @@ defmodule Xgit.Plumbing.UpdateRef do
 
   ## Parameters
 
-  `repository` is the `Xgit.Repository` (PID) to search for the object.
+  `repository` is the `Xgit.Repository.Storage` (PID) to search for the object.
 
   `name` is the name of the reference to update. (See `t/Xgit.Core.Ref.name`.)
 
@@ -47,24 +47,24 @@ defmodule Xgit.Plumbing.UpdateRef do
   `:ok` if written successfully.
 
   `{:error, :invalid_repository}` if `repository` doesn't represent a valid
-  `Xgit.Repository` process.
+  `Xgit.Repository.Storage` process.
 
   Reason codes may also come from the following functions:
 
-  * `Xgit.Repository.put_ref/3`
-  * `Xgit.Repository.delete_ref/3`
+  * `Xgit.Repository.Storage.put_ref/3`
+  * `Xgit.Repository.Storage.delete_ref/3`
   """
-  @spec run(repository :: Repository.t(), name :: Ref.name(), new_value :: ObjectId.t(),
+  @spec run(repository :: Storage.t(), name :: Ref.name(), new_value :: ObjectId.t(),
           old_target: ObjectId.t()
         ) :: :ok | {:error, reason}
   def run(repository, name, new_value, opts \\ [])
       when is_pid(repository) and is_binary(name) and is_binary(new_value) and is_list(opts) do
-    with {:repository_valid?, true} <- {:repository_valid?, Repository.valid?(repository)},
+    with {:repository_valid?, true} <- {:repository_valid?, Storage.valid?(repository)},
          repo_opts <- validate_opts(opts) do
       if new_value == ObjectId.zero() do
-        Repository.delete_ref(repository, name, repo_opts)
+        Storage.delete_ref(repository, name, repo_opts)
       else
-        Repository.put_ref(repository, %Ref{name: name, target: new_value}, repo_opts)
+        Storage.put_ref(repository, %Ref{name: name, target: new_value}, repo_opts)
       end
     else
       {:repository_valid?, false} -> cover {:error, :invalid_repository}

@@ -3,9 +3,9 @@ defmodule Xgit.Plumbing.LsFiles.StageTest do
 
   alias Xgit.Core.DirCache.Entry, as: DirCacheEntry
   alias Xgit.Plumbing.LsFiles.Stage, as: LsFilesStage
-  alias Xgit.Repository
   alias Xgit.Repository.InMemory
   alias Xgit.Repository.OnDisk
+  alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
   alias Xgit.Test.TempDirTestCase
 
@@ -16,7 +16,7 @@ defmodule Xgit.Plumbing.LsFiles.StageTest do
       %{tmp_dir: path} = TempDirTestCase.tmp_dir!()
 
       {:ok, working_tree} = WorkingTree.start_link(repo, path)
-      :ok = Repository.set_default_working_tree(repo, working_tree)
+      :ok = Storage.set_default_working_tree(repo, working_tree)
 
       assert {:ok, []} = LsFilesStage.run(repo)
     end

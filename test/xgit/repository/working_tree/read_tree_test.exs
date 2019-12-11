@@ -5,8 +5,8 @@ defmodule Xgit.Repository.WorkingTree.ReadTreeTest do
   alias Xgit.Core.DirCache.Entry
   alias Xgit.GitInitTestCase
   alias Xgit.Plumbing.UpdateIndex.CacheInfo
-  alias Xgit.Repository
   alias Xgit.Repository.OnDisk
+  alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
 
   describe "read_tree/3" do
@@ -370,7 +370,7 @@ defmodule Xgit.Repository.WorkingTree.ReadTreeTest do
       {output, 0} = System.cmd("git", ["write-tree", "--missing-ok"], cd: xgit)
       tree_object_id = String.trim(output)
 
-      working_tree = Repository.default_working_tree(repo)
+      working_tree = Storage.default_working_tree(repo)
 
       assert {:error, :objects_missing} = WorkingTree.read_tree(working_tree, tree_object_id)
     end
@@ -381,7 +381,7 @@ defmodule Xgit.Repository.WorkingTree.ReadTreeTest do
       :ok = OnDisk.create(xgit)
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
-      working_tree = Repository.default_working_tree(repo)
+      working_tree = Storage.default_working_tree(repo)
 
       assert_raise ArgumentError,
                    ~s(Xgit.Repository.WorkingTree.read_tree/3: missing_ok? "sure" is invalid),
@@ -432,7 +432,7 @@ defmodule Xgit.Repository.WorkingTree.ReadTreeTest do
       File.mkdir_p!(index_path)
 
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
-      working_tree = Repository.default_working_tree(repo)
+      working_tree = Storage.default_working_tree(repo)
 
       assert {:error, :eisdir} =
                WorkingTree.read_tree(working_tree, tree_object_id, missing_ok?: true)
@@ -453,7 +453,7 @@ defmodule Xgit.Repository.WorkingTree.ReadTreeTest do
 
       {:ok, repo} = OnDisk.start_link(work_dir: ref)
 
-      working_tree = Repository.default_working_tree(repo)
+      working_tree = Storage.default_working_tree(repo)
 
       assert :ok = WorkingTree.read_tree(working_tree, tree_object_id, opts)
       assert {:ok, dir_cache} = WorkingTree.dir_cache(working_tree)

@@ -5,7 +5,7 @@ defmodule Xgit.Plumbing.SymbolicRef.PutTest do
   alias Xgit.Plumbing.HashObject
   alias Xgit.Plumbing.SymbolicRef.Put
   alias Xgit.Plumbing.UpdateRef
-  alias Xgit.Repository
+  alias Xgit.Repository.Storage
   alias Xgit.Test.OnDiskRepoTestCase
 
   import FolderDiff
@@ -59,9 +59,9 @@ defmodule Xgit.Plumbing.SymbolicRef.PutTest do
 
       assert :ok = UpdateRef.run(repo, "HEAD", commit_id_master)
 
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
-      assert {:ok, ^master_ref} = Repository.get_ref(repo, "refs/heads/master")
-      assert {:ok, ^master_ref_via_head} = Repository.get_ref(repo, "HEAD")
+      assert {:ok, [^master_ref]} = Storage.list_refs(repo)
+      assert {:ok, ^master_ref} = Storage.get_ref(repo, "refs/heads/master")
+      assert {:ok, ^master_ref_via_head} = Storage.get_ref(repo, "HEAD")
 
       {:ok, commit_id_other} =
         HashObject.run('shhh... another not commit',
@@ -86,9 +86,9 @@ defmodule Xgit.Plumbing.SymbolicRef.PutTest do
 
       assert :ok = UpdateRef.run(repo, "HEAD", commit_id_other)
 
-      assert {:ok, [^master_ref, ^other_ref]} = Repository.list_refs(repo)
-      assert {:ok, ^master_ref} = Repository.get_ref(repo, "refs/heads/master")
-      assert {:ok, ^other_ref_via_head} = Repository.get_ref(repo, "HEAD")
+      assert {:ok, [^master_ref, ^other_ref]} = Storage.list_refs(repo)
+      assert {:ok, ^master_ref} = Storage.get_ref(repo, "refs/heads/master")
+      assert {:ok, ^other_ref_via_head} = Storage.get_ref(repo, "HEAD")
     end
 
     test "result can be read by command-line git" do

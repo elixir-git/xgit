@@ -7,10 +7,10 @@ arbitrary locations other than file systems. (In a server environment, it likely
 makes sense to store content in a database or cloud-based file system such as S3.)
 
 For that reason, the concept of **"repository"** in Xgit is kept intentionally
-minimal. `Xgit.Repository` defines a is a behaviour module that describes the interface
+minimal. `Xgit.Repository.Storage` defines a behaviour module that describes the interface
 that a storage implementor would need to implement and very little else. (A repository
 is implemented using `GenServer` so that it can maintain its state independently.
-`Xgit.Repository` provides a wrapper interface for the calls that other modules
+`Xgit.Repository.Storage` provides a wrapper interface for the calls that other modules
 within Xgit need to make to manipulate the repository.)
 
 A **typical end-user developer** will typically construct an instance of `Xgit.Repository.OnDisk`
@@ -21,7 +21,7 @@ extent possible.)
 
 A **storage architect** will construct a module that encapsulates the desired storage mechanism
 in a `GenServer` process and makes that available to the rest of Xgit by implementing
-the `Xgit.Repository` behaviour interface.
+the `Xgit.Repository.Storage` behaviour interface.
 
 **Guideline:** With the exception of the reference implementation `Xgit.Repository.OnDisk`,
 all code in Xgit should be implemented without knowledge of how and where content is stored.
@@ -52,3 +52,5 @@ of the dependency sequence:
 
 * **`util`**: The modules in this folder aren't really part of the data model
   _per se_, but provide building blocks to make higher layers of Xgit possible.
+  These are considered implementation details and not part of the public API of
+  Xgit.

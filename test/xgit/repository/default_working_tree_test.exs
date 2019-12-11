@@ -1,8 +1,8 @@
 defmodule Xgit.Repository.DefaultWorkingTreeTest do
   use ExUnit.Case, async: true
 
-  alias Xgit.Repository
   alias Xgit.Repository.InMemory
+  alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
   alias Xgit.Test.TempDirTestCase
 
@@ -13,7 +13,7 @@ defmodule Xgit.Repository.DefaultWorkingTreeTest do
     test "happy path" do
       {:ok, repo} = InMemory.start_link()
 
-      assert Repository.default_working_tree(repo) == nil
+      assert Storage.default_working_tree(repo) == nil
 
       # Create a working tree and assign it.
 
@@ -21,14 +21,14 @@ defmodule Xgit.Repository.DefaultWorkingTreeTest do
 
       {:ok, working_tree} = WorkingTree.start_link(repo, path)
 
-      assert :ok = Repository.set_default_working_tree(repo, working_tree)
-      assert Repository.default_working_tree(repo) == working_tree
+      assert :ok = Storage.set_default_working_tree(repo, working_tree)
+      assert Storage.default_working_tree(repo) == working_tree
 
       # Kids, don't try this at home.
 
       {:ok, working_tree2} = WorkingTree.start_link(repo, path)
-      assert :error = Repository.set_default_working_tree(repo, working_tree2)
-      assert Repository.default_working_tree(repo) == working_tree
+      assert :error = Storage.set_default_working_tree(repo, working_tree2)
+      assert Storage.default_working_tree(repo) == working_tree
 
       # Ensure working tree dies with repo.
 
@@ -43,7 +43,7 @@ defmodule Xgit.Repository.DefaultWorkingTreeTest do
       {:ok, repo} = InMemory.start_link()
       {:ok, not_working_tree} = GenServer.start_link(NotValid, nil)
 
-      assert :error = Repository.set_default_working_tree(repo, not_working_tree)
+      assert :error = Storage.set_default_working_tree(repo, not_working_tree)
     end
   end
 end
