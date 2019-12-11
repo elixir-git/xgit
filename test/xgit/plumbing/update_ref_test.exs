@@ -5,8 +5,8 @@ defmodule Xgit.Plumbing.UpdateRefTest do
   alias Xgit.Core.ObjectId
   alias Xgit.Core.Ref
   alias Xgit.Plumbing.UpdateRef
-  alias Xgit.Repository.Storage
   alias Xgit.Repository.Plumbing
+  alias Xgit.Repository.Storage
   alias Xgit.Test.OnDiskRepoTestCase
 
   import FolderDiff
