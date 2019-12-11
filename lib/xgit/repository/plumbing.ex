@@ -181,4 +181,48 @@ defmodule Xgit.Repository.Plumbing do
 
   defp hash_object_result({:ok, %Object{id: id}}, _opts), do: cover({:ok, id})
   defp hash_object_result({:error, reason}, _opts), do: cover({:error, reason})
+
+  @typedoc ~S"""
+  Reason codes that can be returned by `cat_file/2`.
+  """
+  @type cat_file_reason :: :invalid_repository | :invalid_object_id | Storage.get_object_reason()
+
+  @doc ~S"""
+  Retrieves the content, type, and size information for a single object in a
+  repository's object store.
+
+  Analogous to the first form of [`git cat-file`](https://git-scm.com/docs/git-cat-file).
+
+  ## Parameters
+
+  `repository` is the `Xgit.Repository.Storage` (PID) to search for the object.
+
+  `object_id` is a string identifying the object.
+
+  ## Return Value
+
+  `{:ok, object}` if the object could be found. `object` is an instance of
+  `Xgit.Core.Object` and can be used to retrieve content and other information
+  about the underlying git object.
+
+  `{:error, :invalid_repository}` if `repository` doesn't represent a valid
+  `Xgit.Repository.Storage` process.
+
+  `{:error, :invalid_object_id}` if `object_id` can't be parsed as a valid git object ID.
+
+  `{:error, :not_found}` if the object does not exist in the database.
+
+  `{:error, :invalid_object}` if object was found, but invalid.
+  """
+  @spec cat_file(repository :: Storage.t(), object_id :: ObjectId.t()) ::
+          {:ok, Object} | {:error, reason :: cat_file_reason}
+  def cat_file(repository, object_id) when is_pid(repository) and is_binary(object_id) do
+    with {:repository_valid?, true} <- {:repository_valid?, Storage.valid?(repository)},
+         {:object_id_valid?, true} <- {:object_id_valid?, ObjectId.valid?(object_id)} do
+      Storage.get_object(repository, object_id)
+    else
+      {:repository_valid?, false} -> cover {:error, :invalid_repository}
+      {:object_id_valid?, false} -> cover {:error, :invalid_object_id}
+    end
+  end
 end
