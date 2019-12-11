@@ -13,7 +13,7 @@ defmodule Xgit.Plumbing.UpdateIndex.CacheInfo do
   alias Xgit.Core.FilePath
   alias Xgit.Core.ObjectId
   alias Xgit.Plumbing.Util.WorkingTreeOpt
-  alias Xgit.Repository
+  alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
 
   @typedoc ~S"""
@@ -35,7 +35,7 @@ defmodule Xgit.Plumbing.UpdateIndex.CacheInfo do
 
   ## Parameters
 
-  `repository` is the `Xgit.Repository` (PID) to which the new entries should be written.
+  `repository` is the `Xgit.Repository.Storage` (PID) to which the new entries should be written.
 
   `add`: a list of tuples of `{mode, object_id, path}` entries to add to the dir cache.
   In the event of collisions with existing entries, the existing entries will
@@ -49,7 +49,7 @@ defmodule Xgit.Plumbing.UpdateIndex.CacheInfo do
   `:ok` if successful.
 
   `{:error, :invalid_repository}` if `repository` doesn't represent a valid
-  `Xgit.Repository` process.
+  `Xgit.Repository.Storage` process.
 
   `{:error, :bare}` if `repository` doesn't have a working tree.
 
@@ -58,7 +58,7 @@ defmodule Xgit.Plumbing.UpdateIndex.CacheInfo do
   `{:error, :reason}` if unable. The relevant reason codes may come from
   `Xgit.Repository.WorkingTree.update_dir_cache/3`.
   """
-  @spec run(repository :: Repository.t(), add :: [add_entry], remove :: [FilePath.t()]) ::
+  @spec run(repository :: Storage.t(), add :: [add_entry], remove :: [FilePath.t()]) ::
           :ok | {:error, reason()}
   def run(repository, add, remove \\ [])
       when is_pid(repository) and is_list(add) and is_list(remove) do

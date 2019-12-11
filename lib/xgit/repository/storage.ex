@@ -1,30 +1,23 @@
-defmodule Xgit.Repository do
+defmodule Xgit.Repository.Storage do
   @moduledoc ~S"""
-  Represents an abstract git repository.
+  Represents the persistent storage for a git repository.
 
-  ## Looking for Typical Git Commands?
-
-  The operations to inspect or mutate a git repository are not located in this
-  module. (See _Design Goals,_ below, and
-  [the `README.md` file in the `lib/xgit` folder](https://github.com/elixir-git/xgit/tree/master/lib/xgit/)
-  for an explanation.)
-
-  You'll find these operations in the modules named `Xgit.Api.*` _(none yet as
-  of this writing)_ and `Xgit.Plumbing.*`
+  Unless you are implementing an alternative storage architecture or implementing
+  plumbing-level commands, this module is probably not of interest to you.
 
   ## Design Goals
 
   Xgit intends to allow repositories to be stored in multiple different mechanisms.
   While it includes built-in support for local on-disk repositories
-  (see `Xgit.Repository.OnDisk`), and in-lib repositories (see `Xgit.Repository.InMemory`),
+  (see `Xgit.Repository.OnDisk`), and in-member repositories (see `Xgit.Repository.InMemory`),
   you could envision repositories stored entirely on a remote file system or database.
 
   ## Implementing a Storage Architecture
 
-  To define a new mechanism for storing a git repo, start by creating a new module
-  that `use`s this module and implements the required callbacks. Consider the
-  information stored in a typical `.git` directory in a local repository. You will
-  be building an alternative to that storage mechanism.
+  To define a new mechanism for storing a git repo, create a new module that `use`s
+  this module and implements the required callbacks. Consider the information stored
+  in a typical `.git` directory in a local repository. You will be building an
+  alternative to that storage mechanism.
   """
   use GenServer
 
@@ -38,12 +31,12 @@ defmodule Xgit.Repository do
   require Logger
 
   @typedoc ~S"""
-  The process ID for a `Repository` process.
+  The process ID for an `Xgit.Repository.Storage` process.
   """
   @type t :: pid
 
   @doc """
-  Starts a `Repository` process linked to the current process.
+  Starts an `Xgit.Repository.Storage` process linked to the current process.
 
   _IMPORTANT:_ You should not invoke this function directly unless you are
   implementing a new storage implementation module that implements this behaviour.
@@ -74,7 +67,7 @@ defmodule Xgit.Repository do
   end
 
   @doc ~S"""
-  Returns `true` if the argument is a PID representing a valid `Repository` process.
+  Returns `true` if the argument is a PID representing a valid `Xgit.Repository.Storage` process.
   """
   @spec valid?(repository :: term) :: boolean
   def valid?(repository) when is_pid(repository) do
@@ -534,8 +527,8 @@ defmodule Xgit.Repository do
   defmacro __using__(opts) do
     quote location: :keep, bind_quoted: [opts: opts] do
       use GenServer, opts
-      alias Xgit.Repository
-      @behaviour Repository
+      alias Xgit.Repository.Storage
+      @behaviour Storage
     end
   end
 end

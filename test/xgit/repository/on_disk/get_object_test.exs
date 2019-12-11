@@ -3,8 +3,8 @@ defmodule Xgit.Repository.OnDisk.GetObjectTest do
 
   alias Xgit.Core.ContentSource
   alias Xgit.Core.Object
-  alias Xgit.Repository
   alias Xgit.Repository.OnDisk
+  alias Xgit.Repository.Storage
 
   describe "get_object/2" do
     test "happy path: can read from command-line git (small file)", %{ref: ref} do
@@ -19,7 +19,7 @@ defmodule Xgit.Repository.OnDisk.GetObjectTest do
 
       assert {:ok,
               %Object{type: :blob, content: test_content, size: 13, id: ^test_content_id} = object} =
-               Repository.get_object(repo, test_content_id)
+               Storage.get_object(repo, test_content_id)
 
       rendered_content =
         test_content
@@ -48,7 +48,7 @@ defmodule Xgit.Repository.OnDisk.GetObjectTest do
 
       assert {:ok,
               %Object{type: :blob, content: test_content, size: 6000, id: ^content_id} = object} =
-               Repository.get_object(repo, content_id)
+               Storage.get_object(repo, content_id)
 
       assert Object.valid?(object)
 
@@ -65,7 +65,7 @@ defmodule Xgit.Repository.OnDisk.GetObjectTest do
       assert {:ok, repo} = OnDisk.start_link(work_dir: ref)
 
       assert {:error, :not_found} =
-               Repository.get_object(repo, "5cb5d77be2d92c7368038dac67e648a69e0a654d")
+               Storage.get_object(repo, "5cb5d77be2d92c7368038dac67e648a69e0a654d")
     end
 
     test "error: invalid object (not ZIP compressed)", %{xgit: xgit} do
@@ -132,6 +132,6 @@ defmodule Xgit.Repository.OnDisk.GetObjectTest do
     assert {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
     assert {:error, :invalid_object} =
-             Repository.get_object(repo, "5cb5d77be2d92c7368038dac67e648a69e0a654d")
+             Storage.get_object(repo, "5cb5d77be2d92c7368038dac67e648a69e0a654d")
   end
 end

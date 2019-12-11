@@ -10,7 +10,7 @@ defmodule Xgit.Plumbing.ReadTree do
 
   alias Xgit.Core.ObjectId
   alias Xgit.Plumbing.Util.WorkingTreeOpt
-  alias Xgit.Repository
+  alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
 
   @typedoc ~S"""
@@ -30,7 +30,7 @@ defmodule Xgit.Plumbing.ReadTree do
 
   ## Parameters
 
-  `repository` is the `Xgit.Repository` (PID) to search for the object.
+  `repository` is the `Xgit.Repository.Storage` (PID) to search for the object.
 
   `object_id` is the object ID of the root working tree. The special name `:empty`
   may be used to empty the index.
@@ -45,22 +45,22 @@ defmodule Xgit.Plumbing.ReadTree do
   `:ok` if successful.
 
   `{:error, :invalid_repository}` if `repository` doesn't represent a valid
-  `Xgit.Repository` process.
+  `Xgit.Repository.Storage` process.
 
   `{:error, :bare}` if `repository` doesn't have a working tree.
 
   Reason codes may also come from the following functions:
 
   * `Xgit.Core.Tree.from_object/1`
-  * `Xgit.Repository.get_object/2`
-  * `Xgit.Repository.WorkingTree.read_tree/3`
-  * `Xgit.Repository.WorkingTree.WriteIndexFile.to_iodevice/2`
+  * `Xgit.Repository.Storage.get_object/2`
+  * `Xgit.Repository.Storage.WorkingTree.read_tree/3`
+  * `Xgit.Repository.Storage.WorkingTree.WriteIndexFile.to_iodevice/2`
 
   ## TO DO
 
   Implement `--prefix` option. https://github.com/elixir-git/xgit/issues/175
   """
-  @spec run(repository :: Repository.t(), object_id :: ObjectId.t(), missing_ok?: boolean) ::
+  @spec run(repository :: Storage.t(), object_id :: ObjectId.t(), missing_ok?: boolean) ::
           :ok | {:error, reason :: reason}
   def run(repository, object_id, opts \\ [])
       when is_pid(repository) and (is_binary(object_id) or object_id == :empty) and is_list(opts) do

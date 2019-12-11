@@ -2,8 +2,8 @@ defmodule Xgit.Repository.WorkingTree.UpdateDirCacheTest do
   use Xgit.GitInitTestCase, async: true
 
   alias Xgit.Core.DirCache
-  alias Xgit.Repository
   alias Xgit.Repository.OnDisk
+  alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
 
   import FolderDiff
@@ -41,7 +41,7 @@ defmodule Xgit.Repository.WorkingTree.UpdateDirCacheTest do
 
       assert :ok = OnDisk.create(xgit)
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
-      working_tree = Repository.default_working_tree(repo)
+      working_tree = Storage.default_working_tree(repo)
 
       assert :ok = WorkingTree.update_dir_cache(working_tree, [], [])
 
@@ -80,7 +80,7 @@ defmodule Xgit.Repository.WorkingTree.UpdateDirCacheTest do
 
       assert :ok = OnDisk.create(xgit)
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
-      working_tree = Repository.default_working_tree(repo)
+      working_tree = Storage.default_working_tree(repo)
 
       assert :ok =
                WorkingTree.update_dir_cache(
@@ -181,7 +181,7 @@ defmodule Xgit.Repository.WorkingTree.UpdateDirCacheTest do
         )
 
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
-      working_tree = Repository.default_working_tree(repo)
+      working_tree = Storage.default_working_tree(repo)
 
       assert :ok =
                assert(
@@ -204,7 +204,7 @@ defmodule Xgit.Repository.WorkingTree.UpdateDirCacheTest do
       File.write!(index, 'DIRX12345678901234567890')
 
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
-      working_tree = Repository.default_working_tree(repo)
+      working_tree = Storage.default_working_tree(repo)
 
       assert {:error, :invalid_format} =
                WorkingTree.update_dir_cache(

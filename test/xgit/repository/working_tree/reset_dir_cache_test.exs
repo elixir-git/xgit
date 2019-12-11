@@ -2,8 +2,8 @@ defmodule Xgit.Repository.WorkingTree.ResetDirCacheTest do
   use Xgit.GitInitTestCase, async: true
 
   alias Xgit.Core.DirCache
-  alias Xgit.Repository
   alias Xgit.Repository.OnDisk
+  alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
 
   import FolderDiff
@@ -41,7 +41,7 @@ defmodule Xgit.Repository.WorkingTree.ResetDirCacheTest do
 
       assert :ok = OnDisk.create(xgit)
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
-      working_tree = Repository.default_working_tree(repo)
+      working_tree = Storage.default_working_tree(repo)
 
       assert :ok = WorkingTree.reset_dir_cache(working_tree)
 
@@ -80,7 +80,7 @@ defmodule Xgit.Repository.WorkingTree.ResetDirCacheTest do
 
       assert :ok = OnDisk.create(xgit)
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
-      working_tree = Repository.default_working_tree(repo)
+      working_tree = Storage.default_working_tree(repo)
 
       assert :ok =
                WorkingTree.update_dir_cache(
@@ -165,7 +165,7 @@ defmodule Xgit.Repository.WorkingTree.ResetDirCacheTest do
       File.mkdir_p!(index)
 
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
-      working_tree = Repository.default_working_tree(repo)
+      working_tree = Storage.default_working_tree(repo)
 
       assert {:error, :eisdir} = WorkingTree.reset_dir_cache(working_tree)
     end

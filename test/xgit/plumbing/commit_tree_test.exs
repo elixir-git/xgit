@@ -4,7 +4,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
   alias Xgit.Core.Object
   alias Xgit.Core.PersonIdent
   alias Xgit.Plumbing.CommitTree
-  alias Xgit.Repository
+  alias Xgit.Repository.Storage
   alias Xgit.Test.OnDiskRepoTestCase
 
   import FolderDiff
@@ -205,7 +205,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
         id: "d670460b4b4aece5915caf5c68d12f560a9fe3e4"
       }
 
-      :ok = Repository.put_loose_object(xgit_repo, object)
+      :ok = Storage.put_loose_object(xgit_repo, object)
 
       assert {:error, :invalid_tree} =
                CommitTree.run(xgit_repo,

@@ -12,7 +12,7 @@ defmodule Xgit.Plumbing.HashObject do
   alias Xgit.Core.Object
   alias Xgit.Core.ObjectId
   alias Xgit.Core.ObjectType
-  alias Xgit.Repository
+  alias Xgit.Repository.Storage
 
   @doc ~S"""
   Computes an object ID and optionally writes that into the repository's object store.
@@ -35,7 +35,7 @@ defmodule Xgit.Plumbing.HashObject do
     * This is the inverse of the [`--literally` option on `git hash-object`](https://git-scm.com/docs/git-hash-object#Documentation/git-hash-object.txt---literally).
 
   `:repo`: where the content should be stored
-    * Type: `Xgit.Repository` (PID)
+    * Type: `Xgit.Repository.Storage` (PID)
     * Default: `nil`
 
   `:write?`: `true` to write the object into the repository
@@ -56,19 +56,19 @@ defmodule Xgit.Plumbing.HashObject do
   * `Xgit.Core.FilePath.check_path/2`
   * `Xgit.Core.FilePath.check_path_segment/2`
   * `Xgit.Core.Object.check/2`
-  * `Xgit.Repository.put_loose_object/2`.
+  * `Xgit.Repository.Storage.put_loose_object/2`.
   """
   @spec run(content :: ContentSource.t(),
           type: ObjectType.t(),
           validate?: boolean,
-          repo: Repository.t(),
+          repo: Storage.t(),
           write?: boolean
         ) ::
           {:ok, ObjectId.t()}
           | {:error, reason :: Object.check_reason()}
           | {:error, reason :: FilePath.check_path_reason()}
           | {:error, reason :: FilePath.check_path_segment_reason()}
-          | {:error, reason :: Repository.put_loose_object_reason()}
+          | {:error, reason :: Storage.put_loose_object_reason()}
   def run(content, opts \\ []) when not is_nil(content) and is_list(opts) do
     %{type: type, validate?: validate?, repo: repo, write?: write?} = validate_options(opts)
 
@@ -97,7 +97,7 @@ defmodule Xgit.Plumbing.HashObject do
 
     repo = Keyword.get(opts, :repo)
 
-    unless repo == nil or Repository.valid?(repo) do
+    unless repo == nil or Storage.valid?(repo) do
       raise ArgumentError, "Xgit.Plumbing.HashObject.run/2: repo #{inspect(repo)} is invalid"
     end
 
@@ -153,7 +153,7 @@ defmodule Xgit.Plumbing.HashObject do
   defp maybe_write_to_repo({:ok, object}, _repo, false = _write?), do: cover({:ok, object})
 
   defp maybe_write_to_repo({:ok, object}, repo, true = _write?) do
-    case Repository.put_loose_object(repo, object) do
+    case Storage.put_loose_object(repo, object) do
       :ok -> cover {:ok, object}
       {:error, reason} -> cover {:error, reason}
     end

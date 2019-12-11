@@ -1,12 +1,12 @@
 defmodule Xgit.Repository.InMemory do
   @moduledoc ~S"""
-  Implementation of `Xgit.Repository` that stores content in memory.
+  Implementation of `Xgit.Repository.Storage` that stores content in memory.
 
   _WARNING:_ This is intended for testing purposes only. As the name implies,
   repository content is stored only in memory. When the process that implements
   this repository terminates, the content it stores is lost.
   """
-  use Xgit.Repository
+  use Xgit.Repository.Storage
 
   import Xgit.Util.ForceCoverage
 
@@ -17,7 +17,8 @@ defmodule Xgit.Repository.InMemory do
   @doc ~S"""
   Start an in-memory git repository.
 
-  Use the functions in `Xgit.Repository` to interact with this repository process.
+  Use the functions in `Xgit.Repository.Storage` to interact with this
+  repository process.
 
   Any options are passed through to `GenServer.start_link/3`.
 
@@ -26,7 +27,7 @@ defmodule Xgit.Repository.InMemory do
   See `GenServer.start_link/3`.
   """
   @spec start_link(opts :: Keyword.t()) :: GenServer.on_start()
-  def start_link(opts \\ []), do: Repository.start_link(__MODULE__, opts, opts)
+  def start_link(opts \\ []), do: Storage.start_link(__MODULE__, opts, opts)
 
   @impl true
   def init(opts) when is_list(opts) do

@@ -11,7 +11,7 @@ defmodule Xgit.Plumbing.LsFiles.Stage do
   alias Xgit.Core.DirCache
   alias Xgit.Core.DirCache.Entry, as: DirCacheEntry
   alias Xgit.Plumbing.Util.WorkingTreeOpt
-  alias Xgit.Repository
+  alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
   alias Xgit.Repository.WorkingTree.ParseIndexFile
 
@@ -25,7 +25,7 @@ defmodule Xgit.Plumbing.LsFiles.Stage do
 
   ## Parameters
 
-  `repository` is the `Xgit.Repository` (PID) to search for the object.
+  `repository` is the `Xgit.Repository.Storage` (PID) to search for the object.
 
   ## Return Value
 
@@ -33,7 +33,7 @@ defmodule Xgit.Plumbing.LsFiles.Stage do
   in sorted order.
 
   `{:error, :invalid_repository}` if `repository` doesn't represent a valid
-  `Xgit.Repository` process.
+  `Xgit.Repository.Storage` process.
 
   `{:error, :bare}` if `repository` doesn't have a working tree.
 
@@ -41,7 +41,7 @@ defmodule Xgit.Plumbing.LsFiles.Stage do
   `Xgit.Repository.WorkingTree.ParseIndexFile.from_iodevice/1` for possible
   reason codes.)
   """
-  @spec run(repository :: Repository.t()) ::
+  @spec run(repository :: Storage.t()) ::
           {:ok, entries :: [DirCacheEntry.t()]}
           | {:error, reason :: reason}
   def run(repository) when is_pid(repository) do

@@ -21,7 +21,7 @@ Xgit.Core.Tree
 	from_object/1
 	to_object/1
 
-Xgit.Repository (permute on the implementations)
+Xgit.Repository.Storage (permute on the implementations)
 	get_object/2
 	has_all_object_ids?/2
 	put_loose_object/2

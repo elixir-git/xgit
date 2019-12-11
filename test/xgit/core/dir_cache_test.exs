@@ -4,8 +4,8 @@ defmodule Xgit.Core.DirCacheTest do
   alias Xgit.Core.DirCache
   alias Xgit.Core.DirCache.Entry
   alias Xgit.GitInitTestCase
-  alias Xgit.Repository
   alias Xgit.Repository.OnDisk
+  alias Xgit.Repository.Storage
 
   import FolderDiff
 
@@ -660,7 +660,7 @@ defmodule Xgit.Core.DirCacheTest do
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       Enum.each(tree_objects, fn tree_object ->
-        :ok = Repository.put_loose_object(repo, tree_object)
+        :ok = Storage.put_loose_object(repo, tree_object)
       end)
 
       assert_folders_are_equal(

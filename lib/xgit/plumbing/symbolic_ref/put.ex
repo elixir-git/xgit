@@ -9,19 +9,19 @@ defmodule Xgit.Plumbing.SymbolicRef.Put do
   import Xgit.Util.ForceCoverage
 
   alias Xgit.Core.Ref
-  alias Xgit.Repository
+  alias Xgit.Repository.Storage
 
   @typedoc ~S"""
   Reason codes that can be returned by `run/2`.
   """
-  @type reason :: :invalid_repository | Repository.put_ref_reason()
+  @type reason :: :invalid_repository | Storage.put_ref_reason()
 
   @doc ~S"""
   Creates or updates a symbolic ref to point at a specific branch.
 
   ## Parameters
 
-  `repository` is the `Xgit.Repository` (PID) in which to create the symbolic reference.
+  `repository` is the `Xgit.Repository.Storage` (PID) in which to create the symbolic reference.
 
   `name` is the name of the symbolic reference to create or update. (See `t/Xgit.Core.Ref.name`.)
 
@@ -38,22 +38,22 @@ defmodule Xgit.Plumbing.SymbolicRef.Put do
   `:ok` if written successfully.
 
   `{:error, :invalid_repository}` if `repository` doesn't represent a valid
-  `Xgit.Repository` process.
+  `Xgit.Repository.Storage` process.
 
   Reason codes may also come from the following functions:
 
-  * `Xgit.Repository.put_ref/3`
+  * `Xgit.Repository.Storage.put_ref/3`
   """
   @spec run(
-          repository :: Repository.t(),
+          repository :: Storage.t(),
           name :: Ref.name(),
           new_target :: Ref.name(),
           opts :: Keyword.t()
         ) :: :ok | {:error, reason}
   def run(repository, name, new_target, opts \\ [])
       when is_pid(repository) and is_binary(name) and is_binary(new_target) and is_list(opts) do
-    if Repository.valid?(repository) do
-      Repository.put_ref(repository, %Ref{name: name, target: "ref: #{new_target}"},
+    if Storage.valid?(repository) do
+      Storage.put_ref(repository, %Ref{name: name, target: "ref: #{new_target}"},
         follow_link?: false
       )
     else

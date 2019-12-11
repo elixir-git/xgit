@@ -10,7 +10,7 @@ defmodule Xgit.Plumbing.CatFile.Tree do
 
   alias Xgit.Core.ObjectId
   alias Xgit.Core.Tree
-  alias Xgit.Repository
+  alias Xgit.Repository.Storage
 
   @typedoc ~S"""
   Reason codes that can be returned by `run/2`.
@@ -18,7 +18,7 @@ defmodule Xgit.Plumbing.CatFile.Tree do
   @type reason ::
           :invalid_repository
           | :invalid_object_id
-          | Repository.get_object_reason()
+          | Storage.get_object_reason()
           | Tree.from_object_reason()
 
   @doc ~S"""
@@ -27,7 +27,7 @@ defmodule Xgit.Plumbing.CatFile.Tree do
 
   ## Parameters
 
-  `repository` is the `Xgit.Repository` (PID) to search for the object.
+  `repository` is the `Xgit.Repository.Storage` (PID) to search for the object.
 
   `object_id` is a string identifying the object.
 
@@ -38,21 +38,21 @@ defmodule Xgit.Plumbing.CatFile.Tree do
   references to the members of that tree.
 
   `{:error, :invalid_repository}` if `repository` doesn't represent a valid
-  `Xgit.Repository` process.
+  `Xgit.Repository.Storage` process.
 
   `{:error, :invalid_object_id}` if `object_id` can't be parsed as a valid git object ID.
 
   `{:error, reason}` if otherwise unable. The relevant reason codes may come from:
 
   * `Xgit.Core.Tree.from_object/1`.
-  * `Xgit.Repository.get_object/2`
+  * `Xgit.Repository.Storage.get_object/2`
   """
-  @spec run(repository :: Repository.t(), object_id :: ObjectId.t()) ::
+  @spec run(repository :: Storage.t(), object_id :: ObjectId.t()) ::
           {:ok, tree :: Tree.t()} | {:error, reason :: reason}
   def run(repository, object_id) when is_pid(repository) and is_binary(object_id) do
-    with {:repository_valid?, true} <- {:repository_valid?, Repository.valid?(repository)},
+    with {:repository_valid?, true} <- {:repository_valid?, Storage.valid?(repository)},
          {:object_id_valid?, true} <- {:object_id_valid?, ObjectId.valid?(object_id)},
-         {:ok, object} <- Repository.get_object(repository, object_id) do
+         {:ok, object} <- Storage.get_object(repository, object_id) do
       Tree.from_object(object)
     else
       {:error, reason} -> cover {:error, reason}

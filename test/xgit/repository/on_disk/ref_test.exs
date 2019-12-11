@@ -4,7 +4,7 @@ defmodule Xgit.Repository.OnDisk.RefTest do
   alias Xgit.Core.Object
   alias Xgit.Core.Ref
   alias Xgit.Plumbing.HashObject
-  alias Xgit.Repository
+  alias Xgit.Repository.Storage
   alias Xgit.Test.OnDiskRepoTestCase
 
   import FolderDiff
@@ -19,22 +19,22 @@ defmodule Xgit.Repository.OnDisk.RefTest do
   describe "get_ref/2" do
     test "invalid ref (malformed file)", %{repo: repo, path: path} do
       File.write!(Path.join(path, ".git/refs/heads/master"), "not a SHA-1 hash")
-      assert {:error, :invalid_ref} = Repository.get_ref(repo, "refs/heads/master")
+      assert {:error, :invalid_ref} = Storage.get_ref(repo, "refs/heads/master")
     end
 
     test "invalid ref (dir, not file)", %{repo: repo, path: path} do
       File.mkdir_p!(Path.join(path, ".git/refs/heads/master"))
-      assert {:error, :eisdir} = Repository.get_ref(repo, "refs/heads/master")
+      assert {:error, :eisdir} = Storage.get_ref(repo, "refs/heads/master")
     end
 
     test "invalid ref (empty file)", %{repo: repo, path: path} do
       File.write!(Path.join(path, ".git/refs/heads/master"), "")
-      assert {:error, :eof} = Repository.get_ref(repo, "refs/heads/master")
+      assert {:error, :eof} = Storage.get_ref(repo, "refs/heads/master")
     end
 
     test "posix error", %{repo: repo, path: path} do
       File.mkdir_p!(Path.join(path, ".git/refs/heads/master"))
-      assert {:error, :eisdir} = Repository.get_ref(repo, "refs/heads/master")
+      assert {:error, :eisdir} = Storage.get_ref(repo, "refs/heads/master")
     end
 
     test "can read ref written by command-line git", %{repo: repo, path: path} do
@@ -54,7 +54,7 @@ defmodule Xgit.Repository.OnDisk.RefTest do
         target: commit_id
       }
 
-      assert {:ok, ^other_ref} = Repository.get_ref(repo, "refs/heads/other")
+      assert {:ok, ^other_ref} = Storage.get_ref(repo, "refs/heads/other")
     end
   end
 
@@ -71,7 +71,7 @@ defmodule Xgit.Repository.OnDisk.RefTest do
         )
 
       assert {:error, :eisdir} =
-               Repository.put_ref(repo, %Ref{
+               Storage.put_ref(repo, %Ref{
                  name: "refs/heads/master",
                  target: commit_id_master
                })
@@ -89,7 +89,7 @@ defmodule Xgit.Repository.OnDisk.RefTest do
         )
 
       assert {:error, :eexist} =
-               Repository.put_ref(repo, %Ref{
+               Storage.put_ref(repo, %Ref{
                  name: "refs/heads/sub/master",
                  target: commit_id_master
                })
@@ -109,7 +109,7 @@ defmodule Xgit.Repository.OnDisk.RefTest do
         target: commit_id_master
       }
 
-      assert :ok = Repository.put_ref(repo, master_ref)
+      assert :ok = Storage.put_ref(repo, master_ref)
 
       {:ok, commit_id_other} =
         HashObject.run('shhh... another fake commit',
@@ -124,7 +124,7 @@ defmodule Xgit.Repository.OnDisk.RefTest do
         target: commit_id_other
       }
 
-      assert :ok = Repository.put_ref(repo, other_ref)
+      assert :ok = Storage.put_ref(repo, other_ref)
 
       show_ref_output = ~s"""
       #{commit_id_master} refs/heads/master
@@ -143,7 +143,7 @@ defmodule Xgit.Repository.OnDisk.RefTest do
 
       {_, 0} = System.cmd("git", ["update-ref", "refs/heads/other", ref_commit_id], cd: ref_path)
 
-      :ok = Repository.put_ref(xgit_repo, %Ref{name: "refs/heads/other", target: xgit_commit_id})
+      :ok = Storage.put_ref(xgit_repo, %Ref{name: "refs/heads/other", target: xgit_commit_id})
 
       assert_folders_are_equal(
         Path.join([ref_path, ".git", "refs"]),
@@ -162,14 +162,14 @@ defmodule Xgit.Repository.OnDisk.RefTest do
         System.cmd("git", ["symbolic-ref", "refs/heads/link", "refs/heads/blah"], cd: ref_path)
 
       :ok =
-        Repository.put_ref(
+        Storage.put_ref(
           xgit_repo,
           %Ref{name: "refs/heads/link", target: "ref: refs/heads/other"},
           follow_link?: false
         )
 
       :ok =
-        Repository.put_ref(
+        Storage.put_ref(
           xgit_repo,
           %Ref{name: "refs/heads/link", target: "ref: refs/heads/blah"},
           follow_link?: false
@@ -199,11 +199,11 @@ defmodule Xgit.Repository.OnDisk.RefTest do
         target: commit_id_master
       }
 
-      assert :ok = Repository.put_ref(repo, master_ref)
+      assert :ok = Storage.put_ref(repo, master_ref)
 
       File.write!(Path.join(xgit_path, ".git/refs/heads/other"), "not a SHA-1 hash")
 
-      assert {:ok, [^master_ref]} = Repository.list_refs(repo)
+      assert {:ok, [^master_ref]} = Storage.list_refs(repo)
     end
   end
 
@@ -213,7 +213,7 @@ defmodule Xgit.Repository.OnDisk.RefTest do
 
       File.mkdir_p!(bogus_ref_path)
 
-      assert {:error, :cant_delete_file} = Repository.delete_ref(repo, "refs/heads/bogus")
+      assert {:error, :cant_delete_file} = Storage.delete_ref(repo, "refs/heads/bogus")
 
       assert File.dir?(bogus_ref_path)
     end
@@ -231,7 +231,7 @@ defmodule Xgit.Repository.OnDisk.RefTest do
       assert {_, 0} = System.cmd("git", ["update-ref", "refs/heads/other", commit_id], cd: path)
       assert {_, 0} = System.cmd("git", ["show-ref", "refs/heads/other"], cd: path)
 
-      assert :ok = Repository.delete_ref(repo, "refs/heads/other")
+      assert :ok = Storage.delete_ref(repo, "refs/heads/other")
 
       assert {_, 1} = System.cmd("git", ["show-ref", "refs/heads/other"], cd: path)
     end
