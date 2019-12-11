@@ -1,8 +1,14 @@
-defmodule Xgit.Plumbing.HashObject do
+defmodule Xgit.Repository.Plumbing do
   @moduledoc ~S"""
-  Computes an object ID and optionally writes that into the repository's object store.
+  Implements the "plumbing"-level commands for a git repository.
 
-  Analogous to [`git hash-object`](https://git-scm.com/docs/git-hash-object).
+  The functions in this module, like the "plumbing" commands in command-line
+  git, are typically not of interest to an end-user developer. Instead, they
+  represent mid-level implementation details that are chained together to
+  build the more user-friendly "porcelain" commands.
+
+  The "porcelain" commands are implemented by functions in the `Xgit.Repository`
+  module.
   """
 
   import Xgit.Util.ForceCoverage
@@ -14,8 +20,21 @@ defmodule Xgit.Plumbing.HashObject do
   alias Xgit.Core.ObjectType
   alias Xgit.Repository.Storage
 
+  ## --- Objects ---
+
+  @typedoc ~S"""
+  Reason codes that can be returned by `hash_object/2`.
+  """
+  @type hash_object_reason ::
+          Object.check_reason()
+          | FilePath.check_path_reason()
+          | FilePath.check_path_segment_reason()
+          | Storage.put_loose_object_reason()
+
   @doc ~S"""
   Computes an object ID and optionally writes that into the repository's object store.
+
+  Analogous to [`git hash-object`](https://git-scm.com/docs/git-hash-object).
 
   ## Parameters
 
@@ -58,19 +77,16 @@ defmodule Xgit.Plumbing.HashObject do
   * `Xgit.Core.Object.check/2`
   * `Xgit.Repository.Storage.put_loose_object/2`.
   """
-  @spec run(content :: ContentSource.t(),
+  @spec hash_object(content :: ContentSource.t(),
           type: ObjectType.t(),
           validate?: boolean,
           repo: Storage.t(),
           write?: boolean
         ) ::
-          {:ok, ObjectId.t()}
-          | {:error, reason :: Object.check_reason()}
-          | {:error, reason :: FilePath.check_path_reason()}
-          | {:error, reason :: FilePath.check_path_segment_reason()}
-          | {:error, reason :: Storage.put_loose_object_reason()}
-  def run(content, opts \\ []) when not is_nil(content) and is_list(opts) do
-    %{type: type, validate?: validate?, repo: repo, write?: write?} = validate_options(opts)
+          {:ok, object_id :: ObjectId.t()} | {:error, reason :: hash_object_reason}
+  def hash_object(content, opts \\ []) when not is_nil(content) and is_list(opts) do
+    %{type: type, validate?: validate?, repo: repo, write?: write?} =
+      validate_hash_object_options(opts)
 
     %Object{content: content, type: type}
     |> apply_filters(repo)
@@ -78,39 +94,41 @@ defmodule Xgit.Plumbing.HashObject do
     |> assign_object_id()
     |> validate_content(validate?)
     |> maybe_write_to_repo(repo, write?)
-    |> result(opts)
+    |> hash_object_result(opts)
   end
 
-  defp validate_options(opts) do
+  defp validate_hash_object_options(opts) do
     type = Keyword.get(opts, :type, :blob)
 
     unless ObjectType.valid?(type) do
-      raise ArgumentError, "Xgit.Plumbing.HashObject.run/2: type #{inspect(type)} is invalid"
+      raise ArgumentError,
+            "Xgit.Repository.Plumbing.hash_object/2: type #{inspect(type)} is invalid"
     end
 
     validate? = Keyword.get(opts, :validate?, true)
 
     unless is_boolean(validate?) do
       raise ArgumentError,
-            "Xgit.Plumbing.HashObject.run/2: validate? #{inspect(validate?)} is invalid"
+            "Xgit.Repository.Plumbing.hash_object/2: validate? #{inspect(validate?)} is invalid"
     end
 
     repo = Keyword.get(opts, :repo)
 
     unless repo == nil or Storage.valid?(repo) do
-      raise ArgumentError, "Xgit.Plumbing.HashObject.run/2: repo #{inspect(repo)} is invalid"
+      raise ArgumentError,
+            "Xgit.Repository.Plumbing.hash_object/2: repo #{inspect(repo)} is invalid"
     end
 
     write? = Keyword.get(opts, :write?, false)
 
     unless is_boolean(write?) do
       raise ArgumentError,
-            "Xgit.Plumbing.HashObject.run/2: write? #{inspect(write?)} is invalid"
+            "Xgit.Repository.Plumbing.hash_object/2: write? #{inspect(write?)} is invalid"
     end
 
     if write? and repo == nil do
       raise ArgumentError,
-            "Xgit.Plumbing.HashObject.run/2: write?: true requires a repo to be specified"
+            "Xgit.Repository.Plumbing.hash_object/2: write?: true requires a repo to be specified"
     end
 
     %{type: type, validate?: validate?, repo: repo, write?: write?}
@@ -161,6 +179,6 @@ defmodule Xgit.Plumbing.HashObject do
 
   defp maybe_write_to_repo({:error, reason}, _repo, _write?), do: cover({:error, reason})
 
-  defp result({:ok, %Object{id: id}}, _opts), do: cover({:ok, id})
-  defp result({:error, reason}, _opts), do: cover({:error, reason})
+  defp hash_object_result({:ok, %Object{id: id}}, _opts), do: cover({:ok, id})
+  defp hash_object_result({:error, reason}, _opts), do: cover({:error, reason})
 end

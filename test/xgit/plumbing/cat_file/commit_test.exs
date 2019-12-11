@@ -4,8 +4,8 @@ defmodule Xgit.Plumbing.CatFile.CommitTest do
   alias Xgit.Core.Commit
   alias Xgit.Core.PersonIdent
   alias Xgit.Plumbing.CatFile.Commit, as: CatFileCommit
-  alias Xgit.Plumbing.HashObject
   alias Xgit.Repository.InMemory
+  alias Xgit.Repository.Plumbing
   alias Xgit.Test.OnDiskRepoTestCase
 
   @env OnDiskRepoTestCase.sample_commit_env()
@@ -77,7 +77,12 @@ defmodule Xgit.Plumbing.CatFile.CommitTest do
       %{xgit_repo: xgit_repo} = repo!()
 
       {:ok, commit_id} =
-        HashObject.run(commit_text, repo: xgit_repo, type: :commit, validate?: false, write?: true)
+        Plumbing.hash_object(commit_text,
+          repo: xgit_repo,
+          type: :commit,
+          validate?: false,
+          write?: true
+        )
 
       CatFileCommit.run(xgit_repo, commit_id)
     end

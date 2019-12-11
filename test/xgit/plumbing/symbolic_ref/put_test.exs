@@ -2,9 +2,9 @@ defmodule Xgit.Plumbing.SymbolicRef.PutTest do
   use ExUnit.Case, async: true
 
   alias Xgit.Core.Ref
-  alias Xgit.Plumbing.HashObject
   alias Xgit.Plumbing.SymbolicRef.Put
   alias Xgit.Plumbing.UpdateRef
+  alias Xgit.Repository.Plumbing
   alias Xgit.Repository.Storage
   alias Xgit.Test.OnDiskRepoTestCase
 
@@ -39,7 +39,7 @@ defmodule Xgit.Plumbing.SymbolicRef.PutTest do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -64,7 +64,7 @@ defmodule Xgit.Plumbing.SymbolicRef.PutTest do
       assert {:ok, ^master_ref_via_head} = Storage.get_ref(repo, "HEAD")
 
       {:ok, commit_id_other} =
-        HashObject.run('shhh... another not commit',
+        Plumbing.hash_object('shhh... another not commit',
           repo: repo,
           type: :commit,
           validate?: false,

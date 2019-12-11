@@ -4,9 +4,9 @@ defmodule Xgit.Plumbing.UpdateRefTest do
   alias Xgit.Core.Object
   alias Xgit.Core.ObjectId
   alias Xgit.Core.Ref
-  alias Xgit.Plumbing.HashObject
   alias Xgit.Plumbing.UpdateRef
   alias Xgit.Repository.Storage
+  alias Xgit.Repository.Plumbing
   alias Xgit.Test.OnDiskRepoTestCase
 
   import FolderDiff
@@ -44,7 +44,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       File.mkdir_p!(Path.join(xgit_path, ".git/refs/heads/master"))
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -60,7 +60,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       File.write!(Path.join(xgit_path, ".git/refs/heads/sub"), "oops, not a directory")
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -74,7 +74,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -91,7 +91,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       assert {:ok, [^master_ref]} = Storage.list_refs(repo)
 
       {:ok, commit_id_other} =
-        HashObject.run('shhh... another fake commit',
+        Plumbing.hash_object('shhh... another fake commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -115,7 +115,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -144,7 +144,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       %{xgit_repo: repo, xgit_path: path} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -154,7 +154,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       assert :ok = UpdateRef.run(repo, "refs/heads/master", commit_id_master)
 
       {:ok, commit_id_other} =
-        HashObject.run('shhh... another fake commit',
+        Plumbing.hash_object('shhh... another fake commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -192,7 +192,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -208,7 +208,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       assert {:ok, [^master_ref]} = Storage.list_refs(repo)
 
       {:ok, commit_id2_master} =
-        HashObject.run('shhh... another not commit',
+        Plumbing.hash_object('shhh... another not commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -232,7 +232,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -248,7 +248,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       assert {:ok, [^master_ref]} = Storage.list_refs(repo)
 
       {:ok, commit_id2_master} =
-        HashObject.run('shhh... another not commit',
+        Plumbing.hash_object('shhh... another not commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -267,7 +267,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -283,7 +283,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       assert {:ok, [^master_ref]} = Storage.list_refs(repo)
 
       {:ok, commit_id2_master} =
-        HashObject.run('shhh... another not commit',
+        Plumbing.hash_object('shhh... another not commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -302,7 +302,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -322,7 +322,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -338,7 +338,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       assert {:ok, [^master_ref]} = Storage.list_refs(repo)
 
       {:ok, commit_id2_master} =
-        HashObject.run('shhh... another not commit',
+        Plumbing.hash_object('shhh... another not commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -355,7 +355,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -403,7 +403,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -432,7 +432,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,

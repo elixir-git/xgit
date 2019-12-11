@@ -3,7 +3,7 @@ defmodule Xgit.Plumbing.CatFileTest do
 
   alias Xgit.Core.ContentSource
   alias Xgit.Plumbing.CatFile
-  alias Xgit.Plumbing.HashObject
+  alias Xgit.Repository.Plumbing
   alias Xgit.Repository.OnDisk
   alias Xgit.Test.OnDiskRepoTestCase
 
@@ -32,7 +32,7 @@ defmodule Xgit.Plumbing.CatFileTest do
     test "happy path: can read back from Xgit-written loose object" do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
-      {:ok, test_content_id} = HashObject.run("test content\n", repo: repo, write?: true)
+      {:ok, test_content_id} = Plumbing.hash_object("test content\n", repo: repo, write?: true)
 
       assert {:ok, %{type: :blob, size: 13, content: test_content} = object} =
                CatFile.run(repo, test_content_id)

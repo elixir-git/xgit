@@ -3,10 +3,10 @@ defmodule Xgit.Plumbing.WriteTreeTest do
 
   alias Xgit.Core.DirCache.Entry
   alias Xgit.GitInitTestCase
-  alias Xgit.Plumbing.HashObject
   alias Xgit.Plumbing.UpdateIndex.CacheInfo
   alias Xgit.Plumbing.WriteTree
   alias Xgit.Repository.OnDisk
+  alias Xgit.Repository.Plumbing
   alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
 
@@ -325,7 +325,7 @@ defmodule Xgit.Plumbing.WriteTreeTest do
             )
         end,
         fn xgit_repo ->
-          {:ok, object_id} = HashObject.run("test content\n", repo: xgit_repo, write?: true)
+          {:ok, object_id} = Plumbing.hash_object("test content\n", repo: xgit_repo, write?: true)
           :ok = CacheInfo.run(xgit_repo, [{0o100644, object_id, 'a/b'}])
         end
       )
