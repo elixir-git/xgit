@@ -1,6 +1,7 @@
 defmodule Xgit.Repository.OnDiskTest do
   use Xgit.GitInitTestCase, async: true
 
+  alias Xgit.Repository
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
@@ -13,6 +14,7 @@ defmodule Xgit.Repository.OnDiskTest do
 
       assert {:ok, repo} = OnDisk.start_link(work_dir: xgit)
       assert is_pid(repo)
+      assert Repository.valid?(repo)
       assert Storage.valid?(repo)
 
       assert working_tree = Storage.default_working_tree(repo)
