@@ -1,10 +1,9 @@
-defmodule Xgit.Plumbing.ReadTreeTest do
+defmodule Xgit.Repository.Plumbing.ReadTreeTest do
   use Xgit.GitInitTestCase, async: true
 
   alias Xgit.Core.DirCache
   alias Xgit.Core.DirCache.Entry
   alias Xgit.GitInitTestCase
-  alias Xgit.Plumbing.ReadTree
   alias Xgit.Repository.InMemory
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Plumbing
@@ -12,7 +11,7 @@ defmodule Xgit.Plumbing.ReadTreeTest do
   alias Xgit.Repository.WorkingTree
   alias Xgit.Test.OnDiskRepoTestCase
 
-  describe "run/3" do
+  describe "read_tree/3" do
     test "happy path: empty dir cache" do
       assert write_git_tree_and_read_back(
                fn git_dir ->
@@ -111,7 +110,7 @@ defmodule Xgit.Plumbing.ReadTreeTest do
 
       {:ok, repo} = OnDisk.start_link(work_dir: ref)
 
-      assert :ok = ReadTree.run(repo, :empty)
+      assert :ok = Plumbing.read_tree(repo, :empty)
 
       working_tree = Storage.default_working_tree(repo)
       assert {:ok, dir_cache} = WorkingTree.dir_cache(working_tree)
@@ -395,7 +394,7 @@ defmodule Xgit.Plumbing.ReadTreeTest do
       {output, 0} = System.cmd("git", ["write-tree", "--missing-ok"], cd: xgit_path)
       tree_object_id = String.trim(output)
 
-      assert {:error, :objects_missing} = ReadTree.run(xgit_repo, tree_object_id)
+      assert {:error, :objects_missing} = Plumbing.read_tree(xgit_repo, tree_object_id)
     end
 
     test "missing_ok? error (defaulted)" do
@@ -409,16 +408,16 @@ defmodule Xgit.Plumbing.ReadTreeTest do
       {output, 0} = System.cmd("git", ["write-tree", "--missing-ok"], cd: xgit_path)
       tree_object_id = String.trim(output)
 
-      assert {:error, :objects_missing} = ReadTree.run(xgit_repo, tree_object_id)
+      assert {:error, :objects_missing} = Plumbing.read_tree(xgit_repo, tree_object_id)
     end
 
     test "error: :missing_ok? invalid" do
       %{xgit_repo: xgit_repo} = OnDiskRepoTestCase.repo!()
 
       assert_raise ArgumentError,
-                   ~s(Xgit.Plumbing.ReadTree.run/3: missing_ok? "sure" is invalid),
+                   ~s(Xgit.Repository.Plumbing.read_tree/3: missing_ok? "sure" is invalid),
                    fn ->
-                     ReadTree.run(
+                     Plumbing.read_tree(
                        xgit_repo,
                        "7919e8900c3af541535472aebd56d44222b7b3a3",
                        missing_ok?: "sure"
@@ -465,12 +464,12 @@ defmodule Xgit.Plumbing.ReadTreeTest do
 
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
-      assert {:error, :eisdir} = ReadTree.run(repo, tree_object_id, missing_ok?: true)
+      assert {:error, :eisdir} = Plumbing.read_tree(repo, tree_object_id, missing_ok?: true)
     end
 
     test "error: no working tree" do
       {:ok, repo} = InMemory.start_link()
-      assert {:error, :bare} = ReadTree.run(repo, :empty)
+      assert {:error, :bare} = Plumbing.read_tree(repo, :empty)
     end
 
     defp write_git_tree_and_read_back(git_ref_fn, opts) do
@@ -483,12 +482,12 @@ defmodule Xgit.Plumbing.ReadTreeTest do
 
       # We want the *tree* to be present, but the dir cache should be empty.
       # Otherwise, the subsequent call to `WorkingTree.dir_cache/1` could mask
-      # any failure in `ReadTree.run/3`.
+      # any failure in `Plumbing.read_tree/3`.
       {_output, 0} = System.cmd("git", ["read-tree", "--empty"], cd: ref)
 
       {:ok, repo} = OnDisk.start_link(work_dir: ref)
 
-      assert :ok = ReadTree.run(repo, tree_object_id, opts)
+      assert :ok = Plumbing.read_tree(repo, tree_object_id, opts)
 
       working_tree = Storage.default_working_tree(repo)
       assert {:ok, dir_cache} = WorkingTree.dir_cache(working_tree)
