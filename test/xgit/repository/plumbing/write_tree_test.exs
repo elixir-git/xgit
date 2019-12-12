@@ -411,7 +411,7 @@ defmodule Xgit.Repository.Plumbing.WriteTreeTest do
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       assert_raise ArgumentError,
-                   ~s(Xgit.Plumbing.Plumbing.write_tree/2: missing_ok? "sure" is invalid),
+                   ~s(Xgit.Repository.Plumbing.write_tree/2: missing_ok? "sure" is invalid),
                    fn ->
                      Plumbing.write_tree(repo, missing_ok?: "sure")
                    end
@@ -478,7 +478,7 @@ defmodule Xgit.Repository.Plumbing.WriteTreeTest do
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       assert_raise ArgumentError,
-                   ~s[Xgit.Plumbing.Plumbing.write_tree/2: prefix "a/b/c" is invalid (should be a charlist, not a String)],
+                   ~s[Xgit.Repository.Plumbing.write_tree/2: prefix "a/b/c" is invalid (should be a charlist, not a String)],
                    fn ->
                      Plumbing.write_tree(repo, prefix: "a/b/c")
                    end
