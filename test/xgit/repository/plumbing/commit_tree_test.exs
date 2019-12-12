@@ -1,9 +1,9 @@
-defmodule Xgit.Plumbing.CommitTreeTest do
+defmodule Xgit.Repository.Plumbing.CommitTreeTest do
   use ExUnit.Case, async: true
 
   alias Xgit.Core.Object
   alias Xgit.Core.PersonIdent
-  alias Xgit.Plumbing.CommitTree
+  alias Xgit.Repository.Plumbing
   alias Xgit.Repository.Storage
   alias Xgit.Test.OnDiskRepoTestCase
 
@@ -31,7 +31,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
       %{xgit_path: xgit_path, xgit_repo: xgit_repo, tree_id: ^tree_id} = setup_with_valid_tree!()
 
       assert {:ok, commit_id} =
-               CommitTree.run(xgit_repo,
+               Plumbing.commit_tree(xgit_repo,
                  tree: tree_id,
                  message: 'xxx',
                  author: @valid_pi
@@ -49,7 +49,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
       %{xgit_path: xgit_path, xgit_repo: xgit_repo, tree_id: ^tree_id} = setup_with_valid_tree!()
 
       assert {:ok, commit_id} =
-               CommitTree.run(xgit_repo,
+               Plumbing.commit_tree(xgit_repo,
                  tree: tree_id,
                  message: 'xxx\n',
                  author: @valid_pi
@@ -72,7 +72,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
         setup_with_valid_parent_commit!()
 
       assert {:ok, commit_id} =
-               CommitTree.run(xgit_repo,
+               Plumbing.commit_tree(xgit_repo,
                  tree: tree_id,
                  parents: [parent_id],
                  message: 'mumble',
@@ -99,7 +99,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
         setup_with_valid_parent_commit!()
 
       assert {:ok, commit_id} =
-               CommitTree.run(xgit_repo,
+               Plumbing.commit_tree(xgit_repo,
                  tree: tree_id,
                  parents: [parent_id, parent_id],
                  message: 'mumble',
@@ -155,7 +155,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
       parent2_id = String.trim(parent2_id_str)
 
       assert {:ok, commit_id} =
-               CommitTree.run(xgit_repo,
+               Plumbing.commit_tree(xgit_repo,
                  tree: tree_id,
                  parents: [parent_id, parent2_id],
                  message: 'mumble',
@@ -169,7 +169,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
       {:ok, not_repo} = GenServer.start_link(NotValid, nil)
 
       assert {:error, :invalid_repository} =
-               CommitTree.run(not_repo,
+               Plumbing.commit_tree(not_repo,
                  tree: "9d252945c1d3c553a30361214db02892d1ea4876",
                  author: @valid_pi
                )
@@ -179,7 +179,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
       %{xgit_repo: xgit_repo} = OnDiskRepoTestCase.repo!()
 
       assert {:error, :invalid_tree} =
-               CommitTree.run(xgit_repo,
+               Plumbing.commit_tree(xgit_repo,
                  tree: "9d252945c1d3c553a30361214db02892d1ea487",
                  author: @valid_pi
                )
@@ -189,7 +189,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
       %{xgit_repo: xgit_repo} = OnDiskRepoTestCase.repo!()
 
       assert {:error, :invalid_tree} =
-               CommitTree.run(xgit_repo,
+               Plumbing.commit_tree(xgit_repo,
                  tree: "9d252945c1d3c553a30361214db02892d1ea4876",
                  author: @valid_pi
                )
@@ -208,7 +208,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
       :ok = Storage.put_loose_object(xgit_repo, object)
 
       assert {:error, :invalid_tree} =
-               CommitTree.run(xgit_repo,
+               Plumbing.commit_tree(xgit_repo,
                  tree: "d670460b4b4aece5915caf5c68d12f560a9fe3e4",
                  author: @valid_pi
                )
@@ -218,7 +218,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
       %{xgit_repo: xgit_repo, tree_id: tree_id} = setup_with_valid_tree!()
 
       assert {:error, :invalid_parents} =
-               CommitTree.run(xgit_repo,
+               Plumbing.commit_tree(xgit_repo,
                  tree: tree_id,
                  parents: "mom and dad",
                  author: @valid_pi
@@ -229,7 +229,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
       %{xgit_repo: xgit_repo, tree_id: tree_id} = setup_with_valid_tree!()
 
       assert {:error, :invalid_parent_ids} =
-               CommitTree.run(xgit_repo,
+               Plumbing.commit_tree(xgit_repo,
                  tree: tree_id,
                  parents: ["mom and dad"],
                  author: @valid_pi
@@ -240,7 +240,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
       %{xgit_repo: xgit_repo, tree_id: tree_id} = setup_with_valid_tree!()
 
       assert {:error, :invalid_parent_ids} =
-               CommitTree.run(xgit_repo,
+               Plumbing.commit_tree(xgit_repo,
                  tree: tree_id,
                  parents: ['e2f6b54e68192566b90a0ed123fcdcf14a58a421'],
                  author: @valid_pi
@@ -251,7 +251,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
       %{xgit_repo: xgit_repo, tree_id: tree_id} = setup_with_valid_tree!()
 
       assert {:error, :invalid_parent_ids} =
-               CommitTree.run(xgit_repo,
+               Plumbing.commit_tree(xgit_repo,
                  tree: tree_id,
                  parents: ["e2f6b54e68192566b90a0ed123fcdcf14a58a421"],
                  author: @valid_pi
@@ -262,7 +262,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
       %{xgit_repo: xgit_repo, tree_id: tree_id} = setup_with_valid_tree!()
 
       assert {:error, :invalid_parent_ids} =
-               CommitTree.run(xgit_repo,
+               Plumbing.commit_tree(xgit_repo,
                  tree: tree_id,
                  parents: [tree_id],
                  author: @valid_pi
@@ -274,7 +274,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
         setup_with_valid_parent_commit!()
 
       assert {:error, :invalid_message} =
-               CommitTree.run(xgit_repo,
+               Plumbing.commit_tree(xgit_repo,
                  tree: tree_id,
                  parents: [parent_id],
                  message: "message",
@@ -287,7 +287,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
         setup_with_valid_parent_commit!()
 
       assert {:error, :invalid_message} =
-               CommitTree.run(xgit_repo,
+               Plumbing.commit_tree(xgit_repo,
                  tree: tree_id,
                  parents: [parent_id],
                  message: 'abc' ++ [false],
@@ -300,7 +300,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
         setup_with_valid_parent_commit!()
 
       assert {:error, :invalid_author} =
-               CommitTree.run(xgit_repo,
+               Plumbing.commit_tree(xgit_repo,
                  tree: tree_id,
                  parents: [parent_id],
                  message: 'message',
@@ -314,7 +314,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
         setup_with_valid_parent_commit!()
 
       assert {:error, :invalid_author} =
-               CommitTree.run(xgit_repo,
+               Plumbing.commit_tree(xgit_repo,
                  tree: tree_id,
                  parents: [parent_id],
                  message: 'message',
@@ -328,7 +328,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
         setup_with_valid_parent_commit!()
 
       assert {:error, :invalid_committer} =
-               CommitTree.run(xgit_repo,
+               Plumbing.commit_tree(xgit_repo,
                  tree: tree_id,
                  parents: [parent_id],
                  message: 'message',
@@ -342,7 +342,7 @@ defmodule Xgit.Plumbing.CommitTreeTest do
         setup_with_valid_parent_commit!()
 
       assert {:error, :invalid_committer} =
-               CommitTree.run(xgit_repo,
+               Plumbing.commit_tree(xgit_repo,
                  tree: tree_id,
                  parents: [parent_id],
                  message: 'message',
