@@ -21,6 +21,7 @@ defmodule Xgit.Repository.Plumbing do
   alias Xgit.Core.Object
   alias Xgit.Core.ObjectId
   alias Xgit.Core.ObjectType
+  alias Xgit.Core.Tree
   alias Xgit.Plumbing.Util.WorkingTreeOpt
   alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
@@ -232,6 +233,59 @@ defmodule Xgit.Repository.Plumbing do
     end
   end
 
+  @typedoc ~S"""
+  Reason codes that can be returned by `cat_file_tree/2`.
+  """
+  @type cat_file_tree_reason ::
+          :invalid_repository
+          | :invalid_object_id
+          | Storage.get_object_reason()
+          | Tree.from_object_reason()
+
+  @doc ~S"""
+  Retrieves a `tree` object from a repository's object store and renders
+  it as an `Xgit.Core.Tree` struct.
+
+  Analogous to
+  [`git cat-file -p`](https://git-scm.com/docs/git-cat-file#Documentation/git-cat-file.txt--p)
+  when the target object is a `tree` object.
+
+  ## Parameters
+
+  `repository` is the `Xgit.Repository.Storage` (PID) to search for the object.
+
+  `object_id` is a string identifying the object.
+
+  ## Return Value
+
+  `{:ok, tree}` if the object could be found and understood as a tree.
+  `tree` is an instance of `Xgit.Core.Tree` and can be used to retrieve
+  references to the members of that tree.
+
+  `{:error, :invalid_repository}` if `repository` doesn't represent a valid
+  `Xgit.Repository.Storage` process.
+
+  `{:error, :invalid_object_id}` if `object_id` can't be parsed as a valid git object ID.
+
+  `{:error, reason}` if otherwise unable. The relevant reason codes may come from:
+
+  * `Xgit.Core.Tree.from_object/1`.
+  * `Xgit.Repository.Storage.get_object/2`
+  """
+  @spec cat_file_tree(repository :: Storage.t(), object_id :: ObjectId.t()) ::
+          {:ok, tree :: Tree.t()} | {:error, reason :: cat_file_tree_reason}
+  def cat_file_tree(repository, object_id) when is_pid(repository) and is_binary(object_id) do
+    with {:repository_valid?, true} <- {:repository_valid?, Storage.valid?(repository)},
+         {:object_id_valid?, true} <- {:object_id_valid?, ObjectId.valid?(object_id)},
+         {:ok, object} <- Storage.get_object(repository, object_id) do
+      Tree.from_object(object)
+    else
+      {:error, reason} -> cover {:error, reason}
+      {:repository_valid?, false} -> cover {:error, :invalid_repository}
+      {:object_id_valid?, false} -> cover {:error, :invalid_object_id}
+    end
+  end
+
   ## --- Working Tree ---
 
   @typedoc ~S"""
@@ -347,7 +401,6 @@ defmodule Xgit.Repository.Plumbing do
   defp valid_remove?(_), do: cover(false)
 
   defp map_remove_entry(name), do: cover({name, :all})
-
 
   @typedoc ~S"""
   Reason codes that can be returned by `write_tree/2`.
