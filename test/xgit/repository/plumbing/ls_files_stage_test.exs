@@ -1,15 +1,15 @@
-defmodule Xgit.Plumbing.LsFiles.StageTest do
+defmodule Xgit.Repository.Plumbing.LsFilesStageTest do
   use Xgit.GitInitTestCase, async: true
 
   alias Xgit.Core.DirCache.Entry, as: DirCacheEntry
-  alias Xgit.Plumbing.LsFiles.Stage, as: LsFilesStage
   alias Xgit.Repository.InMemory
   alias Xgit.Repository.OnDisk
+  alias Xgit.Repository.Plumbing
   alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
   alias Xgit.Test.TempDirTestCase
 
-  describe "run/1" do
+  describe "ls_files_stage/1" do
     test "happy path: no index file" do
       {:ok, repo} = InMemory.start_link()
 
@@ -18,7 +18,7 @@ defmodule Xgit.Plumbing.LsFiles.StageTest do
       {:ok, working_tree} = WorkingTree.start_link(repo, path)
       :ok = Storage.set_default_working_tree(repo, working_tree)
 
-      assert {:ok, []} = LsFilesStage.run(repo)
+      assert {:ok, []} = Plumbing.ls_files_stage(repo)
     end
 
     test "happy path: can read from command-line git (empty index)", %{ref: ref} do
@@ -48,7 +48,7 @@ defmodule Xgit.Plumbing.LsFiles.StageTest do
         )
 
       {:ok, repo} = OnDisk.start_link(work_dir: ref)
-      assert {:ok, []} = LsFilesStage.run(repo)
+      assert {:ok, []} = Plumbing.ls_files_stage(repo)
     end
 
     test "happy path: can read from command-line git (two small files)", %{ref: ref} do
@@ -82,7 +82,7 @@ defmodule Xgit.Plumbing.LsFiles.StageTest do
 
       {:ok, repo} = OnDisk.start_link(work_dir: ref)
 
-      assert {:ok, entries} = LsFilesStage.run(repo)
+      assert {:ok, entries} = Plumbing.ls_files_stage(repo)
 
       assert entries = [
                %DirCacheEntry{
@@ -128,18 +128,18 @@ defmodule Xgit.Plumbing.LsFiles.StageTest do
 
     test "error: repository invalid (not PID)" do
       assert_raise FunctionClauseError, fn ->
-        LsFilesStage.run("xgit repo")
+        Plumbing.ls_files_stage("xgit repo")
       end
     end
 
     test "error: repository invalid (PID, but not repo)" do
       {:ok, not_repo} = GenServer.start_link(NotValid, nil)
-      assert {:error, :invalid_repository} = LsFilesStage.run(not_repo)
+      assert {:error, :invalid_repository} = Plumbing.ls_files_stage(not_repo)
     end
 
     test "error: no working tree" do
       {:ok, repo} = InMemory.start_link()
-      assert {:error, :bare} = LsFilesStage.run(repo)
+      assert {:error, :bare} = Plumbing.ls_files_stage(repo)
     end
 
     test "error: invalid index file", %{xgit: xgit} do
@@ -151,7 +151,7 @@ defmodule Xgit.Plumbing.LsFiles.StageTest do
 
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
-      assert {:error, :invalid_format} = LsFilesStage.run(repo)
+      assert {:error, :invalid_format} = Plumbing.ls_files_stage(repo)
     end
   end
 end
