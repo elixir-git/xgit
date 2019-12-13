@@ -23,6 +23,7 @@ defmodule Xgit.Repository.Plumbing do
   alias Xgit.Core.ObjectId
   alias Xgit.Core.ObjectType
   alias Xgit.Core.PersonIdent
+  alias Xgit.Core.Ref
   alias Xgit.Core.Tree
   alias Xgit.Plumbing.Util.WorkingTreeOpt
   alias Xgit.Repository.Storage
@@ -778,5 +779,89 @@ defmodule Xgit.Repository.Plumbing do
     end
 
     {missing_ok?, prefix}
+  end
+
+  ## -- References --
+
+  @typedoc ~S"""
+  Reason codes that can be returned by `update_ref/4`.
+  """
+  @type update_ref_reason :: :invalid_repository | Storage.put_ref_reason()
+
+  @doc ~S"""
+  Update the object name stored in a ref.
+
+  Analogous to [`git update-ref`](https://git-scm.com/docs/git-update-ref).
+
+  ## Parameters
+
+  `repository` is the `Xgit.Repository.Storage` (PID) to search for the object.
+
+  `name` is the name of the reference to update. (See `t/Xgit.Core.Ref.name`.)
+
+  `new_value` is the object ID to be written at this reference. (Use `Xgit.Core.ObjectId.zero/0` to delete the reference.)
+
+  ## Options
+
+  `old_target`: If present, a ref with this name must already exist and the `target`
+  value must match the object ID provided in this option. (There is a special value `:new`
+  which instead requires that the named ref must **not** exist.)
+
+  ## TO DO
+
+  Follow symbolic links, but only if they start with `refs/`.
+  (https://github.com/elixir-git/xgit/issues/241)
+
+  ## Return Value
+
+  `:ok` if written successfully.
+
+  `{:error, :invalid_repository}` if `repository` doesn't represent a valid
+  `Xgit.Repository.Storage` process.
+
+  Reason codes may also come from the following functions:
+
+  * `Xgit.Repository.Storage.put_ref/3`
+  * `Xgit.Repository.Storage.delete_ref/3`
+  """
+  @spec update_ref(repository :: Storage.t(), name :: Ref.name(), new_value :: ObjectId.t(),
+          old_target: ObjectId.t()
+        ) :: :ok | {:error, reason :: update_ref_reason}
+  def update_ref(repository, name, new_value, opts \\ [])
+      when is_pid(repository) and is_binary(name) and is_binary(new_value) and is_list(opts) do
+    with {:repository_valid?, true} <- {:repository_valid?, Storage.valid?(repository)},
+         repo_opts <- validate_update_ref_opts(opts) do
+      if new_value == ObjectId.zero() do
+        Storage.delete_ref(repository, name, repo_opts)
+      else
+        Storage.put_ref(repository, %Ref{name: name, target: new_value}, repo_opts)
+      end
+    else
+      {:repository_valid?, false} -> cover {:error, :invalid_repository}
+    end
+  end
+
+  defp validate_update_ref_opts(opts) do
+    case validate_old_target(Keyword.get(opts, :old_target, nil)) do
+      nil -> cover []
+      old_target -> cover [{:old_target, old_target}]
+    end
+  end
+
+  defp validate_old_target(nil) do
+    cover nil
+  end
+
+  defp validate_old_target(:new) do
+    cover :new
+  end
+
+  defp validate_old_target(old_target) do
+    if ObjectId.valid?(old_target) do
+      cover old_target
+    else
+      raise ArgumentError,
+            "Xgit.Repository.Plumbing.update_ref/4: old_target #{inspect(old_target)} is invalid"
+    end
   end
 end

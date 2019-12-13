@@ -3,7 +3,6 @@ defmodule Xgit.Plumbing.SymbolicRef.PutTest do
 
   alias Xgit.Core.Ref
   alias Xgit.Plumbing.SymbolicRef.Put
-  alias Xgit.Plumbing.UpdateRef
   alias Xgit.Repository.Plumbing
   alias Xgit.Repository.Storage
   alias Xgit.Test.OnDiskRepoTestCase
@@ -57,7 +56,7 @@ defmodule Xgit.Plumbing.SymbolicRef.PutTest do
         link_target: "refs/heads/master"
       }
 
-      assert :ok = UpdateRef.run(repo, "HEAD", commit_id_master)
+      assert :ok = Plumbing.update_ref(repo, "HEAD", commit_id_master)
 
       assert {:ok, [^master_ref]} = Storage.list_refs(repo)
       assert {:ok, ^master_ref} = Storage.get_ref(repo, "refs/heads/master")
@@ -84,7 +83,7 @@ defmodule Xgit.Plumbing.SymbolicRef.PutTest do
 
       assert :ok = Put.run(repo, "HEAD", "refs/heads/other")
 
-      assert :ok = UpdateRef.run(repo, "HEAD", commit_id_other)
+      assert :ok = Plumbing.update_ref(repo, "HEAD", commit_id_other)
 
       assert {:ok, [^master_ref, ^other_ref]} = Storage.list_refs(repo)
       assert {:ok, ^master_ref} = Storage.get_ref(repo, "refs/heads/master")
