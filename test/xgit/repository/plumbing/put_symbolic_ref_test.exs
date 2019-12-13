@@ -1,19 +1,18 @@
-defmodule Xgit.Plumbing.SymbolicRef.PutTest do
+defmodule Xgit.Repository.Plumbing.PutSymbolicRefTest do
   use ExUnit.Case, async: true
 
   alias Xgit.Core.Ref
-  alias Xgit.Plumbing.SymbolicRef.Put
   alias Xgit.Repository.Plumbing
   alias Xgit.Repository.Storage
   alias Xgit.Test.OnDiskRepoTestCase
 
   import FolderDiff
 
-  describe "run/4" do
+  describe "put_symbolic_ref/4" do
     test "happy path: target ref does not exist" do
       %{xgit_path: path, xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
-      assert :ok = Put.run(repo, "HEAD", "refs/heads/nope")
+      assert :ok = Plumbing.put_symbolic_ref(repo, "HEAD", "refs/heads/nope")
 
       assert {"refs/heads/nope\n", 0} = System.cmd("git", ["symbolic-ref", "HEAD"], cd: path)
     end
@@ -23,7 +22,8 @@ defmodule Xgit.Plumbing.SymbolicRef.PutTest do
 
       File.mkdir_p!(Path.join(xgit_path, ".git/refs/heads/whatever"))
 
-      assert {:error, :eisdir} = Put.run(repo, "refs/heads/whatever", "refs/heads/master")
+      assert {:error, :eisdir} =
+               Plumbing.put_symbolic_ref(repo, "refs/heads/whatever", "refs/heads/master")
     end
 
     test "error: posix error (file where dir should be)" do
@@ -31,7 +31,8 @@ defmodule Xgit.Plumbing.SymbolicRef.PutTest do
 
       File.write!(Path.join(xgit_path, ".git/refs/heads/sub"), "oops, not a directory")
 
-      assert {:error, :eexist} = Put.run(repo, "refs/heads/sub/master", "refs/heads/master")
+      assert {:error, :eexist} =
+               Plumbing.put_symbolic_ref(repo, "refs/heads/sub/master", "refs/heads/master")
     end
 
     test "follows HEAD reference after it changes" do
@@ -81,7 +82,7 @@ defmodule Xgit.Plumbing.SymbolicRef.PutTest do
         link_target: "refs/heads/other"
       }
 
-      assert :ok = Put.run(repo, "HEAD", "refs/heads/other")
+      assert :ok = Plumbing.put_symbolic_ref(repo, "HEAD", "refs/heads/other")
 
       assert :ok = Plumbing.update_ref(repo, "HEAD", commit_id_other)
 
@@ -93,7 +94,7 @@ defmodule Xgit.Plumbing.SymbolicRef.PutTest do
     test "result can be read by command-line git" do
       %{xgit_repo: repo, xgit_path: path} = OnDiskRepoTestCase.repo!()
 
-      assert :ok = Put.run(repo, "HEAD", "refs/heads/other")
+      assert :ok = Plumbing.put_symbolic_ref(repo, "HEAD", "refs/heads/other")
       assert {"refs/heads/other\n", 0} = System.cmd("git", ["symbolic-ref", "HEAD"], cd: path)
     end
 
@@ -103,21 +104,22 @@ defmodule Xgit.Plumbing.SymbolicRef.PutTest do
 
       {_, 0} = System.cmd("git", ["symbolic-ref", "HEAD", "refs/heads/other"], cd: ref_path)
 
-      :ok = Put.run(xgit_repo, "HEAD", "refs/heads/other")
+      :ok = Plumbing.put_symbolic_ref(xgit_repo, "HEAD", "refs/heads/other")
 
       assert_folders_are_equal(ref_path, xgit_path)
     end
 
     test "error: repository invalid (not PID)" do
       assert_raise FunctionClauseError, fn ->
-        Put.run("xgit repo", "HEAD", "refs/heads/master")
+        Plumbing.put_symbolic_ref("xgit repo", "HEAD", "refs/heads/master")
       end
     end
 
     test "error: repository invalid (PID, but not repo)" do
       {:ok, not_repo} = GenServer.start_link(NotValid, nil)
 
-      assert {:error, :invalid_repository} = Put.run(not_repo, "HEAD", "refs/heads/master")
+      assert {:error, :invalid_repository} =
+               Plumbing.put_symbolic_ref(not_repo, "HEAD", "refs/heads/master")
     end
   end
 end
