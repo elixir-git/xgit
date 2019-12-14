@@ -33,10 +33,6 @@ Code in Xgit is organized into the following categories, reflected in module nam
 and corresponding folder organization, listed here roughly in order from top to bottom
 of the dependency sequence:
 
-* **`api`** _(none implemented yet)_: These are the typical commands or operations
-  that you perform on a git repository. In the git vernacular, these are often
-  referred to as **porcelain** (i.e. the refined, user-visible operations).
-
 * **`repository`**: This describes how a single git repository is persisted. A
   reference "on-disk" implementation is provided and is designed to interoperate
   with the existing git command-line tool.

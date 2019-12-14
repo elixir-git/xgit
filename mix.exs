@@ -52,7 +52,35 @@ defmodule Xgit.MixProject do
       logo: "branding/xgit-logo.png",
       canonical: "http://hexdocs.pm/xgit",
       source_url: "https://github.com/elixir-git/xgit",
-      homepage_url: "https://xgit.io"
+      homepage_url: "https://xgit.io",
+      groups_for_modules: [
+        Repository: [
+          "Xgit.Repository",
+          "Xgit.Repository.InMemory",
+          "Xgit.Repository.OnDisk",
+          "Xgit.Repository.Plumbing",
+          "Xgit.Repository.Storage"
+        ],
+        "Core Data Model": [
+          "Xgit.Core.Commit",
+          "Xgit.Core.ContentSource",
+          "Xgit.Core.DirCache",
+          "Xgit.Core.DirCache.Entry",
+          "Xgit.Core.FileContentSource",
+          "Xgit.Core.FileMode",
+          "Xgit.Core.FilePath",
+          "Xgit.Core.Object",
+          "Xgit.Core.ObjectId",
+          "Xgit.Core.ObjectType",
+          "Xgit.Core.PersonIdent",
+          "Xgit.Core.Ref",
+          "Xgit.Core.Tree",
+          "Xgit.Core.Tree.Entry",
+          "Xgit.Repository.WorkingTree",
+          "Xgit.Repository.WorkingTree.ParseIndexFile",
+          "Xgit.Repository.WorkingTree.WriteIndexFile"
+        ]
+      ]
     ]
   end
 
