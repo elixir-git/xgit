@@ -37,11 +37,6 @@ of the dependency sequence:
   that you perform on a git repository. In the git vernacular, these are often
   referred to as **porcelain** (i.e. the refined, user-visible operations).
 
-* **`plumbing`**: These are the raw building-block operations that are often
-  composed together to make the user-targeted commands. These are often sophisticated
-  operations in and of themselves, but are typically not of interest to end-user
-  developers.
-
 * **`repository`**: This describes how a single git repository is persisted. A
   reference "on-disk" implementation is provided and is designed to interoperate
   with the existing git command-line tool.

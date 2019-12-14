@@ -3,12 +3,9 @@ defmodule Xgit.Repository.Plumbing do
   Implements the "plumbing"-level commands for a git repository.
 
   The functions in this module, like the "plumbing" commands in command-line
-  git, are typically not of interest to an end-user developer. Instead, they
-  represent mid-level implementation details that are chained together to
-  build the more user-friendly "porcelain" commands.
-
-  The "porcelain" commands are implemented by functions in the `Xgit.Repository`
-  module.
+  git, are typically not of interest to an end-user developer. Instead, these
+  are the raw building-block operations that are often composed together to
+  make the user-targeted "porcelain" commands.
   """
   use Xgit.Core.FileMode
 
