@@ -25,7 +25,6 @@ defmodule Xgit.Repository.Plumbing do
   alias Xgit.Core.PersonIdent
   alias Xgit.Core.Ref
   alias Xgit.Core.Tree
-  alias Xgit.Plumbing.Util.WorkingTreeOpt
   alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
   alias Xgit.Repository.WorkingTree.ParseIndexFile
@@ -547,7 +546,7 @@ defmodule Xgit.Repository.Plumbing do
           {:ok, entries :: [DirCacheEntry.t()]}
           | {:error, reason :: ls_files_stage_reason}
   def ls_files_stage(repository) when is_pid(repository) do
-    with {:ok, working_tree} <- WorkingTreeOpt.get(repository),
+    with {:ok, working_tree} <- working_tree_from_opts(repository),
          {:ok, %DirCache{entries: entries} = _dir_cache} <-
            WorkingTree.dir_cache(working_tree) do
       cover {:ok, entries}
@@ -609,7 +608,7 @@ defmodule Xgit.Repository.Plumbing do
           :ok | {:error, update_index_cache_info_reason()}
   def update_index_cache_info(repository, add, remove \\ [])
       when is_pid(repository) and is_list(add) and is_list(remove) do
-    with {:ok, working_tree} <- WorkingTreeOpt.get(repository),
+    with {:ok, working_tree} <- working_tree_from_opts(repository),
          {:items_to_add, add} when is_list(add) <- {:items_to_add, parse_add_entries(add)},
          {:items_to_remove, remove} when is_list(remove) <-
            {:items_to_remove, parse_remove_entries(remove)} do
@@ -721,7 +720,7 @@ defmodule Xgit.Repository.Plumbing do
           :ok | {:error, reason :: read_tree_reason}
   def read_tree(repository, object_id, opts \\ [])
       when is_pid(repository) and (is_binary(object_id) or object_id == :empty) and is_list(opts) do
-    with {:ok, working_tree} <- WorkingTreeOpt.get(repository),
+    with {:ok, working_tree} <- working_tree_from_opts(repository),
          _missing_ok? <- validate_read_tree_options(opts) do
       if object_id == :empty do
         WorkingTree.reset_dir_cache(working_tree)
@@ -797,7 +796,7 @@ defmodule Xgit.Repository.Plumbing do
           {:ok, object_id :: ObjectId.t()}
           | {:error, reason :: write_tree_reason}
   def write_tree(repository, opts \\ []) when is_pid(repository) do
-    with {:ok, working_tree} <- WorkingTreeOpt.get(repository),
+    with {:ok, working_tree} <- working_tree_from_opts(repository),
          _ <- validate_write_tree_options(opts) do
       cover WorkingTree.write_tree(working_tree, opts)
     else
@@ -958,5 +957,30 @@ defmodule Xgit.Repository.Plumbing do
     else
       cover {:error, :invalid_repository}
     end
+  end
+
+  ## --- Options ---
+
+  # Parse working tree and repository from arguments and options.
+
+  defp working_tree_from_opts(repository, opts \\ []) when is_pid(repository) and is_list(opts) do
+    with {:repository_valid?, true} <- {:repository_valid?, Storage.valid?(repository)},
+         {:working_tree, working_tree} when is_pid(working_tree) <-
+           {:working_tree, working_tree_from_repo_or_opts(repository, opts)} do
+      cover {:ok, working_tree}
+    else
+      {:repository_valid?, false} -> cover {:error, :invalid_repository}
+      {:working_tree, nil} -> cover {:error, :bare}
+    end
+  end
+
+  defp working_tree_from_repo_or_opts(repository, _opts) do
+    # TO DO: Allow working tree to be specified via options.
+    # https://github.com/elixir-git/xgit/issues/133
+    # (NOTE: Should follow through to ensure all relevant plumbing
+    # modules have that option documented when implemented.)
+    # For now, only recognize default working tree.
+
+    Storage.default_working_tree(repository)
   end
 end
