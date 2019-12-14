@@ -3,7 +3,7 @@ defmodule Xgit.Repository.OnDisk.RefTest do
 
   alias Xgit.Core.Object
   alias Xgit.Core.Ref
-  alias Xgit.Plumbing.HashObject
+  alias Xgit.Repository.Plumbing
   alias Xgit.Repository.Storage
   alias Xgit.Test.OnDiskRepoTestCase
 
@@ -63,7 +63,7 @@ defmodule Xgit.Repository.OnDisk.RefTest do
       File.mkdir_p!(Path.join(path, ".git/refs/heads/master"))
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -81,7 +81,7 @@ defmodule Xgit.Repository.OnDisk.RefTest do
       File.write!(Path.join(path, ".git/refs/heads/sub"), "oops, not a directory")
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -97,7 +97,7 @@ defmodule Xgit.Repository.OnDisk.RefTest do
 
     test "result can be read by command-line git", %{repo: repo, path: path} do
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -112,7 +112,7 @@ defmodule Xgit.Repository.OnDisk.RefTest do
       assert :ok = Storage.put_ref(repo, master_ref)
 
       {:ok, commit_id_other} =
-        HashObject.run('shhh... another fake commit',
+        Plumbing.hash_object('shhh... another fake commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -187,7 +187,7 @@ defmodule Xgit.Repository.OnDisk.RefTest do
       %{xgit_repo: repo, xgit_path: xgit_path} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,

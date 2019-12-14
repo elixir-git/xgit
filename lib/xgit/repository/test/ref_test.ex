@@ -18,7 +18,7 @@ defmodule Xgit.Repository.Test.RefTest do
   define_shared_tests do
     alias Xgit.Core.Object
     alias Xgit.Core.Ref
-    alias Xgit.Plumbing.HashObject
+    alias Xgit.Repository.Plumbing
     alias Xgit.Repository.Storage
 
     @test_content 'test content\n'
@@ -88,7 +88,7 @@ defmodule Xgit.Repository.Test.RefTest do
 
       test "happy path: results visible to list_refs/1 and get_ref/2", %{repo: repo} do
         {:ok, commit_id_master} =
-          HashObject.run('shhh... not really a commit',
+          Plumbing.hash_object('shhh... not really a commit',
             repo: repo,
             type: :commit,
             validate?: false,
@@ -105,7 +105,7 @@ defmodule Xgit.Repository.Test.RefTest do
         assert {:ok, [^master_ref]} = Storage.list_refs(repo)
 
         {:ok, commit_id_other} =
-          HashObject.run('shhh... another fake commit',
+          Plumbing.hash_object('shhh... another fake commit',
             repo: repo,
             type: :commit,
             validate?: false,
@@ -127,7 +127,7 @@ defmodule Xgit.Repository.Test.RefTest do
 
       test "follows HEAD reference correctly", %{repo: repo} do
         {:ok, commit_id_master} =
-          HashObject.run('shhh... not really a commit',
+          Plumbing.hash_object('shhh... not really a commit',
             repo: repo,
             type: :commit,
             validate?: false,
@@ -159,7 +159,7 @@ defmodule Xgit.Repository.Test.RefTest do
 
       test "can replace an existing object ID ref with a symbolic ref", %{repo: repo} do
         {:ok, commit_id} =
-          HashObject.run('shhh... not really a commit',
+          Plumbing.hash_object('shhh... not really a commit',
             repo: repo,
             type: :commit,
             validate?: false,
@@ -209,7 +209,7 @@ defmodule Xgit.Repository.Test.RefTest do
 
       test ":old_target option (correct match)", %{repo: repo} do
         {:ok, commit_id_master} =
-          HashObject.run('shhh... not really a commit',
+          Plumbing.hash_object('shhh... not really a commit',
             repo: repo,
             type: :commit,
             validate?: false,
@@ -225,7 +225,7 @@ defmodule Xgit.Repository.Test.RefTest do
         assert {:ok, [^master_ref]} = Storage.list_refs(repo)
 
         {:ok, commit_id2_master} =
-          HashObject.run('shhh... another not commit',
+          Plumbing.hash_object('shhh... another not commit',
             repo: repo,
             type: :commit,
             validate?: false,
@@ -243,7 +243,7 @@ defmodule Xgit.Repository.Test.RefTest do
 
       test ":old_target (incorrect match)", %{repo: repo} do
         {:ok, commit_id_master} =
-          HashObject.run('shhh... not really a commit',
+          Plumbing.hash_object('shhh... not really a commit',
             repo: repo,
             type: :commit,
             validate?: false,
@@ -259,7 +259,7 @@ defmodule Xgit.Repository.Test.RefTest do
         assert {:ok, [^master_ref]} = Storage.list_refs(repo)
 
         {:ok, commit_id2_master} =
-          HashObject.run('shhh... another not commit',
+          Plumbing.hash_object('shhh... another not commit',
             repo: repo,
             type: :commit,
             validate?: false,
@@ -281,7 +281,7 @@ defmodule Xgit.Repository.Test.RefTest do
 
       test "put_ref: :old_target (does not exist)", %{repo: repo} do
         {:ok, commit_id_master} =
-          HashObject.run('shhh... not really a commit',
+          Plumbing.hash_object('shhh... not really a commit',
             repo: repo,
             type: :commit,
             validate?: false,
@@ -297,7 +297,7 @@ defmodule Xgit.Repository.Test.RefTest do
         assert {:ok, [^master_ref]} = Storage.list_refs(repo)
 
         {:ok, commit_id2_master} =
-          HashObject.run('shhh... another not commit',
+          Plumbing.hash_object('shhh... another not commit',
             repo: repo,
             type: :commit,
             validate?: false,
@@ -317,7 +317,7 @@ defmodule Xgit.Repository.Test.RefTest do
 
       test ":old_target = :new", %{repo: repo} do
         {:ok, commit_id_master} =
-          HashObject.run('shhh... not really a commit',
+          Plumbing.hash_object('shhh... not really a commit',
             repo: repo,
             type: :commit,
             validate?: false,
@@ -335,7 +335,7 @@ defmodule Xgit.Repository.Test.RefTest do
 
       test ":old_target = :new, but target does exist", %{repo: repo} do
         {:ok, commit_id_master} =
-          HashObject.run('shhh... not really a commit',
+          Plumbing.hash_object('shhh... not really a commit',
             repo: repo,
             type: :commit,
             validate?: false,
@@ -351,7 +351,7 @@ defmodule Xgit.Repository.Test.RefTest do
         assert {:ok, [^master_ref]} = Storage.list_refs(repo)
 
         {:ok, commit_id2_master} =
-          HashObject.run('shhh... another not commit',
+          Plumbing.hash_object('shhh... another not commit',
             repo: repo,
             type: :commit,
             validate?: false,
@@ -373,7 +373,7 @@ defmodule Xgit.Repository.Test.RefTest do
     describe "delete_ref/3 (shared)" do
       test "removes an existing ref", %{repo: repo} do
         {:ok, commit_id_master} =
-          HashObject.run('shhh... not really a commit',
+          Plumbing.hash_object('shhh... not really a commit',
             repo: repo,
             type: :commit,
             validate?: false,
@@ -415,7 +415,7 @@ defmodule Xgit.Repository.Test.RefTest do
 
       test ":old_target matches existing ref", %{repo: repo} do
         {:ok, commit_id_master} =
-          HashObject.run('shhh... not really a commit',
+          Plumbing.hash_object('shhh... not really a commit',
             repo: repo,
             type: :commit,
             validate?: false,
@@ -439,7 +439,7 @@ defmodule Xgit.Repository.Test.RefTest do
 
       test "doesn't remove ref if :old_target doesn't match", %{repo: repo} do
         {:ok, commit_id_master} =
-          HashObject.run('shhh... not really a commit',
+          Plumbing.hash_object('shhh... not really a commit',
             repo: repo,
             type: :commit,
             validate?: false,

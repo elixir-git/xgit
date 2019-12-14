@@ -1,11 +1,10 @@
-defmodule Xgit.Plumbing.UpdateRefTest do
+defmodule Xgit.Repository.Plumbing.UpdateRefTest do
   use ExUnit.Case, async: true
 
   alias Xgit.Core.Object
   alias Xgit.Core.ObjectId
   alias Xgit.Core.Ref
-  alias Xgit.Plumbing.HashObject
-  alias Xgit.Plumbing.UpdateRef
+  alias Xgit.Repository.Plumbing
   alias Xgit.Repository.Storage
   alias Xgit.Test.OnDiskRepoTestCase
 
@@ -13,12 +12,12 @@ defmodule Xgit.Plumbing.UpdateRefTest do
 
   @env OnDiskRepoTestCase.sample_commit_env()
 
-  describe "run/4" do
+  describe "update_ref/4" do
     test "error: object does not exist" do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       assert {:error, :target_not_found} =
-               UpdateRef.run(
+               Plumbing.update_ref(
                  repo,
                  "refs/heads/master",
                  "532ad3cb2518ad13a91e717998a26a6028df0623"
@@ -35,7 +34,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       :ok = Storage.put_loose_object(repo, object)
 
       assert {:error, :target_not_commit} =
-               UpdateRef.run(repo, "refs/heads/master", @test_content_id)
+               Plumbing.update_ref(repo, "refs/heads/master", @test_content_id)
     end
 
     test "error: posix error (dir where file should be)" do
@@ -44,14 +43,14 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       File.mkdir_p!(Path.join(xgit_path, ".git/refs/heads/master"))
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
           write?: true
         )
 
-      assert {:error, :eisdir} = UpdateRef.run(repo, "refs/heads/master", commit_id_master)
+      assert {:error, :eisdir} = Plumbing.update_ref(repo, "refs/heads/master", commit_id_master)
     end
 
     test "error: posix error (file where dir should be)" do
@@ -60,21 +59,22 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       File.write!(Path.join(xgit_path, ".git/refs/heads/sub"), "oops, not a directory")
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
           write?: true
         )
 
-      assert {:error, :eexist} = UpdateRef.run(repo, "refs/heads/sub/master", commit_id_master)
+      assert {:error, :eexist} =
+               Plumbing.update_ref(repo, "refs/heads/sub/master", commit_id_master)
     end
 
     test "happy path" do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -86,12 +86,12 @@ defmodule Xgit.Plumbing.UpdateRefTest do
         target: commit_id_master
       }
 
-      assert :ok = UpdateRef.run(repo, "refs/heads/master", commit_id_master)
+      assert :ok = Plumbing.update_ref(repo, "refs/heads/master", commit_id_master)
 
       assert {:ok, [^master_ref]} = Storage.list_refs(repo)
 
       {:ok, commit_id_other} =
-        HashObject.run('shhh... another fake commit',
+        Plumbing.hash_object('shhh... another fake commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -103,7 +103,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
         target: commit_id_other
       }
 
-      assert :ok = UpdateRef.run(repo, "refs/heads/other", commit_id_other)
+      assert :ok = Plumbing.update_ref(repo, "refs/heads/other", commit_id_other)
 
       assert {:ok, ^master_ref} = Storage.get_ref(repo, "refs/heads/master")
       assert {:ok, ^other_ref} = Storage.get_ref(repo, "refs/heads/other")
@@ -115,7 +115,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -133,7 +133,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
         link_target: "refs/heads/master"
       }
 
-      assert :ok = UpdateRef.run(repo, "HEAD", commit_id_master)
+      assert :ok = Plumbing.update_ref(repo, "HEAD", commit_id_master)
 
       assert {:ok, [^master_ref]} = Storage.list_refs(repo)
       assert {:ok, ^master_ref} = Storage.get_ref(repo, "refs/heads/master")
@@ -144,24 +144,24 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       %{xgit_repo: repo, xgit_path: path} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
           write?: true
         )
 
-      assert :ok = UpdateRef.run(repo, "refs/heads/master", commit_id_master)
+      assert :ok = Plumbing.update_ref(repo, "refs/heads/master", commit_id_master)
 
       {:ok, commit_id_other} =
-        HashObject.run('shhh... another fake commit',
+        Plumbing.hash_object('shhh... another fake commit',
           repo: repo,
           type: :commit,
           validate?: false,
           write?: true
         )
 
-      assert :ok = UpdateRef.run(repo, "refs/heads/other", commit_id_other)
+      assert :ok = Plumbing.update_ref(repo, "refs/heads/other", commit_id_other)
 
       show_ref_output = ~s"""
       #{commit_id_master} refs/heads/master
@@ -180,7 +180,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
 
       {_, 0} = System.cmd("git", ["update-ref", "refs/heads/other", ref_commit_id], cd: ref_path)
 
-      :ok = UpdateRef.run(xgit_repo, "refs/heads/other", xgit_commit_id)
+      :ok = Plumbing.update_ref(xgit_repo, "refs/heads/other", xgit_commit_id)
 
       assert_folders_are_equal(
         Path.join([ref_path, ".git", "refs"]),
@@ -192,7 +192,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -204,11 +204,11 @@ defmodule Xgit.Plumbing.UpdateRefTest do
         target: commit_id_master
       }
 
-      assert :ok = UpdateRef.run(repo, "refs/heads/master", commit_id_master)
+      assert :ok = Plumbing.update_ref(repo, "refs/heads/master", commit_id_master)
       assert {:ok, [^master_ref]} = Storage.list_refs(repo)
 
       {:ok, commit_id2_master} =
-        HashObject.run('shhh... another not commit',
+        Plumbing.hash_object('shhh... another not commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -221,7 +221,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       }
 
       assert :ok =
-               UpdateRef.run(repo, "refs/heads/master", commit_id2_master,
+               Plumbing.update_ref(repo, "refs/heads/master", commit_id2_master,
                  old_target: commit_id_master
                )
 
@@ -232,7 +232,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -244,11 +244,11 @@ defmodule Xgit.Plumbing.UpdateRefTest do
         target: commit_id_master
       }
 
-      assert :ok = UpdateRef.run(repo, "refs/heads/master", commit_id_master)
+      assert :ok = Plumbing.update_ref(repo, "refs/heads/master", commit_id_master)
       assert {:ok, [^master_ref]} = Storage.list_refs(repo)
 
       {:ok, commit_id2_master} =
-        HashObject.run('shhh... another not commit',
+        Plumbing.hash_object('shhh... another not commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -256,7 +256,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
         )
 
       assert {:error, :old_target_not_matched} =
-               UpdateRef.run(repo, "refs/heads/master", commit_id2_master,
+               Plumbing.update_ref(repo, "refs/heads/master", commit_id2_master,
                  old_target: "2075df9dff2b5a10ad417586b4edde66af849bad"
                )
 
@@ -267,7 +267,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -279,11 +279,11 @@ defmodule Xgit.Plumbing.UpdateRefTest do
         target: commit_id_master
       }
 
-      assert :ok = UpdateRef.run(repo, "refs/heads/master", commit_id_master)
+      assert :ok = Plumbing.update_ref(repo, "refs/heads/master", commit_id_master)
       assert {:ok, [^master_ref]} = Storage.list_refs(repo)
 
       {:ok, commit_id2_master} =
-        HashObject.run('shhh... another not commit',
+        Plumbing.hash_object('shhh... another not commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -291,7 +291,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
         )
 
       assert {:error, :old_target_not_matched} =
-               UpdateRef.run(repo, "refs/heads/master2", commit_id2_master,
+               Plumbing.update_ref(repo, "refs/heads/master2", commit_id2_master,
                  old_target: commit_id_master
                )
 
@@ -302,7 +302,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -314,7 +314,9 @@ defmodule Xgit.Plumbing.UpdateRefTest do
         target: commit_id_master
       }
 
-      assert :ok = UpdateRef.run(repo, "refs/heads/master", commit_id_master, old_target: :new)
+      assert :ok =
+               Plumbing.update_ref(repo, "refs/heads/master", commit_id_master, old_target: :new)
+
       assert {:ok, [^master_ref]} = Storage.list_refs(repo)
     end
 
@@ -322,7 +324,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -334,11 +336,11 @@ defmodule Xgit.Plumbing.UpdateRefTest do
         target: commit_id_master
       }
 
-      assert :ok = UpdateRef.run(repo, "refs/heads/master", commit_id_master)
+      assert :ok = Plumbing.update_ref(repo, "refs/heads/master", commit_id_master)
       assert {:ok, [^master_ref]} = Storage.list_refs(repo)
 
       {:ok, commit_id2_master} =
-        HashObject.run('shhh... another not commit',
+        Plumbing.hash_object('shhh... another not commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -346,7 +348,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
         )
 
       assert {:error, :old_target_not_matched} =
-               UpdateRef.run(repo, "refs/heads/master", commit_id2_master, old_target: :new)
+               Plumbing.update_ref(repo, "refs/heads/master", commit_id2_master, old_target: :new)
 
       assert {:ok, [^master_ref]} = Storage.list_refs(repo)
     end
@@ -355,7 +357,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -367,11 +369,11 @@ defmodule Xgit.Plumbing.UpdateRefTest do
         target: commit_id_master
       }
 
-      assert :ok = UpdateRef.run(repo, "refs/heads/master", commit_id_master)
+      assert :ok = Plumbing.update_ref(repo, "refs/heads/master", commit_id_master)
 
       assert {:ok, [^master_ref]} = Storage.list_refs(repo)
 
-      assert :ok = UpdateRef.run(repo, "refs/heads/master", ObjectId.zero())
+      assert :ok = Plumbing.update_ref(repo, "refs/heads/master", ObjectId.zero())
 
       assert {:error, :not_found} = Storage.get_ref(repo, "refs/heads/master")
       assert {:ok, []} = Storage.list_refs(repo)
@@ -382,7 +384,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
 
       assert {:ok, []} = Storage.list_refs(repo)
 
-      assert :ok = UpdateRef.run(repo, "refs/heads/master", ObjectId.zero())
+      assert :ok = Plumbing.update_ref(repo, "refs/heads/master", ObjectId.zero())
 
       assert {:error, :not_found} = Storage.get_ref(repo, "refs/heads/master")
       assert {:ok, []} = Storage.list_refs(repo)
@@ -393,7 +395,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
 
       assert {:ok, []} = Storage.list_refs(repo)
 
-      assert {:error, :invalid_ref} = UpdateRef.run(repo, "refs", ObjectId.zero())
+      assert {:error, :invalid_ref} = Plumbing.update_ref(repo, "refs", ObjectId.zero())
 
       assert {:error, :not_found} = Storage.get_ref(repo, "refs/heads/master")
       assert {:ok, []} = Storage.list_refs(repo)
@@ -403,7 +405,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -415,12 +417,12 @@ defmodule Xgit.Plumbing.UpdateRefTest do
         target: commit_id_master
       }
 
-      assert :ok = UpdateRef.run(repo, "refs/heads/master", commit_id_master)
+      assert :ok = Plumbing.update_ref(repo, "refs/heads/master", commit_id_master)
 
       assert {:ok, [^master_ref]} = Storage.list_refs(repo)
 
       assert :ok =
-               UpdateRef.run(repo, "refs/heads/master", ObjectId.zero(),
+               Plumbing.update_ref(repo, "refs/heads/master", ObjectId.zero(),
                  old_target: commit_id_master
                )
 
@@ -432,7 +434,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       {:ok, commit_id_master} =
-        HashObject.run('shhh... not really a commit',
+        Plumbing.hash_object('shhh... not really a commit',
           repo: repo,
           type: :commit,
           validate?: false,
@@ -444,12 +446,12 @@ defmodule Xgit.Plumbing.UpdateRefTest do
         target: commit_id_master
       }
 
-      assert :ok = UpdateRef.run(repo, "refs/heads/master", commit_id_master)
+      assert :ok = Plumbing.update_ref(repo, "refs/heads/master", commit_id_master)
 
       assert {:ok, [^master_ref]} = Storage.list_refs(repo)
 
       assert {:error, :old_target_not_matched} =
-               UpdateRef.run(repo, "refs/heads/master", ObjectId.zero(),
+               Plumbing.update_ref(repo, "refs/heads/master", ObjectId.zero(),
                  old_target: "bec43c416143e6b8bf9a3b559260185757e1386b"
                )
 
@@ -463,7 +465,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       assert {:ok, []} = Storage.list_refs(repo)
 
       assert {:error, :old_target_not_matched} =
-               UpdateRef.run(repo, "refs/heads/master", ObjectId.zero(),
+               Plumbing.update_ref(repo, "refs/heads/master", ObjectId.zero(),
                  old_target: "bec43c416143e6b8bf9a3b559260185757e1386b"
                )
 
@@ -479,7 +481,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       File.mkdir_p!(bogus_ref_path)
 
       assert {:error, :cant_delete_file} =
-               UpdateRef.run(repo, "refs/heads/bogus", ObjectId.zero())
+               Plumbing.update_ref(repo, "refs/heads/bogus", ObjectId.zero())
 
       assert File.dir?(bogus_ref_path)
     end
@@ -499,14 +501,14 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       assert {_, 0} = System.cmd("git", ["update-ref", "refs/heads/other", commit_id], cd: path)
       assert {_, 0} = System.cmd("git", ["show-ref", "refs/heads/other"], cd: path)
 
-      assert :ok = UpdateRef.run(repo, "refs/heads/other", ObjectId.zero())
+      assert :ok = Plumbing.update_ref(repo, "refs/heads/other", ObjectId.zero())
 
       assert {_, 1} = System.cmd("git", ["show-ref", "refs/heads/other"], cd: path)
     end
 
     test "error: repository invalid (not PID)" do
       assert_raise FunctionClauseError, fn ->
-        UpdateRef.run(
+        Plumbing.update_ref(
           "xgit repo",
           "refs/heads/master",
           "18a4a651653d7caebd3af9c05b0dc7ffa2cd0ae0"
@@ -518,7 +520,7 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       {:ok, not_repo} = GenServer.start_link(NotValid, nil)
 
       assert {:error, :invalid_repository} =
-               UpdateRef.run(
+               Plumbing.update_ref(
                  not_repo,
                  "refs/heads/master",
                  "18a4a651653d7caebd3af9c05b0dc7ffa2cd0ae0"
@@ -529,9 +531,9 @@ defmodule Xgit.Plumbing.UpdateRefTest do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       assert_raise ArgumentError,
-                   ~s(Xgit.Plumbing.UpdateRef.run/4: old_target "bogus" is invalid),
+                   ~s(Xgit.Repository.Plumbing.update_ref/4: old_target "bogus" is invalid),
                    fn ->
-                     UpdateRef.run(
+                     Plumbing.update_ref(
                        repo,
                        "refs/heads/master",
                        "18a4a651653d7caebd3af9c05b0dc7ffa2cd0ae0",

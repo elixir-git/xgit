@@ -3,8 +3,8 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
 
   alias Xgit.Core.DirCache.Entry
   alias Xgit.GitInitTestCase
-  alias Xgit.Plumbing.HashObject
   alias Xgit.Repository.OnDisk
+  alias Xgit.Repository.Plumbing
   alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
 
@@ -607,7 +607,7 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
         end,
         fn xgit_repo ->
           # Ideally, this should not reach up-level to plumbing, but I'm cheating here today.
-          {:ok, object_id} = HashObject.run("test content\n", repo: xgit_repo, write?: true)
+          {:ok, object_id} = Plumbing.hash_object("test content\n", repo: xgit_repo, write?: true)
 
           working_tree = Storage.default_working_tree(xgit_repo)
 

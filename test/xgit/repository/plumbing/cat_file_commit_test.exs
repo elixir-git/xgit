@@ -1,18 +1,17 @@
-defmodule Xgit.Plumbing.CatFile.CommitTest do
+defmodule Xgit.Repository.Plumbing.CatFileCommitTest do
   use Xgit.Test.OnDiskRepoTestCase, async: true
 
   alias Xgit.Core.Commit
   alias Xgit.Core.PersonIdent
-  alias Xgit.Plumbing.CatFile.Commit, as: CatFileCommit
-  alias Xgit.Plumbing.HashObject
   alias Xgit.Repository.InMemory
+  alias Xgit.Repository.Plumbing
   alias Xgit.Test.OnDiskRepoTestCase
 
   @env OnDiskRepoTestCase.sample_commit_env()
 
   import Xgit.Test.OnDiskRepoTestCase
 
-  describe "run/2" do
+  describe "cat_file_commit/2" do
     test "command-line interop: no parents" do
       %{xgit_path: path, xgit_repo: repo, tree_id: tree_id} = setup_with_valid_tree!()
 
@@ -38,7 +37,7 @@ defmodule Xgit.Plumbing.CatFile.CommitTest do
                 message: 'xxx\n',
                 parents: [],
                 tree: "3e69f02f3247843b482cc99872683692999f6703"
-              }} = CatFileCommit.run(repo, commit_id)
+              }} = Plumbing.cat_file_commit(repo, commit_id)
     end
 
     test "command-line interop: one parent" do
@@ -70,16 +69,21 @@ defmodule Xgit.Plumbing.CatFile.CommitTest do
                 message: 'mumble\n',
                 parents: [^parent_id],
                 tree: "3e69f02f3247843b482cc99872683692999f6703"
-              }} = CatFileCommit.run(repo, commit_id)
+              }} = Plumbing.cat_file_commit(repo, commit_id)
     end
 
     defp write_commit_and_cat_file!(commit_text) do
       %{xgit_repo: xgit_repo} = repo!()
 
       {:ok, commit_id} =
-        HashObject.run(commit_text, repo: xgit_repo, type: :commit, validate?: false, write?: true)
+        Plumbing.hash_object(commit_text,
+          repo: xgit_repo,
+          type: :commit,
+          validate?: false,
+          write?: true
+        )
 
-      CatFileCommit.run(xgit_repo, commit_id)
+      Plumbing.cat_file_commit(xgit_repo, commit_id)
     end
 
     test "valid: message" do
@@ -460,7 +464,7 @@ defmodule Xgit.Plumbing.CatFile.CommitTest do
       {:ok, repo} = InMemory.start_link()
 
       assert {:error, :not_found} =
-               CatFileCommit.run(repo, "6c22d81cc51c6518e4625a9fe26725af52403b4f")
+               Plumbing.cat_file_commit(repo, "6c22d81cc51c6518e4625a9fe26725af52403b4f")
     end
 
     test "error: invalid_object", %{xgit_repo: xgit_repo, xgit_path: xgit_path} do
@@ -473,7 +477,7 @@ defmodule Xgit.Plumbing.CatFile.CommitTest do
       )
 
       assert {:error, :invalid_object} =
-               CatFileCommit.run(xgit_repo, "5cb5d77be2d92c7368038dac67e648a69e0a654d")
+               Plumbing.cat_file_commit(xgit_repo, "5cb5d77be2d92c7368038dac67e648a69e0a654d")
     end
 
     test "error: not_a_commit", %{xgit_repo: xgit_repo, xgit_path: xgit_path} do
@@ -485,12 +489,12 @@ defmodule Xgit.Plumbing.CatFile.CommitTest do
       {output, 0} = System.cmd("git", ["hash-object", "-w", path], cd: xgit_path)
       object_id = String.trim(output)
 
-      assert {:error, :not_a_commit} = CatFileCommit.run(xgit_repo, object_id)
+      assert {:error, :not_a_commit} = Plumbing.cat_file_commit(xgit_repo, object_id)
     end
 
     test "error: repository invalid (not PID)" do
       assert_raise FunctionClauseError, fn ->
-        CatFileCommit.run("xgit repo", "18a4a651653d7caebd3af9c05b0dc7ffa2cd0ae0")
+        Plumbing.cat_file_commit("xgit repo", "18a4a651653d7caebd3af9c05b0dc7ffa2cd0ae0")
       end
     end
 
@@ -498,14 +502,14 @@ defmodule Xgit.Plumbing.CatFile.CommitTest do
       {:ok, not_repo} = GenServer.start_link(NotValid, nil)
 
       assert {:error, :invalid_repository} =
-               CatFileCommit.run(not_repo, "18a4a651653d7caebd3af9c05b0dc7ffa2cd0ae0")
+               Plumbing.cat_file_commit(not_repo, "18a4a651653d7caebd3af9c05b0dc7ffa2cd0ae0")
     end
 
     test "error: object_id invalid (not binary)" do
       {:ok, repo} = InMemory.start_link()
 
       assert_raise FunctionClauseError, fn ->
-        CatFileCommit.run(repo, 0x18A4)
+        Plumbing.cat_file_commit(repo, 0x18A4)
       end
     end
 
@@ -513,7 +517,7 @@ defmodule Xgit.Plumbing.CatFile.CommitTest do
       {:ok, repo} = InMemory.start_link()
 
       assert {:error, :invalid_object_id} =
-               CatFileCommit.run(repo, "some random ID that isn't valid")
+               Plumbing.cat_file_commit(repo, "some random ID that isn't valid")
     end
   end
 end

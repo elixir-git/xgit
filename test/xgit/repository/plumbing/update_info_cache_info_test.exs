@@ -1,9 +1,9 @@
-defmodule Xgit.Plumbing.UpdateInfo.CacheInfoTest do
+defmodule Xgit.Repository.Plumbing.UpdateInfoCacheInfoTest do
   use Xgit.GitInitTestCase, async: true
 
-  alias Xgit.Plumbing.UpdateIndex.CacheInfo
   alias Xgit.Repository.InMemory
   alias Xgit.Repository.OnDisk
+  alias Xgit.Repository.Plumbing
 
   import FolderDiff
 
@@ -27,7 +27,7 @@ defmodule Xgit.Plumbing.UpdateInfo.CacheInfoTest do
       assert {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       assert :ok =
-               CacheInfo.run(
+               Plumbing.update_index_cache_info(
                  repo,
                  [{0o100644, "18832d35117ef2f013c4009f5b2128dfaeff354f", 'hello.txt'}]
                )
@@ -41,7 +41,7 @@ defmodule Xgit.Plumbing.UpdateInfo.CacheInfoTest do
       {:ok, repo} = OnDisk.start_link(work_dir: ref)
 
       assert :ok =
-               CacheInfo.run(
+               Plumbing.update_index_cache_info(
                  repo,
                  [{0o100644, "18832d35117ef2f013c4009f5b2128dfaeff354f", 'hello.txt'}]
                )
@@ -83,7 +83,7 @@ defmodule Xgit.Plumbing.UpdateInfo.CacheInfoTest do
       assert :ok = OnDisk.create(xgit)
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
-      assert :ok = CacheInfo.run(repo, [])
+      assert :ok = Plumbing.update_index_cache_info(repo, [])
 
       assert_folders_are_equal(ref, xgit)
     end
@@ -122,7 +122,7 @@ defmodule Xgit.Plumbing.UpdateInfo.CacheInfoTest do
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       assert :ok =
-               CacheInfo.run(
+               Plumbing.update_index_cache_info(
                  repo,
                  [
                    {0o100644, "18832d35117ef2f013c4009f5b2128dfaeff354f", 'hello.txt'},
@@ -184,7 +184,7 @@ defmodule Xgit.Plumbing.UpdateInfo.CacheInfoTest do
 
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
-      assert :ok = CacheInfo.run(repo, [], ['test_content.txt'])
+      assert :ok = Plumbing.update_index_cache_info(repo, [], ['test_content.txt'])
 
       assert_folders_are_equal(ref, xgit)
     end
@@ -198,23 +198,24 @@ defmodule Xgit.Plumbing.UpdateInfo.CacheInfoTest do
 
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
-      assert {:error, :invalid_format} = CacheInfo.run(repo, [], ['test_content.txt'])
+      assert {:error, :invalid_format} =
+               Plumbing.update_index_cache_info(repo, [], ['test_content.txt'])
     end
 
     test "error: repository invalid (not PID)" do
       assert_raise FunctionClauseError, fn ->
-        CacheInfo.run("xgit repo", [])
+        Plumbing.update_index_cache_info("xgit repo", [])
       end
     end
 
     test "error: repository invalid (PID, but not repo)" do
       {:ok, not_repo} = GenServer.start_link(NotValid, nil)
-      assert {:error, :invalid_repository} = CacheInfo.run(not_repo, [])
+      assert {:error, :invalid_repository} = Plumbing.update_index_cache_info(not_repo, [])
     end
 
     test "error: no working tree" do
       {:ok, repo} = InMemory.start_link()
-      assert {:error, :bare} = CacheInfo.run(repo, [])
+      assert {:error, :bare} = Plumbing.update_index_cache_info(repo, [])
     end
 
     test "error: invalid index file", %{xgit: xgit} do
@@ -226,7 +227,7 @@ defmodule Xgit.Plumbing.UpdateInfo.CacheInfoTest do
 
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
-      assert {:error, :invalid_format} = CacheInfo.run(repo, [])
+      assert {:error, :invalid_format} = Plumbing.update_index_cache_info(repo, [])
     end
 
     test "error: invalid entries (add)", %{xgit: xgit} do
@@ -234,7 +235,7 @@ defmodule Xgit.Plumbing.UpdateInfo.CacheInfoTest do
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       assert {:error, :invalid_entry} =
-               CacheInfo.run(repo, [
+               Plumbing.update_index_cache_info(repo, [
                  {0o100644, "18832d35117ef2f013c4009f5b2128dfaeff354f", "hello.txt"}
                ])
 
@@ -245,7 +246,8 @@ defmodule Xgit.Plumbing.UpdateInfo.CacheInfoTest do
       assert :ok = OnDisk.create(xgit)
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
-      assert {:error, :invalid_entry} = CacheInfo.run(repo, [], ["should be a charlist"])
+      assert {:error, :invalid_entry} =
+               Plumbing.update_index_cache_info(repo, [], ["should be a charlist"])
     end
   end
 end

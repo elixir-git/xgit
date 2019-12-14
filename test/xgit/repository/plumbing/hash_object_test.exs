@@ -1,10 +1,10 @@
-defmodule Xgit.Plumbing.HashObjectTest do
+defmodule Xgit.Repository.Plumbing.HashObjectTest do
   use ExUnit.Case, async: true
 
   alias Xgit.Core.FileContentSource
   alias Xgit.GitInitTestCase
-  alias Xgit.Plumbing.HashObject
   alias Xgit.Repository.OnDisk
+  alias Xgit.Repository.Plumbing
 
   import FolderDiff
 
@@ -13,7 +13,8 @@ defmodule Xgit.Plumbing.HashObjectTest do
       # $ echo 'test content' | git hash-object --stdin
       # d670460b4b4aece5915caf5c68d12f560a9fe3e4
 
-      assert {:ok, "d670460b4b4aece5915caf5c68d12f560a9fe3e4"} = HashObject.run("test content\n")
+      assert {:ok, "d670460b4b4aece5915caf5c68d12f560a9fe3e4"} =
+               Plumbing.hash_object("test content\n")
     end
 
     test "happy path: deriving SHA hash (large file on disk) with no repo" do
@@ -33,7 +34,7 @@ defmodule Xgit.Plumbing.HashObjectTest do
       assert {:ok, ^expected_object_id} =
                path
                |> FileContentSource.new()
-               |> HashObject.run()
+               |> Plumbing.hash_object()
     end
 
     test "happy path: write to repo matches command-line git (small file)" do
@@ -52,7 +53,7 @@ defmodule Xgit.Plumbing.HashObjectTest do
       assert {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       assert {:ok, "d670460b4b4aece5915caf5c68d12f560a9fe3e4"} =
-               HashObject.run("test content\n", repo: repo, write?: true)
+               Plumbing.hash_object("test content\n", repo: repo, write?: true)
 
       assert File.exists?(
                Path.join([xgit, ".git", "objects", "d6", "70460b4b4aece5915caf5c68d12f560a9fe3e4"])
@@ -77,7 +78,7 @@ defmodule Xgit.Plumbing.HashObjectTest do
       assert {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       assert {:ok, "d670460b4b4aece5915caf5c68d12f560a9fe3e4"} =
-               HashObject.run("test content\n", repo: repo, write?: false)
+               Plumbing.hash_object("test content\n", repo: repo, write?: false)
 
       refute File.exists?(
                Path.join([xgit, ".git", "objects", "d6", "70460b4b4aece5915caf5c68d12f560a9fe3e4"])
@@ -104,7 +105,7 @@ defmodule Xgit.Plumbing.HashObjectTest do
       assert {:ok, ^expected_object_id} =
                path
                |> FileContentSource.new()
-               |> HashObject.run(type: :commit)
+               |> Plumbing.hash_object(type: :commit)
     end
 
     test "validate?: false skips validation" do
@@ -125,7 +126,7 @@ defmodule Xgit.Plumbing.HashObjectTest do
       assert {:ok, ^expected_object_id} =
                path
                |> FileContentSource.new()
-               |> HashObject.run(type: :commit, validate?: false)
+               |> Plumbing.hash_object(type: :commit, validate?: false)
     end
 
     test "error: validate content (content is invalid)" do
@@ -135,7 +136,7 @@ defmodule Xgit.Plumbing.HashObjectTest do
       committer A. U. Thor <author@localhost> 1 +0000
       """
 
-      assert {:error, :no_tree_header} = HashObject.run(content, type: :commit)
+      assert {:error, :no_tree_header} = Plumbing.hash_object(content, type: :commit)
     end
 
     test "error: can't write to disk" do
@@ -155,50 +156,53 @@ defmodule Xgit.Plumbing.HashObjectTest do
       |> Path.join()
       |> File.mkdir_p!()
 
-      assert {:error, :object_exists} = HashObject.run("test content\n", repo: repo, write?: true)
+      assert {:error, :object_exists} =
+               Plumbing.hash_object("test content\n", repo: repo, write?: true)
     end
 
     test "error: content nil" do
       assert_raise FunctionClauseError, fn ->
-        HashObject.run(nil)
+        Plumbing.hash_object(nil)
       end
     end
 
     test "error: :type invalid" do
-      assert_raise ArgumentError, "Xgit.Plumbing.HashObject.run/2: type :bogus is invalid", fn ->
-        HashObject.run("test content\n", type: :bogus)
-      end
+      assert_raise ArgumentError,
+                   "Xgit.Repository.Plumbing.hash_object/2: type :bogus is invalid",
+                   fn ->
+                     Plumbing.hash_object("test content\n", type: :bogus)
+                   end
     end
 
     test "error: :validate? invalid" do
       assert_raise ArgumentError,
-                   ~s(Xgit.Plumbing.HashObject.run/2: validate? "yes" is invalid),
+                   ~s(Xgit.Repository.Plumbing.hash_object/2: validate? "yes" is invalid),
                    fn ->
-                     HashObject.run("test content\n", validate?: "yes")
+                     Plumbing.hash_object("test content\n", validate?: "yes")
                    end
     end
 
     test "error: :repo invalid" do
       assert_raise ArgumentError,
-                   ~s(Xgit.Plumbing.HashObject.run/2: repo "/path/to/repo" is invalid),
+                   ~s(Xgit.Repository.Plumbing.hash_object/2: repo "/path/to/repo" is invalid),
                    fn ->
-                     HashObject.run("test content\n", repo: "/path/to/repo")
+                     Plumbing.hash_object("test content\n", repo: "/path/to/repo")
                    end
     end
 
     test "error: :write? invalid" do
       assert_raise ArgumentError,
-                   ~s(Xgit.Plumbing.HashObject.run/2: write? "yes" is invalid),
+                   ~s(Xgit.Repository.Plumbing.hash_object/2: write? "yes" is invalid),
                    fn ->
-                     HashObject.run("test content\n", write?: "yes")
+                     Plumbing.hash_object("test content\n", write?: "yes")
                    end
     end
 
     test "error: :write? without repo" do
       assert_raise ArgumentError,
-                   ~s(Xgit.Plumbing.HashObject.run/2: write?: true requires a repo to be specified),
+                   ~s(Xgit.Repository.Plumbing.hash_object/2: write?: true requires a repo to be specified),
                    fn ->
-                     HashObject.run("test content\n", write?: true)
+                     Plumbing.hash_object("test content\n", write?: true)
                    end
     end
   end

@@ -1,10 +1,9 @@
-defmodule Xgit.Plumbing.CatFileTest do
+defmodule Xgit.Repository.Plumbing.CatFileTest do
   use Xgit.GitInitTestCase, async: true
 
   alias Xgit.Core.ContentSource
-  alias Xgit.Plumbing.CatFile
-  alias Xgit.Plumbing.HashObject
   alias Xgit.Repository.OnDisk
+  alias Xgit.Repository.Plumbing
   alias Xgit.Test.OnDiskRepoTestCase
 
   describe "run/2" do
@@ -19,7 +18,7 @@ defmodule Xgit.Plumbing.CatFileTest do
       assert {:ok, repo} = OnDisk.start_link(work_dir: ref)
 
       assert {:ok, %{type: :blob, size: 13, content: test_content} = object} =
-               CatFile.run(repo, test_content_id)
+               Plumbing.cat_file(repo, test_content_id)
 
       rendered_content =
         test_content
@@ -32,10 +31,10 @@ defmodule Xgit.Plumbing.CatFileTest do
     test "happy path: can read back from Xgit-written loose object" do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
-      {:ok, test_content_id} = HashObject.run("test content\n", repo: repo, write?: true)
+      {:ok, test_content_id} = Plumbing.hash_object("test content\n", repo: repo, write?: true)
 
       assert {:ok, %{type: :blob, size: 13, content: test_content} = object} =
-               CatFile.run(repo, test_content_id)
+               Plumbing.cat_file(repo, test_content_id)
 
       rendered_content =
         test_content
@@ -47,7 +46,9 @@ defmodule Xgit.Plumbing.CatFileTest do
 
     test "error: not_found" do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
-      assert {:error, :not_found} = CatFile.run(repo, "6c22d81cc51c6518e4625a9fe26725af52403b4f")
+
+      assert {:error, :not_found} =
+               Plumbing.cat_file(repo, "6c22d81cc51c6518e4625a9fe26725af52403b4f")
     end
 
     test "error: invalid_object" do
@@ -62,12 +63,12 @@ defmodule Xgit.Plumbing.CatFileTest do
       )
 
       assert {:error, :invalid_object} =
-               CatFile.run(repo, "5cb5d77be2d92c7368038dac67e648a69e0a654d")
+               Plumbing.cat_file(repo, "5cb5d77be2d92c7368038dac67e648a69e0a654d")
     end
 
     test "error: repository invalid (not PID)" do
       assert_raise FunctionClauseError, fn ->
-        CatFile.run("xgit repo", "18a4a651653d7caebd3af9c05b0dc7ffa2cd0ae0")
+        Plumbing.cat_file("xgit repo", "18a4a651653d7caebd3af9c05b0dc7ffa2cd0ae0")
       end
     end
 
@@ -75,14 +76,14 @@ defmodule Xgit.Plumbing.CatFileTest do
       {:ok, not_repo} = GenServer.start_link(NotValid, nil)
 
       assert {:error, :invalid_repository} =
-               CatFile.run(not_repo, "18a4a651653d7caebd3af9c05b0dc7ffa2cd0ae0")
+               Plumbing.cat_file(not_repo, "18a4a651653d7caebd3af9c05b0dc7ffa2cd0ae0")
     end
 
     test "error: object_id invalid (not binary)" do
       %{xgit_repo: xgit_repo} = OnDiskRepoTestCase.repo!()
 
       assert_raise FunctionClauseError, fn ->
-        CatFile.run(xgit_repo, 0x18A4)
+        Plumbing.cat_file(xgit_repo, 0x18A4)
       end
     end
 
@@ -90,7 +91,7 @@ defmodule Xgit.Plumbing.CatFileTest do
       %{xgit_repo: xgit_repo} = OnDiskRepoTestCase.repo!()
 
       assert {:error, :invalid_object_id} =
-               CatFile.run(xgit_repo, "some random ID that isn't valid")
+               Plumbing.cat_file(xgit_repo, "some random ID that isn't valid")
     end
   end
 end

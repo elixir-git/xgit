@@ -1,16 +1,16 @@
-defmodule Xgit.Plumbing.CatFile.TreeTest do
+defmodule Xgit.Repository.Plumbing.CatFileTreeTest do
   use Xgit.Test.OnDiskRepoTestCase, async: true
 
   alias Xgit.Core.Tree
-  alias Xgit.Plumbing.CatFile.Tree, as: CatFileTree
   alias Xgit.Repository.InMemory
+  alias Xgit.Repository.Plumbing
 
-  describe "run/2" do
+  describe "cat_file_tree/2" do
     defp write_git_tree_and_read_xgit_tree(xgit_repo, xgit_path) do
       {output, 0} = System.cmd("git", ["write-tree", "--missing-ok"], cd: xgit_path)
       tree_id = String.trim(output)
 
-      assert {:ok, %Tree{} = tree} = CatFileTree.run(xgit_repo, tree_id)
+      assert {:ok, %Tree{} = tree} = Plumbing.cat_file_tree(xgit_repo, tree_id)
       tree
     end
 
@@ -99,7 +99,7 @@ defmodule Xgit.Plumbing.CatFile.TreeTest do
       {:ok, repo} = InMemory.start_link()
 
       assert {:error, :not_found} =
-               CatFileTree.run(repo, "6c22d81cc51c6518e4625a9fe26725af52403b4f")
+               Plumbing.cat_file_tree(repo, "6c22d81cc51c6518e4625a9fe26725af52403b4f")
     end
 
     test "error: invalid_object", %{xgit_repo: xgit_repo, xgit_path: xgit_path} do
@@ -112,7 +112,7 @@ defmodule Xgit.Plumbing.CatFile.TreeTest do
       )
 
       assert {:error, :invalid_object} =
-               CatFileTree.run(xgit_repo, "5cb5d77be2d92c7368038dac67e648a69e0a654d")
+               Plumbing.cat_file_tree(xgit_repo, "5cb5d77be2d92c7368038dac67e648a69e0a654d")
     end
 
     test "error: not_a_tree", %{xgit_repo: xgit_repo, xgit_path: xgit_path} do
@@ -124,12 +124,12 @@ defmodule Xgit.Plumbing.CatFile.TreeTest do
       {output, 0} = System.cmd("git", ["hash-object", "-w", path], cd: xgit_path)
       object_id = String.trim(output)
 
-      assert {:error, :not_a_tree} = CatFileTree.run(xgit_repo, object_id)
+      assert {:error, :not_a_tree} = Plumbing.cat_file_tree(xgit_repo, object_id)
     end
 
     test "error: repository invalid (not PID)" do
       assert_raise FunctionClauseError, fn ->
-        CatFileTree.run("xgit repo", "18a4a651653d7caebd3af9c05b0dc7ffa2cd0ae0")
+        Plumbing.cat_file_tree("xgit repo", "18a4a651653d7caebd3af9c05b0dc7ffa2cd0ae0")
       end
     end
 
@@ -137,14 +137,14 @@ defmodule Xgit.Plumbing.CatFile.TreeTest do
       {:ok, not_repo} = GenServer.start_link(NotValid, nil)
 
       assert {:error, :invalid_repository} =
-               CatFileTree.run(not_repo, "18a4a651653d7caebd3af9c05b0dc7ffa2cd0ae0")
+               Plumbing.cat_file_tree(not_repo, "18a4a651653d7caebd3af9c05b0dc7ffa2cd0ae0")
     end
 
     test "error: object_id invalid (not binary)" do
       {:ok, repo} = InMemory.start_link()
 
       assert_raise FunctionClauseError, fn ->
-        CatFileTree.run(repo, 0x18A4)
+        Plumbing.cat_file_tree(repo, 0x18A4)
       end
     end
 
@@ -152,7 +152,7 @@ defmodule Xgit.Plumbing.CatFile.TreeTest do
       {:ok, repo} = InMemory.start_link()
 
       assert {:error, :invalid_object_id} =
-               CatFileTree.run(repo, "some random ID that isn't valid")
+               Plumbing.cat_file_tree(repo, "some random ID that isn't valid")
     end
   end
 end

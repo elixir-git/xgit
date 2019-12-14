@@ -1,12 +1,10 @@
-defmodule Xgit.Plumbing.WriteTreeTest do
+defmodule Xgit.Repository.Plumbing.WriteTreeTest do
   use Xgit.GitInitTestCase, async: true
 
   alias Xgit.Core.DirCache.Entry
   alias Xgit.GitInitTestCase
-  alias Xgit.Plumbing.HashObject
-  alias Xgit.Plumbing.UpdateIndex.CacheInfo
-  alias Xgit.Plumbing.WriteTree
   alias Xgit.Repository.OnDisk
+  alias Xgit.Repository.Plumbing
   alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
 
@@ -36,7 +34,7 @@ defmodule Xgit.Plumbing.WriteTreeTest do
         end,
         fn xgit_repo ->
           assert :ok =
-                   CacheInfo.run(
+                   Plumbing.update_index_cache_info(
                      xgit_repo,
                      [{0o100644, "7919e8900c3af541535472aebd56d44222b7b3a3", 'hello.txt'}]
                    )
@@ -52,14 +50,14 @@ defmodule Xgit.Plumbing.WriteTreeTest do
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       assert :ok =
-               CacheInfo.run(
+               Plumbing.update_index_cache_info(
                  repo,
                  [{0o100644, "7919e8900c3af541535472aebd56d44222b7b3a3", 'hello.txt'}]
                )
 
-      assert {:ok, xgit_object_id} = WriteTree.run(repo, missing_ok?: true)
+      assert {:ok, xgit_object_id} = Plumbing.write_tree(repo, missing_ok?: true)
 
-      assert {:ok, ^xgit_object_id} = WriteTree.run(repo, missing_ok?: true)
+      assert {:ok, ^xgit_object_id} = Plumbing.write_tree(repo, missing_ok?: true)
     end
 
     test "happy path: one blob nested one level" do
@@ -81,7 +79,7 @@ defmodule Xgit.Plumbing.WriteTreeTest do
         end,
         fn xgit_repo ->
           assert :ok =
-                   CacheInfo.run(
+                   Plumbing.update_index_cache_info(
                      xgit_repo,
                      [{0o100644, "7fa62716fc68733db4c769fe678295cf4cf5b336", 'a/b'}]
                    )
@@ -165,31 +163,31 @@ defmodule Xgit.Plumbing.WriteTreeTest do
         end,
         fn xgit_repo ->
           assert :ok =
-                   CacheInfo.run(
+                   Plumbing.update_index_cache_info(
                      xgit_repo,
                      [{0o100644, "7fa62716fc68733db4c769fe678295cf4cf5b336", 'a/a/b'}]
                    )
 
           assert :ok =
-                   CacheInfo.run(
+                   Plumbing.update_index_cache_info(
                      xgit_repo,
                      [{0o100644, "0f717230e297de82d0f8d761143dc1e1145c6bd5", 'a/b/c'}]
                    )
 
           assert :ok =
-                   CacheInfo.run(
+                   Plumbing.update_index_cache_info(
                      xgit_repo,
                      [{0o100644, "ff287368514462578ba6406d366113953539cbf1", 'a/b/d'}]
                    )
 
           assert :ok =
-                   CacheInfo.run(
+                   Plumbing.update_index_cache_info(
                      xgit_repo,
                      [{0o100644, "de588889c4d62aaf3ef3bd90be38fa239be2f5d1", 'a/c/x'}]
                    )
 
           assert :ok =
-                   CacheInfo.run(
+                   Plumbing.update_index_cache_info(
                      xgit_repo,
                      [{0o100755, "7919e8900c3af541535472aebd56d44222b7b3a3", 'other.txt'}]
                    )
@@ -273,31 +271,31 @@ defmodule Xgit.Plumbing.WriteTreeTest do
         end,
         fn xgit_repo ->
           assert :ok =
-                   CacheInfo.run(
+                   Plumbing.update_index_cache_info(
                      xgit_repo,
                      [{0o100644, "7fa62716fc68733db4c769fe678295cf4cf5b336", 'a/a/b'}]
                    )
 
           assert :ok =
-                   CacheInfo.run(
+                   Plumbing.update_index_cache_info(
                      xgit_repo,
                      [{0o100644, "0f717230e297de82d0f8d761143dc1e1145c6bd5", 'a/b/c'}]
                    )
 
           assert :ok =
-                   CacheInfo.run(
+                   Plumbing.update_index_cache_info(
                      xgit_repo,
                      [{0o100644, "ff287368514462578ba6406d366113953539cbf1", 'a/b/d'}]
                    )
 
           assert :ok =
-                   CacheInfo.run(
+                   Plumbing.update_index_cache_info(
                      xgit_repo,
                      [{0o100644, "de588889c4d62aaf3ef3bd90be38fa239be2f5d1", 'a/c/x'}]
                    )
 
           assert :ok =
-                   CacheInfo.run(
+                   Plumbing.update_index_cache_info(
                      xgit_repo,
                      [{0o100755, "7919e8900c3af541535472aebd56d44222b7b3a3", 'other.txt'}]
                    )
@@ -325,8 +323,8 @@ defmodule Xgit.Plumbing.WriteTreeTest do
             )
         end,
         fn xgit_repo ->
-          {:ok, object_id} = HashObject.run("test content\n", repo: xgit_repo, write?: true)
-          :ok = CacheInfo.run(xgit_repo, [{0o100644, object_id, 'a/b'}])
+          {:ok, object_id} = Plumbing.hash_object("test content\n", repo: xgit_repo, write?: true)
+          :ok = Plumbing.update_index_cache_info(xgit_repo, [{0o100644, object_id, 'a/b'}])
         end
       )
     end
@@ -339,12 +337,12 @@ defmodule Xgit.Plumbing.WriteTreeTest do
 
       :ok
 
-      CacheInfo.run(
+      Plumbing.update_index_cache_info(
         repo,
         [{0o100644, "7919e8900c3af541535472aebd56d44222b7b3a3", 'hello.txt'}]
       )
 
-      assert {:error, :objects_missing} = WriteTree.run(repo)
+      assert {:error, :objects_missing} = Plumbing.write_tree(repo)
     end
 
     test "prefix doesn't exist" do
@@ -354,43 +352,43 @@ defmodule Xgit.Plumbing.WriteTreeTest do
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       :ok =
-        CacheInfo.run(
+        Plumbing.update_index_cache_info(
           repo,
           [{0o100644, "7fa62716fc68733db4c769fe678295cf4cf5b336", 'a/a/b'}]
         )
 
       :ok =
-        CacheInfo.run(
+        Plumbing.update_index_cache_info(
           repo,
           [{0o100644, "0f717230e297de82d0f8d761143dc1e1145c6bd5", 'a/b/c'}]
         )
 
       :ok =
-        CacheInfo.run(
+        Plumbing.update_index_cache_info(
           repo,
           [{0o100644, "ff287368514462578ba6406d366113953539cbf1", 'a/b/d'}]
         )
 
       :ok =
-        CacheInfo.run(
+        Plumbing.update_index_cache_info(
           repo,
           [{0o100644, "de588889c4d62aaf3ef3bd90be38fa239be2f5d1", 'a/c/x'}]
         )
 
       :ok =
-        CacheInfo.run(
+        Plumbing.update_index_cache_info(
           repo,
           [{0o100755, "7919e8900c3af541535472aebd56d44222b7b3a3", 'other.txt'}]
         )
 
       assert {:error, :prefix_not_found} =
-               WriteTree.run(repo, missing_ok?: true, prefix: 'no/such/prefix')
+               Plumbing.write_tree(repo, missing_ok?: true, prefix: 'no/such/prefix')
     end
 
     test "error: invalid repo" do
       {:ok, not_repo} = GenServer.start_link(NotValid, nil)
 
-      assert {:error, :invalid_repository} = WriteTree.run(not_repo, missing_ok?: true)
+      assert {:error, :invalid_repository} = Plumbing.write_tree(not_repo, missing_ok?: true)
     end
 
     test "error: invalid dir cache" do
@@ -403,7 +401,7 @@ defmodule Xgit.Plumbing.WriteTreeTest do
 
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
-      assert {:error, :invalid_format} = WriteTree.run(repo, missing_ok?: true)
+      assert {:error, :invalid_format} = Plumbing.write_tree(repo, missing_ok?: true)
     end
 
     test "error: :missing_ok? invalid" do
@@ -413,9 +411,9 @@ defmodule Xgit.Plumbing.WriteTreeTest do
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       assert_raise ArgumentError,
-                   ~s(Xgit.Plumbing.WriteTree.run/2: missing_ok? "sure" is invalid),
+                   ~s(Xgit.Repository.Plumbing.write_tree/2: missing_ok? "sure" is invalid),
                    fn ->
-                     WriteTree.run(repo, missing_ok?: "sure")
+                     Plumbing.write_tree(repo, missing_ok?: "sure")
                    end
     end
 
@@ -454,7 +452,7 @@ defmodule Xgit.Plumbing.WriteTreeTest do
           []
         )
 
-      assert {:error, :incomplete_merge} = WriteTree.run(repo, missing_ok?: true)
+      assert {:error, :incomplete_merge} = Plumbing.write_tree(repo, missing_ok?: true)
     end
 
     test "error: can't write tree object" do
@@ -470,7 +468,7 @@ defmodule Xgit.Plumbing.WriteTreeTest do
       File.rm_rf!(objects_path)
       File.write!(objects_path, "not a directory")
 
-      assert {:error, :cant_create_file} = WriteTree.run(repo, missing_ok?: true)
+      assert {:error, :cant_create_file} = Plumbing.write_tree(repo, missing_ok?: true)
     end
 
     test "error: :prefix invalid" do
@@ -480,9 +478,9 @@ defmodule Xgit.Plumbing.WriteTreeTest do
       {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       assert_raise ArgumentError,
-                   ~s[Xgit.Plumbing.WriteTree.run/2: prefix "a/b/c" is invalid (should be a charlist, not a String)],
+                   ~s[Xgit.Repository.Plumbing.write_tree/2: prefix "a/b/c" is invalid (should be a charlist, not a String)],
                    fn ->
-                     WriteTree.run(repo, prefix: "a/b/c")
+                     Plumbing.write_tree(repo, prefix: "a/b/c")
                    end
     end
 
@@ -507,7 +505,7 @@ defmodule Xgit.Plumbing.WriteTreeTest do
 
       xgit_fn.(repo)
 
-      assert {:ok, xgit_object_id} = WriteTree.run(repo, opts)
+      assert {:ok, xgit_object_id} = Plumbing.write_tree(repo, opts)
 
       assert_folders_are_equal(
         Path.join([ref, ".git", "objects"]),
