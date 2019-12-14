@@ -54,7 +54,7 @@ defmodule Xgit.MixProject do
       source_url: "https://github.com/elixir-git/xgit",
       homepage_url: "https://xgit.io",
       groups_for_modules: [
-        "Repository": [
+        Repository: [
           "Xgit.Repository",
           "Xgit.Repository.InMemory",
           "Xgit.Repository.OnDisk",
@@ -79,10 +79,8 @@ defmodule Xgit.MixProject do
           "Xgit.Repository.WorkingTree",
           "Xgit.Repository.WorkingTree.ParseIndexFile",
           "Xgit.Repository.WorkingTree.WriteIndexFile"
-
         ]
       ]
-
     ]
   end
 
