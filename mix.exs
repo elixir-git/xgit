@@ -59,7 +59,8 @@ defmodule Xgit.MixProject do
           "Xgit.Repository.InMemory",
           "Xgit.Repository.OnDisk",
           "Xgit.Repository.Plumbing",
-          "Xgit.Repository.Storage"
+          "Xgit.Repository.Storage",
+          "Xgit.Repository.WorkingTree"
         ],
         "Core Data Model": [
           "Xgit.Commit",
@@ -75,8 +76,7 @@ defmodule Xgit.MixProject do
           "Xgit.PersonIdent",
           "Xgit.Ref",
           "Xgit.Tree",
-          "Xgit.Tree.Entry",
-          "Xgit.Repository.WorkingTree"
+          "Xgit.Tree.Entry"
         ]
       ]
     ]
