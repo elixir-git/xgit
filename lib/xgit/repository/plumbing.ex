@@ -702,9 +702,9 @@ defmodule Xgit.Repository.Plumbing do
 
   Reason codes may also come from the following functions:
 
+  * `Xgit.DirCache.to_iodevice/2`
   * `Xgit.Repository.Storage.get_object/2`
   * `Xgit.Repository.Storage.WorkingTree.read_tree/3`
-  * `Xgit.Repository.Storage.WorkingTree.WriteIndexFile.to_iodevice/2`
   * `Xgit.Tree.from_object/1`
 
   ## TO DO

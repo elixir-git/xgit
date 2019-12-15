@@ -27,7 +27,6 @@ defmodule Xgit.Repository.WorkingTree do
   alias Xgit.Object
   alias Xgit.ObjectId
   alias Xgit.Repository.Storage
-  alias Xgit.Repository.WorkingTree.WriteIndexFile
   alias Xgit.Tree
   alias Xgit.Util.TrailingHashDevice
 
@@ -132,7 +131,7 @@ defmodule Xgit.Repository.WorkingTree do
   @typedoc ~S"""
   Error code reasons returned by `reset_dir_cache/1`.
   """
-  @type reset_dir_cache_reason :: WriteIndexFile.to_iodevice_reason()
+  @type reset_dir_cache_reason :: DirCache.to_iodevice_reason()
 
   @doc ~S"""
   Reset the dir cache to empty and rewrite the index file accordingly.
@@ -143,7 +142,7 @@ defmodule Xgit.Repository.WorkingTree do
 
   `{:error, reason}` if unable. The relevant reason codes may come from:
 
-  * `Xgit.Repository.WorkingTree.WriteIndexFile.to_iodevice/2`.
+  * `Xgit.DirCache.to_iodevice/2`.
   """
   @spec reset_dir_cache(working_tree :: t) ::
           :ok | {:error, reset_dir_cache_reason}
@@ -164,7 +163,7 @@ defmodule Xgit.Repository.WorkingTree do
           DirCache.add_entries_reason()
           | DirCache.from_iodevice_reason()
           | DirCache.remove_entries_reason()
-          | WriteIndexFile.to_iodevice_reason()
+          | DirCache.to_iodevice_reason()
 
   @doc ~S"""
   Apply updates to the dir cache and rewrite the index tree accordingly.
@@ -189,7 +188,7 @@ defmodule Xgit.Repository.WorkingTree do
   * `Xgit.DirCache.add_entries/2`
   * `Xgit.DirCache.from_iodevice/1`
   * `Xgit.DirCache.remove_entries/2`
-  * `Xgit.Repository.WorkingTree.WriteIndexFile.to_iodevice/2`.
+  * `Xgit.DirCache.to_iodevice/2`.
 
   ## TO DO
 
@@ -225,9 +224,9 @@ defmodule Xgit.Repository.WorkingTree do
   """
   @type read_tree_reason ::
           :objects_missing
+          | DirCache.to_iodevice_reason()
           | Storage.get_object_reason()
           | Tree.from_object_reason()
-          | WriteIndexFile.to_iodevice_reason()
 
   @doc ~S"""
   Read a `tree` object and any trees it may refer to and populate the dir cache accordingly.
@@ -255,8 +254,8 @@ defmodule Xgit.Repository.WorkingTree do
 
   Reason codes may also come from the following functions:
 
+  * `Xgit.DirCache.to_iodevice/2`
   * `Xgit.Repository.Storage.get_object/2`
-  * `Xgit.Repository.WorkingTree.WriteIndexFile.to_iodevice/2`
   * `Xgit.Tree.from_object/1`
 
   ## TO DO
@@ -499,7 +498,7 @@ defmodule Xgit.Repository.WorkingTree do
   defp write_index_file(dir_cache, index_path) do
     with {:ok, iodevice}
          when is_pid(iodevice) <- TrailingHashDevice.open_file_for_write(index_path),
-         :ok <- WriteIndexFile.to_iodevice(dir_cache, iodevice),
+         :ok <- DirCache.to_iodevice(dir_cache, iodevice),
          :ok <- File.close(iodevice) do
       :ok
     else
