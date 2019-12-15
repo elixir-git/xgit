@@ -1,16 +1,16 @@
 defmodule Xgit.Repository.WorkingTree.WriteIndexFile do
   @moduledoc ~S"""
-  Save an `Xgit.Core.DirCache` to the corresponding git `index` file data structure.
+  Save an `Xgit.DirCache` to the corresponding git `index` file data structure.
   """
 
   use Bitwise
-  use Xgit.Core.FileMode
+  use Xgit.FileMode
 
   import Xgit.Util.ForceCoverage
 
-  alias Xgit.Core.DirCache
-  alias Xgit.Core.DirCache.Entry, as: DirCacheEntry
-  alias Xgit.Core.ObjectId
+  alias Xgit.DirCache
+  alias Xgit.DirCache.Entry, as: DirCacheEntry
+  alias Xgit.ObjectId
   alias Xgit.Util.NB
   alias Xgit.Util.TrailingHashDevice
 
@@ -22,7 +22,7 @@ defmodule Xgit.Repository.WorkingTree.WriteIndexFile do
 
   @doc ~S"""
   Write index file to an `iodevice` (typically an opened file) from an
-  `Xgit.Core.DirCache` struct.
+  `Xgit.DirCache` struct.
 
   _IMPORTANT:_ The `iodevice` must be created using `Xgit.Util.TrailingHashDevice`.
 
@@ -33,7 +33,7 @@ defmodule Xgit.Repository.WorkingTree.WriteIndexFile do
   `{:error, :not_sha_hash_device}` if the iodevice was not created using
   `Xgit.Util.TrailingHashDevice`.
 
-  `{:error, :invalid_dir_cache}` if `Xgit.Core.DirCache.valid?/1` does not return
+  `{:error, :invalid_dir_cache}` if `Xgit.DirCache.valid?/1` does not return
   `true` for this struct.
 
   `{:error, :unsupported_version}` if the `version` flag in the dir cache struct

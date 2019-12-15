@@ -1,26 +1,12 @@
-defmodule Xgit.Core.DirCache.EntryTest do
+defmodule Xgit.Tree.EntryTest do
   use ExUnit.Case, async: true
 
-  alias Xgit.Core.DirCache.Entry
+  alias Xgit.Tree.Entry
 
   @valid %Entry{
     name: 'hello.txt',
-    stage: 0,
     object_id: "7919e8900c3af541535472aebd56d44222b7b3a3",
-    mode: 0o100644,
-    size: 42,
-    ctime: 1_565_612_933,
-    ctime_ns: 0,
-    mtime: 1_565_612_941,
-    mtime_ns: 0,
-    dev: 0,
-    ino: 0,
-    uid: 0,
-    gid: 0,
-    assume_valid?: true,
-    extended?: false,
-    skip_worktree?: true,
-    intent_to_add?: false
+    mode: 0o100644
   }
 
   describe "valid?/1" do
@@ -32,25 +18,11 @@ defmodule Xgit.Core.DirCache.EntryTest do
       name: "binary, not byte list",
       name: '',
       name: '/absolute/path',
-      stage: 4,
       object_id: "7919e8900c3af541535472aebd56d44222b7b3a",
       object_id: "7919e8900c3af541535472aebd56d44222b7b3a34",
       object_id: "0000000000000000000000000000000000000000",
       mode: 0,
-      mode: 0o100645,
-      size: -1,
-      ctime: 1.45,
-      ctime_ns: -1,
-      mtime: "recently",
-      mtime_ns: true,
-      dev: 4.2,
-      ino: true,
-      uid: "that guy",
-      gid: "those people",
-      assume_valid?: "yes",
-      extended?: "no",
-      skip_worktree?: :maybe,
-      intent_to_add?: :why_not?
+      mode: 0o100645
     ]
 
     test "invalid entries" do
@@ -84,12 +56,6 @@ defmodule Xgit.Core.DirCache.EntryTest do
     test "doesn't compare based on mode" do
       assert Entry.compare(@valid, @mode_gt) == :eq
       assert Entry.compare(@mode_gt, @valid) == :eq
-    end
-
-    @stage_gt Map.put(@valid, :stage, 2)
-    test "comparison based on stage" do
-      assert Entry.compare(@valid, @stage_gt) == :lt
-      assert Entry.compare(@stage_gt, @valid) == :gt
     end
   end
 end

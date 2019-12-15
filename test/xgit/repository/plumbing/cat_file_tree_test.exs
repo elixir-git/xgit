@@ -1,9 +1,9 @@
 defmodule Xgit.Repository.Plumbing.CatFileTreeTest do
   use Xgit.Test.OnDiskRepoTestCase, async: true
 
-  alias Xgit.Core.Tree
   alias Xgit.Repository.InMemory
   alias Xgit.Repository.Plumbing
+  alias Xgit.Tree
 
   describe "cat_file_tree/2" do
     defp write_git_tree_and_read_xgit_tree(xgit_repo, xgit_path) do

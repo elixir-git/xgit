@@ -1,9 +1,9 @@
 defmodule Xgit.Repository.Plumbing.UpdateRefTest do
   use ExUnit.Case, async: true
 
-  alias Xgit.Core.Object
-  alias Xgit.Core.ObjectId
-  alias Xgit.Core.Ref
+  alias Xgit.Object
+  alias Xgit.ObjectId
+  alias Xgit.Ref
   alias Xgit.Repository.Plumbing
   alias Xgit.Repository.Storage
   alias Xgit.Test.OnDiskRepoTestCase

@@ -1,7 +1,7 @@
 defmodule Xgit.Repository.Plumbing.PutSymbolicRefTest do
   use ExUnit.Case, async: true
 
-  alias Xgit.Core.Ref
+  alias Xgit.Ref
   alias Xgit.Repository.Plumbing
   alias Xgit.Repository.Storage
   alias Xgit.Test.OnDiskRepoTestCase

@@ -47,11 +47,11 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-defmodule Xgit.Core.FilePathTest do
+defmodule Xgit.FilePathTest do
   use ExUnit.Case, async: true
-  use Xgit.Core.FileMode
+  use Xgit.FileMode
 
-  import Xgit.Core.FilePath
+  import Xgit.FilePath
 
   @windows_git_names ['GIT~1', 'GiT~1']
   @almost_windows_git_names ['GIT~11', 'GIT~2']

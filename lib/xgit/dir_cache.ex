@@ -1,4 +1,4 @@
-defmodule Xgit.Core.DirCache do
+defmodule Xgit.DirCache do
   @moduledoc ~S"""
   A directory cache records the current (intended) contents of a working tree
   when last scanned or created by git.
@@ -21,12 +21,12 @@ defmodule Xgit.Core.DirCache do
   """
 
   use Bitwise
-  use Xgit.Core.FileMode
+  use Xgit.FileMode
 
   import Xgit.Util.ForceCoverage
 
-  alias Xgit.Core.FilePath
-  alias Xgit.Core.Tree
+  alias Xgit.FilePath
+  alias Xgit.Tree
   alias Xgit.Util.Comparison
 
   @typedoc ~S"""
@@ -62,11 +62,11 @@ defmodule Xgit.Core.DirCache do
     then multiple instances may appear for the same path name.
     """
 
-    use Xgit.Core.FileMode
+    use Xgit.FileMode
 
-    alias Xgit.Core.FileMode
-    alias Xgit.Core.FilePath
-    alias Xgit.Core.ObjectId
+    alias Xgit.FileMode
+    alias Xgit.FilePath
+    alias Xgit.ObjectId
 
     @typedoc ~S"""
     Merge status (stage).
@@ -246,7 +246,7 @@ defmodule Xgit.Core.DirCache do
   * The version is supported by Xgit. (Currently, only version 2 is supported.)
   * The `entry_count` matches the actual number of entries.
   * The entries are properly sorted.
-  * All entries are valid, as determined by `Xgit.Core.DirCache.Entry.valid?/1`.
+  * All entries are valid, as determined by `Xgit.DirCache.Entry.valid?/1`.
   """
   @spec valid?(dir_cache :: any) :: boolean
   def valid?(dir_cache)
@@ -426,12 +426,12 @@ defmodule Xgit.Core.DirCache do
 
   ## Parameters
 
-  `prefix`: (`Xgit.Core.FilePath`) if present, return the object ID for the tree
+  `prefix`: (`Xgit.FilePath`) if present, return the object ID for the tree
   pointed to by `prefix`. All tree objects will be generated, regardless of `prefix`.
 
   ## Return Value
 
-  `{:ok, objects, prefix_tree}` where `objects` is a list of `Xgit.Core.Object`
+  `{:ok, objects, prefix_tree}` where `objects` is a list of `Xgit.Object`
   structs of type `tree`. All others must be written or must be present in the
   object database for the top-level tree to be valid. `prefix_tree` is the
   tree for the subtree specified by `prefix` or the top-level tree if no prefix
@@ -441,8 +441,8 @@ defmodule Xgit.Core.DirCache do
 
   `{:error, :prefix_not_found}` if no tree matching `prefix` exists.
   """
-  @spec to_tree_objects(dir_cache :: t, prefix :: Xgit.Core.FilePath.t()) ::
-          {:ok, [Xgit.Core.Object.t()], Xgit.Core.Object.t()} | {:error, to_tree_objects_reason}
+  @spec to_tree_objects(dir_cache :: t, prefix :: Xgit.FilePath.t()) ::
+          {:ok, [Xgit.Object.t()], Xgit.Object.t()} | {:error, to_tree_objects_reason}
   def to_tree_objects(dir_cache, prefix \\ [])
 
   def to_tree_objects(%__MODULE__{entries: entries} = dir_cache, prefix)

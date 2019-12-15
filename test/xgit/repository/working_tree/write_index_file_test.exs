@@ -1,7 +1,7 @@
 defmodule Xgit.Repository.WorkingTree.WriteIndexFileTest do
   use Xgit.GitInitTestCase, async: true
 
-  alias Xgit.Core.DirCache
+  alias Xgit.DirCache
   alias Xgit.GitInitTestCase
   alias Xgit.Repository.WorkingTree.ParseIndexFile
   alias Xgit.Repository.WorkingTree.WriteIndexFile

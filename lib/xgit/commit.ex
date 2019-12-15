@@ -1,11 +1,11 @@
-defmodule Xgit.Core.Commit do
+defmodule Xgit.Commit do
   @moduledoc ~S"""
   Represents a git `commit` object in memory.
   """
-  alias Xgit.Core.ContentSource
-  alias Xgit.Core.Object
-  alias Xgit.Core.ObjectId
-  alias Xgit.Core.PersonIdent
+  alias Xgit.ContentSource
+  alias Xgit.Object
+  alias Xgit.ObjectId
+  alias Xgit.PersonIdent
 
   import Xgit.Util.ForceCoverage
   import Xgit.Util.ParseHeader, only: [next_header: 1]
@@ -15,10 +15,10 @@ defmodule Xgit.Core.Commit do
 
   ## Struct Members
 
-  * `:tree`: (`Xgit.Core.ObjectId`) tree referenced by this commit
-  * `:parents`: (list of `Xgit.Core.ObjectId`) parent(s) of this commit
-  * `:author`: (`Xgit.Core.PersonIdent`) author of this commit
-  * `:committer`: (`Xgit.Core.PersonIdent`) committer for this commit
+  * `:tree`: (`Xgit.ObjectId`) tree referenced by this commit
+  * `:parents`: (list of `Xgit.ObjectId`) parent(s) of this commit
+  * `:author`: (`Xgit.PersonIdent`) author of this commit
+  * `:committer`: (`Xgit.PersonIdent`) committer for this commit
   * `:message`: (bytelist) user-entered commit message (encoding unspecified)
 
   **TO DO:** Support signatures and other extensions.
@@ -64,7 +64,7 @@ defmodule Xgit.Core.Commit do
   @type from_object_reason :: :not_a_commit | :invalid_commit
 
   @doc ~S"""
-  Renders a commit structure from an `Xgit.Core.Object`.
+  Renders a commit structure from an `Xgit.Object`.
 
   ## Return Values
 
@@ -130,7 +130,7 @@ defmodule Xgit.Core.Commit do
   defp drop_if_lf(_), do: cover(:error)
 
   @doc ~S"""
-  Renders this commit structure into a corresponding `Xgit.Core.Object`.
+  Renders this commit structure into a corresponding `Xgit.Object`.
 
   If duplicate parents are detected, they will be silently de-duplicated.
 
@@ -149,7 +149,7 @@ defmodule Xgit.Core.Commit do
         } = commit
       ) do
     unless valid?(commit) do
-      raise ArgumentError, "Xgit.Core.Commit.to_object/1: commit is not valid"
+      raise ArgumentError, "Xgit.Commit.to_object/1: commit is not valid"
     end
 
     rendered_parents =

@@ -14,9 +14,9 @@ defmodule Xgit.Repository.OnDisk do
 
   import Xgit.Util.ForceCoverage
 
-  alias Xgit.Core.ContentSource
-  alias Xgit.Core.Object
-  alias Xgit.Core.Ref
+  alias Xgit.ContentSource
+  alias Xgit.Object
+  alias Xgit.Ref
   alias Xgit.Repository.WorkingTree
   alias Xgit.Util.FileUtils
   alias Xgit.Util.ParseDecimal
@@ -248,7 +248,7 @@ defmodule Xgit.Repository.OnDisk do
 
   defmodule LooseObjectContentSource do
     @moduledoc false
-    # Implements `Xgit.Core.ContentSource` to read content from a loose object.
+    # Implements `Xgit.ContentSource` to read content from a loose object.
 
     import Xgit.Util.ForceCoverage
 
@@ -257,7 +257,7 @@ defmodule Xgit.Repository.OnDisk do
     @enforce_keys [:path, :size]
     defstruct [:path, :size]
 
-    defimpl Xgit.Core.ContentSource do
+    defimpl Xgit.ContentSource do
       alias Xgit.Repository.OnDisk.LooseObjectContentSource, as: LCS
       @impl true
       def length(%LCS{size: size}), do: cover(size)

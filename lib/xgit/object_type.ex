@@ -1,4 +1,4 @@
-defmodule Xgit.Core.ObjectType do
+defmodule Xgit.ObjectType do
   @moduledoc ~S"""
   Describes the known git object types.
 
@@ -36,8 +36,8 @@ defmodule Xgit.Core.ObjectType do
 
   defmacro __using__(opts) do
     quote location: :keep, bind_quoted: [opts: opts] do
-      alias Xgit.Core.ObjectType
-      import Xgit.Core.ObjectType, only: [is_object_type: 1]
+      alias Xgit.ObjectType
+      import Xgit.ObjectType, only: [is_object_type: 1]
     end
   end
 end

@@ -10,9 +10,9 @@ defmodule Xgit.Repository.InMemory do
 
   import Xgit.Util.ForceCoverage
 
-  alias Xgit.Core.ContentSource
-  alias Xgit.Core.Object
-  alias Xgit.Core.Ref
+  alias Xgit.ContentSource
+  alias Xgit.Object
+  alias Xgit.Ref
 
   @doc ~S"""
   Start an in-memory git repository.

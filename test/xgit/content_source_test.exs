@@ -1,7 +1,7 @@
-defmodule Xgit.Core.ContentSourceTest do
+defmodule Xgit.ContentSourceTest do
   use ExUnit.Case, async: true
 
-  alias Xgit.Core.ContentSource
+  alias Xgit.ContentSource
 
   describe "implementation for list" do
     test "length/1" do

@@ -1,6 +1,6 @@
-defmodule Xgit.Core.ObjectTypeTest do
+defmodule Xgit.ObjectTypeTest do
   use ExUnit.Case, async: true
-  use Xgit.Core.ObjectType
+  use Xgit.ObjectType
 
   @valid_object_types [:blob, :tree, :commit, :tag]
   @invalid_object_types [:mumble, 1, "blob", 'blob', %{blob: true}, {:blob}, self()]

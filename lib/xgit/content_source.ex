@@ -1,4 +1,4 @@
-defprotocol Xgit.Core.ContentSource do
+defprotocol Xgit.ContentSource do
   @moduledoc ~S"""
   Protocol used for reading object content from various sources.
   """
@@ -21,7 +21,7 @@ defprotocol Xgit.Core.ContentSource do
   def stream(content)
 end
 
-defimpl Xgit.Core.ContentSource, for: List do
+defimpl Xgit.ContentSource, for: List do
   @impl true
   def length(list), do: Enum.count(list)
 
@@ -29,7 +29,7 @@ defimpl Xgit.Core.ContentSource, for: List do
   def stream(list), do: list
 end
 
-defimpl Xgit.Core.ContentSource, for: BitString do
+defimpl Xgit.ContentSource, for: BitString do
   @impl true
   def length(s), do: byte_size(s)
 

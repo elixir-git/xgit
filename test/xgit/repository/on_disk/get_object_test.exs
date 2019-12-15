@@ -1,8 +1,8 @@
 defmodule Xgit.Repository.OnDisk.GetObjectTest do
   use Xgit.GitInitTestCase, async: true
 
-  alias Xgit.Core.ContentSource
-  alias Xgit.Core.Object
+  alias Xgit.ContentSource
+  alias Xgit.Object
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Storage
 

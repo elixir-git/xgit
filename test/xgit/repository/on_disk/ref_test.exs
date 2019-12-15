@@ -1,8 +1,8 @@
 defmodule Xgit.Repository.OnDisk.RefTest do
   use Xgit.Repository.Test.RefTest, async: true
 
-  alias Xgit.Core.Object
-  alias Xgit.Core.Ref
+  alias Xgit.Object
+  alias Xgit.Ref
   alias Xgit.Repository.Plumbing
   alias Xgit.Repository.Storage
   alias Xgit.Test.OnDiskRepoTestCase

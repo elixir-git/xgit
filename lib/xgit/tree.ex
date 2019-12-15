@@ -1,12 +1,12 @@
-defmodule Xgit.Core.Tree do
+defmodule Xgit.Tree do
   @moduledoc ~S"""
   Represents a git `tree` object in memory.
   """
-  alias Xgit.Core.ContentSource
-  alias Xgit.Core.FileMode
-  alias Xgit.Core.FilePath
-  alias Xgit.Core.Object
-  alias Xgit.Core.ObjectId
+  alias Xgit.ContentSource
+  alias Xgit.FileMode
+  alias Xgit.FilePath
+  alias Xgit.Object
+  alias Xgit.ObjectId
 
   import Xgit.Util.ForceCoverage
 
@@ -27,11 +27,11 @@ defmodule Xgit.Core.Tree do
     A single file in a `tree` structure.
     """
 
-    use Xgit.Core.FileMode
+    use Xgit.FileMode
 
-    alias Xgit.Core.FileMode
-    alias Xgit.Core.FilePath
-    alias Xgit.Core.ObjectId
+    alias Xgit.FileMode
+    alias Xgit.FilePath
+    alias Xgit.ObjectId
     alias Xgit.Util.Comparison
 
     import Xgit.Util.ForceCoverage
@@ -103,7 +103,7 @@ defmodule Xgit.Core.Tree do
   All of the following must be true for this to occur:
   * The value is a `Tree` struct.
   * The entries are properly sorted.
-  * All entries are valid, as determined by `Xgit.Core.Tree.Entry.valid?/1`.
+  * All entries are valid, as determined by `Xgit.Tree.Entry.valid?/1`.
   """
   @spec valid?(tree :: any) :: boolean
   def valid?(tree)
@@ -125,7 +125,7 @@ defmodule Xgit.Core.Tree do
   @type from_object_reason :: :not_a_tree | :invalid_format | :invalid_tree
 
   @doc ~S"""
-  Renders a tree structure from an `Xgit.Core.Object`.
+  Renders a tree structure from an `Xgit.Object`.
 
   ## Return Values
 
@@ -197,7 +197,7 @@ defmodule Xgit.Core.Tree do
   defp path_and_object_id(data), do: Enum.split_while(data, &(&1 != 0))
 
   @doc ~S"""
-  Renders this tree structure into a corresponding `Xgit.Core.Object`.
+  Renders this tree structure into a corresponding `Xgit.Object`.
   """
   @spec to_object(tree :: t) :: Object.t()
   def to_object(tree)

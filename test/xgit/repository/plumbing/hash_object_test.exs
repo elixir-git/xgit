@@ -1,7 +1,7 @@
 defmodule Xgit.Repository.Plumbing.HashObjectTest do
   use ExUnit.Case, async: true
 
-  alias Xgit.Core.FileContentSource
+  alias Xgit.FileContentSource
   alias Xgit.GitInitTestCase
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Plumbing

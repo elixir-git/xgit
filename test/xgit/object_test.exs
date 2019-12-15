@@ -45,14 +45,14 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-defmodule Xgit.Core.ObjectTest do
+defmodule Xgit.ObjectTest do
   use ExUnit.Case, async: true
 
-  alias Xgit.Core.FileContentSource
-  alias Xgit.Core.Object
+  alias Xgit.FileContentSource
+  alias Xgit.Object
   alias Xgit.Test.TempDirTestCase
 
-  import Xgit.Core.Object, only: [check: 1, check: 2]
+  import Xgit.Object, only: [check: 1, check: 2]
 
   @valid_object_types [:blob, :tree, :commit, :tag]
   @invalid_object_types [:mumble, 1, "blob", 'blob', %{blob: true}, {:blob}, self()]

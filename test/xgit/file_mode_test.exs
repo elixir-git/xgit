@@ -1,7 +1,7 @@
-defmodule Xgit.Core.FileModeTest do
+defmodule Xgit.FileModeTest do
   use ExUnit.Case, async: true
 
-  use Xgit.Core.FileMode
+  use Xgit.FileMode
 
   test "tree/0" do
     assert FileMode.tree() == 0o040000

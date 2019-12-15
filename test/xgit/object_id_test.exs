@@ -1,8 +1,8 @@
-defmodule Xgit.Core.ObjectIdTest do
+defmodule Xgit.ObjectIdTest do
   use ExUnit.Case, async: true
 
-  alias Xgit.Core.FileContentSource
-  alias Xgit.Core.ObjectId
+  alias Xgit.FileContentSource
+  alias Xgit.ObjectId
 
   test "zero/0" do
     zero = ObjectId.zero()

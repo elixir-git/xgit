@@ -45,20 +45,20 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-defmodule Xgit.Core.Object do
+defmodule Xgit.Object do
   @moduledoc ~S"""
   Describes a single object stored (or about to be stored) in a git repository.
 
   This struct is constructed, modified, and shared as a working description of
   how to find and describe an object before it gets written to a repository.
   """
-  use Xgit.Core.ObjectType
+  use Xgit.ObjectType
 
-  alias Xgit.Core.ContentSource
-  alias Xgit.Core.FileMode
-  alias Xgit.Core.FilePath
-  alias Xgit.Core.ObjectId
-  alias Xgit.Core.PersonIdent
+  alias Xgit.ContentSource
+  alias Xgit.FileMode
+  alias Xgit.FilePath
+  alias Xgit.ObjectId
+  alias Xgit.PersonIdent
   alias Xgit.Util.ParseCharlist
   alias Xgit.Util.ParseDecimal
 
@@ -72,7 +72,7 @@ defmodule Xgit.Core.Object do
   ## Struct Members
 
   * `:type`: the object's type (`:blob`, `:tree`, `:commit`, or `:tag`)
-  * `:content`: how to obtain the content (see `Xgit.Core.ContentSource`)
+  * `:content`: how to obtain the content (see `Xgit.ContentSource`)
   * `:size`: size (in bytes) of the object or `:unknown`
   * `:id`: object ID (40 chars hex) of the object or `:unknown`
   """
@@ -206,8 +206,8 @@ defmodule Xgit.Core.Object do
 
   `{:error, :invalid_mode}` if the object is a tree and one of the file modes is incomplete.
 
-  See also error responses from `Xgit.Core.FilePath.check_path/2` and
-  `Xgit.Core.FilePath.check_path_segment/2`.
+  See also error responses from `Xgit.FilePath.check_path/2` and
+  `Xgit.FilePath.check_path_segment/2`.
   """
   @spec check(object :: t(), windows?: boolean, macosx?: boolean) ::
           :ok

@@ -1,9 +1,9 @@
 defmodule Xgit.Repository.InMemory.PutLooseObjectTest do
   use ExUnit.Case, async: true
 
-  alias Xgit.Core.ContentSource
-  alias Xgit.Core.FileContentSource
-  alias Xgit.Core.Object
+  alias Xgit.ContentSource
+  alias Xgit.FileContentSource
+  alias Xgit.Object
   alias Xgit.Repository.InMemory
   alias Xgit.Repository.Storage
 

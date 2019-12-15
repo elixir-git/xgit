@@ -1,7 +1,7 @@
 defmodule Xgit.Repository.Plumbing.LsFilesStageTest do
   use Xgit.GitInitTestCase, async: true
 
-  alias Xgit.Core.DirCache.Entry, as: DirCacheEntry
+  alias Xgit.DirCache.Entry, as: DirCacheEntry
   alias Xgit.Repository.InMemory
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Plumbing

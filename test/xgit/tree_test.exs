@@ -1,13 +1,13 @@
-defmodule Xgit.Core.TreeTest do
+defmodule Xgit.TreeTest do
   use ExUnit.Case, async: true
 
-  alias Xgit.Core.Object
-  alias Xgit.Core.Tree
-  alias Xgit.Core.Tree.Entry
   alias Xgit.GitInitTestCase
+  alias Xgit.Object
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Storage
   alias Xgit.Test.OnDiskRepoTestCase
+  alias Xgit.Tree
+  alias Xgit.Tree.Entry
 
   import FolderDiff
 

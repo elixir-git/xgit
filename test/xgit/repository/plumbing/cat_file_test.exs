@@ -1,7 +1,7 @@
 defmodule Xgit.Repository.Plumbing.CatFileTest do
   use Xgit.GitInitTestCase, async: true
 
-  alias Xgit.Core.ContentSource
+  alias Xgit.ContentSource
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Plumbing
   alias Xgit.Test.OnDiskRepoTestCase

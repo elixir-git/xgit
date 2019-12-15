@@ -1,9 +1,9 @@
 defmodule Xgit.Repository.OnDisk.PutLooseObjectTest do
   use Xgit.GitInitTestCase, async: true
 
-  alias Xgit.Core.ContentSource
-  alias Xgit.Core.FileContentSource
-  alias Xgit.Core.Object
+  alias Xgit.ContentSource
+  alias Xgit.FileContentSource
+  alias Xgit.Object
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Storage
 
