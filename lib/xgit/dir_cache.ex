@@ -8,7 +8,9 @@ defmodule Xgit.DirCache do
   by a specific implementation of the `Xgit.Repository.Storage` behaviour.
 
   This content is commonly persisted on disk as an `index` file at the root of
-  the git tree.
+  the git tree. This file format can be read using the `from_iodevice/1` function
+  and written using `to_iodevice/1`. If a different persistence mechanism is
+  required, you may provide that e elsewhere.
 
   Changes in the working tree can be detected by comparing the modification times
   to the cached modification time within the dir cache.
