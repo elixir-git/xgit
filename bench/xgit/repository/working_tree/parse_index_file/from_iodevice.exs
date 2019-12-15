@@ -1,4 +1,4 @@
-# Measure cost of Xgit.Repository.WorkingTree.ParseIndexFile.from_iodevice/1.
+# Measure cost of Xgit.DirCache.from_iodevice/1.
 #
 # EXPECTED: Cost is roughly O(n) on the number of items in the index file.
 #
@@ -38,7 +38,7 @@
 #
 # --------------------------------------------------------------------------------------
 
-alias Xgit.Repository.WorkingTree.ParseIndexFile
+alias Xgit.DirCache
 alias Xgit.Util.TrailingHashDevice
 
 Temp.track!()
@@ -84,7 +84,7 @@ Benchee.run(
   %{
     "parse_index_file" => fn index_file_path ->
       iodevice = thd_open_file!.(index_file_path)
-      ParseIndexFile.from_iodevice(iodevice)
+      DirCache.from_iodevice(iodevice)
       File.close(iodevice)
     end
   },

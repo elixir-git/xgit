@@ -27,7 +27,6 @@ defmodule Xgit.Repository.WorkingTree do
   alias Xgit.Object
   alias Xgit.ObjectId
   alias Xgit.Repository.Storage
-  alias Xgit.Repository.WorkingTree.ParseIndexFile
   alias Xgit.Repository.WorkingTree.WriteIndexFile
   alias Xgit.Tree
   alias Xgit.Util.TrailingHashDevice
@@ -104,10 +103,8 @@ defmodule Xgit.Repository.WorkingTree do
 
   `{:ok, dir_cache}` if no index file exists. (`dir_cache` will have zero entries.)
 
-  `{:error, reason}` if the file exists but could not be parsed.
-
-  See `Xgit.Repository.WorkingTree.ParseIndexFile.from_iodevice/1` for possible
-  reason codes.
+  `{:error, reason}` if the file exists but could not be parsed. (See
+  `Xgit.DirCache.from_iodevice/1` for possible reason codes.
 
   ## TO DO
 
@@ -121,7 +118,7 @@ defmodule Xgit.Repository.WorkingTree do
   across process boundaries. [Issue #88](https://github.com/elixir-git/xgit/issues/88)
   """
   @spec dir_cache(working_tree :: t) ::
-          {:ok, DirCache.t()} | {:error, reason :: ParseIndexFile.from_iodevice_reason()}
+          {:ok, DirCache.t()} | {:error, reason :: DirCache.from_iodevice_reason()}
   def dir_cache(working_tree) when is_pid(working_tree),
     do: GenServer.call(working_tree, :dir_cache)
 
@@ -165,8 +162,8 @@ defmodule Xgit.Repository.WorkingTree do
   """
   @type update_dir_cache_reason ::
           DirCache.add_entries_reason()
+          | DirCache.from_iodevice_reason()
           | DirCache.remove_entries_reason()
-          | ParseIndexFile.from_iodevice_reason()
           | WriteIndexFile.to_iodevice_reason()
 
   @doc ~S"""
@@ -190,8 +187,8 @@ defmodule Xgit.Repository.WorkingTree do
   `{:error, reason}` if unable. The relevant reason codes may come from:
 
   * `Xgit.DirCache.add_entries/2`
+  * `Xgit.DirCache.from_iodevice/1`
   * `Xgit.DirCache.remove_entries/2`
-  * `Xgit.Repository.WorkingTree.ParseIndexFile.from_iodevice/1`
   * `Xgit.Repository.WorkingTree.WriteIndexFile.to_iodevice/2`.
 
   ## TO DO
@@ -376,8 +373,8 @@ defmodule Xgit.Repository.WorkingTree do
           :incomplete_merge
           | :objects_missing
           | :prefix_not_found
+          | DirCache.from_iodevice_reason()
           | DirCache.to_tree_objects_reason()
-          | ParseIndexFile.from_iodevice_reason()
           | Storage.put_loose_object_reason()
 
   @doc ~S"""
@@ -411,9 +408,9 @@ defmodule Xgit.Repository.WorkingTree do
 
   Reason codes may also come from the following functions:
 
+  * `Xgit.DirCache.from_iodevice/1`
   * `Xgit.DirCache.to_tree_objects/2`
   * `Xgit.Repository.Storage.put_loose_object/2`
-  * `Xgit.Repository.WorkingTree.ParseIndexFile.from_iodevice/1`
   """
   @spec write_tree(working_tree :: t, missing_ok?: boolean, prefix: FilePath.t()) ::
           {:ok, object_id :: ObjectId.t()} | {:error, reason :: write_tree_reason}
@@ -489,7 +486,7 @@ defmodule Xgit.Repository.WorkingTree do
   defp parse_index_file_if_exists(index_path) do
     with true <- File.exists?(index_path),
          {:ok, iodevice} when is_pid(iodevice) <- TrailingHashDevice.open_file(index_path) do
-      res = ParseIndexFile.from_iodevice(iodevice)
+      res = DirCache.from_iodevice(iodevice)
       :ok = File.close(iodevice)
 
       res

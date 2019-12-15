@@ -3,7 +3,6 @@ defmodule Xgit.Repository.WorkingTree.WriteIndexFileTest do
 
   alias Xgit.DirCache
   alias Xgit.GitInitTestCase
-  alias Xgit.Repository.WorkingTree.ParseIndexFile
   alias Xgit.Repository.WorkingTree.WriteIndexFile
   alias Xgit.Util.TrailingHashDevice
 
@@ -256,7 +255,7 @@ defmodule Xgit.Repository.WorkingTree.WriteIndexFileTest do
                [xgit, ".git", "index"]
                |> Path.join()
                |> thd_open_file!()
-               |> ParseIndexFile.from_iodevice()
+               |> DirCache.from_iodevice()
     end
 
     test "error: unsupported version", %{xgit: xgit} do

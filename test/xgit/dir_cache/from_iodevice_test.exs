@@ -1,8 +1,7 @@
-defmodule Xgit.Repository.WorkingTree.ParseIndexFileTest do
+defmodule Xgit.DirCache.FromIoDeviceTest do
   use Xgit.GitInitTestCase, async: true
 
   alias Xgit.DirCache
-  alias Xgit.Repository.WorkingTree.ParseIndexFile
   alias Xgit.Test.TempDirTestCase
   alias Xgit.Util.TrailingHashDevice
 
@@ -39,7 +38,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFileTest do
                [ref, ".git", "index"]
                |> Path.join()
                |> thd_open_file!()
-               |> ParseIndexFile.from_iodevice()
+               |> DirCache.from_iodevice()
 
       assert index_file = %DirCache{
                entries: [],
@@ -81,7 +80,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFileTest do
                [ref, ".git", "index"]
                |> Path.join()
                |> thd_open_file!()
-               |> ParseIndexFile.from_iodevice()
+               |> DirCache.from_iodevice()
 
       assert index_file = %DirCache{
                entries: [
@@ -170,7 +169,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFileTest do
                  [tmp, ".git", "index"]
                  |> Path.join()
                  |> thd_open_file!()
-                 |> ParseIndexFile.from_iodevice()
+                 |> DirCache.from_iodevice()
 
         assert index_file = %DirCache{
                  entries: [
@@ -241,7 +240,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFileTest do
                         [tmp, ".git", "index"]
                         |> Path.join()
                         |> thd_open_file!()
-                        |> ParseIndexFile.from_iodevice()
+                        |> DirCache.from_iodevice()
              end) =~ ~s(skipping extension with signature "TREE", 25 bytes)
 
       assert index_file = %DirCache{
@@ -274,7 +273,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFileTest do
 
   test "error: iodevice isn't a TrailingHashDevice" do
     {:ok, pid} = GenServer.start_link(NotValid, nil)
-    assert {:error, :not_sha_hash_device} = ParseIndexFile.from_iodevice(pid)
+    assert {:error, :not_sha_hash_device} = DirCache.from_iodevice(pid)
   end
 
   test "error: file doesn't start with DIRC signature" do
@@ -405,14 +404,14 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFileTest do
     iodata
     |> IO.iodata_to_binary()
     |> thd_open_string!()
-    |> ParseIndexFile.from_iodevice()
+    |> DirCache.from_iodevice()
   end
 
   defp parse_corrupt_iodata_as_index_file(iodata) do
     iodata
     |> IO.iodata_to_binary()
     |> thd_open_corrupt_string!()
-    |> ParseIndexFile.from_iodevice()
+    |> DirCache.from_iodevice()
   end
 
   defp thd_open_file!(path) do

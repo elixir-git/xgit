@@ -23,7 +23,6 @@ defmodule Xgit.Repository.Plumbing do
   alias Xgit.Ref
   alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
-  alias Xgit.Repository.WorkingTree.ParseIndexFile
   alias Xgit.Tree
 
   ## --- Objects ---
@@ -513,7 +512,7 @@ defmodule Xgit.Repository.Plumbing do
   @typedoc ~S"""
   Reason codes that can be returned by `ls_files_stage_/1`.
   """
-  @type ls_files_stage_reason :: :invalid_repository | ParseIndexFile.from_iodevice_reason()
+  @type ls_files_stage_reason :: :invalid_repository | DirCache.from_iodevice_reason()
 
   @doc ~S"""
   Retrieves information about files in the working tree as described by the index file.
@@ -536,8 +535,7 @@ defmodule Xgit.Repository.Plumbing do
   `{:error, :bare}` if `repository` doesn't have a working tree.
 
   `{:error, reason}` if the index file for `repository` isn't valid. (See
-  `Xgit.Repository.WorkingTree.ParseIndexFile.from_iodevice/1` for possible
-  reason codes.)
+  `Xgit.DirCache.from_iodevice/1` for possible reason codes.)
   """
   @spec ls_files_stage(repository :: Storage.t()) ::
           {:ok, entries :: [DirCacheEntry.t()]}
@@ -747,9 +745,9 @@ defmodule Xgit.Repository.Plumbing do
           :invalid_repository
           | :bare
           | DirCache.to_tree_objects_reason()
+          | DirCache.from_iodevice_reason()
           | Storage.put_loose_object_reason()
           | WorkingTree.write_tree_reason()
-          | ParseIndexFile.from_iodevice_reason()
 
   @doc ~S"""
   Translates the current working tree, as reflected in its index file, to one or more
@@ -785,9 +783,9 @@ defmodule Xgit.Repository.Plumbing do
   Reason codes may also come from the following functions:
 
   * `Xgit.DirCache.to_tree_objects/2`
+  * `Xgit.DirCache.from_iodevice/1`
   * `Xgit.Repository.Storage.put_loose_object/2`
   * `Xgit.Repository.Storage.WorkingTree.write_tree/2`
-  * `Xgit.Repository.WorkingTree.ParseIndexFile.from_iodevice/1`
   """
   @spec write_tree(repository :: Storage.t(), missing_ok?: boolean, prefix: FilePath.t()) ::
           {:ok, object_id :: ObjectId.t()}
