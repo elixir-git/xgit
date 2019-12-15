@@ -8,6 +8,7 @@ Xgit.DirCache
 	fully_merged?/1
 	remove_entries/2
 	to_tree_objects/2
+	to_iodevice/1
 
 Xgit.FilePath
 	check_path_segment/2
@@ -21,9 +22,6 @@ Xgit.Repository.Storage (permute on the implementations)
 	get_object/2
 	has_all_object_ids?/2
 	put_loose_object/2
-
-Xgit.Repository.WorkingTree.WriteIndexFile
-	to_iodevice/1
 
 Xgit.Tree
 	from_object/1

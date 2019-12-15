@@ -1,10 +1,8 @@
-defmodule Xgit.Repository.WorkingTree.WriteIndexFileTest do
+defmodule Xgit.DirCache.ToIoDeviceTest do
   use Xgit.GitInitTestCase, async: true
 
   alias Xgit.DirCache
   alias Xgit.GitInitTestCase
-  alias Xgit.Repository.WorkingTree.ParseIndexFile
-  alias Xgit.Repository.WorkingTree.WriteIndexFile
   alias Xgit.Util.TrailingHashDevice
 
   import FolderDiff
@@ -256,7 +254,7 @@ defmodule Xgit.Repository.WorkingTree.WriteIndexFileTest do
                [xgit, ".git", "index"]
                |> Path.join()
                |> thd_open_file!()
-               |> ParseIndexFile.from_iodevice()
+               |> DirCache.from_iodevice()
     end
 
     test "error: unsupported version", %{xgit: xgit} do
@@ -288,7 +286,7 @@ defmodule Xgit.Repository.WorkingTree.WriteIndexFileTest do
       index_path = Path.join(git_dir, "index")
 
       iodevice = File.open!(index_path, [:write])
-      assert {:error, :not_sha_hash_device} = WriteIndexFile.to_iodevice(dir_cache, iodevice)
+      assert {:error, :not_sha_hash_device} = DirCache.to_iodevice(dir_cache, iodevice)
     end
 
     test "error: I/O error", %{xgit: xgit} do
@@ -324,13 +322,13 @@ defmodule Xgit.Repository.WorkingTree.WriteIndexFileTest do
       index_path = Path.join(git_dir, "index")
 
       {:ok, iodevice} = TrailingHashDevice.open_file_for_write(index_path, max_file_size: 20)
-      assert {:error, :eio} = WriteIndexFile.to_iodevice(dir_cache, iodevice)
+      assert {:error, :eio} = DirCache.to_iodevice(dir_cache, iodevice)
     end
   end
 
   defp write_dir_cache_to_path(dir_cache, path) do
     with {:ok, iodevice} <- TrailingHashDevice.open_file_for_write(path),
-         :ok <- WriteIndexFile.to_iodevice(dir_cache, iodevice) do
+         :ok <- DirCache.to_iodevice(dir_cache, iodevice) do
       File.close(iodevice)
     else
       {:error, reason} -> {:error, reason}

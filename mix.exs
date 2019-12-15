@@ -76,9 +76,7 @@ defmodule Xgit.MixProject do
           "Xgit.Ref",
           "Xgit.Tree",
           "Xgit.Tree.Entry",
-          "Xgit.Repository.WorkingTree",
-          "Xgit.Repository.WorkingTree.ParseIndexFile",
-          "Xgit.Repository.WorkingTree.WriteIndexFile"
+          "Xgit.Repository.WorkingTree"
         ]
       ]
     ]
