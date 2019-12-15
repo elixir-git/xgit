@@ -1,6 +1,6 @@
-defmodule Xgit.Core.FileContentSource do
+defmodule Xgit.FileContentSource do
   @moduledoc ~S"""
-  Implements `Xgit.Core.ContentSource` to read content from a file on disk.
+  Implements `Xgit.ContentSource` to read content from a file on disk.
   """
 
   import Xgit.Util.ForceCoverage
@@ -17,7 +17,7 @@ defmodule Xgit.Core.FileContentSource do
   defstruct [:path, :size]
 
   @doc ~S"""
-  Creates an `Xgit.Core.FileContentSource` for a file on disk.
+  Creates an `Xgit.FileContentSource` for a file on disk.
   """
   @spec new(path :: Path.t()) :: t
   def new(path) when is_binary(path) do
@@ -30,8 +30,8 @@ defmodule Xgit.Core.FileContentSource do
     %__MODULE__{path: path, size: size}
   end
 
-  defimpl Xgit.Core.ContentSource do
-    alias Xgit.Core.FileContentSource, as: FCS
+  defimpl Xgit.ContentSource do
+    alias Xgit.FileContentSource, as: FCS
     @impl true
     def length(%FCS{size: :file_not_found}), do: raise("file not found")
     def length(%FCS{size: size}), do: cover(size)

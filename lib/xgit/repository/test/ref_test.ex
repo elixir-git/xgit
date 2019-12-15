@@ -3,7 +3,7 @@ defmodule Xgit.Repository.Test.RefTest do
 
   # Not normally part of the public API, but available for implementors of
   # `Xgit.Repository.Storage` behaviour modules. Tests the callbacks related to
-  # `Xgit.Core.Ref` to ensure correct implementation of the core contracts.
+  # `Xgit.Ref` to ensure correct implementation of the core contracts.
   # Other tests may be necessary to ensure interop. (For example, the on-disk
   # repository test code adds more tests to ensure correct interop with
   # command-line git.)
@@ -16,8 +16,8 @@ defmodule Xgit.Repository.Test.RefTest do
   import Xgit.Util.SharedTestCase
 
   define_shared_tests do
-    alias Xgit.Core.Object
-    alias Xgit.Core.Ref
+    alias Xgit.Object
+    alias Xgit.Ref
     alias Xgit.Repository.Plumbing
     alias Xgit.Repository.Storage
 
@@ -26,7 +26,7 @@ defmodule Xgit.Repository.Test.RefTest do
 
     describe "get_ref/2 (shared)" do
       test "default repo contains HEAD reference", %{repo: repo} do
-        assert {:ok, %Xgit.Core.Ref{name: "HEAD", target: "ref: refs/heads/master"}} =
+        assert {:ok, %Xgit.Ref{name: "HEAD", target: "ref: refs/heads/master"}} =
                  Storage.get_ref(repo, "HEAD", follow_link?: false)
 
         assert {:error, :not_found} = Storage.get_ref(repo, "HEAD", follow_link?: true)
@@ -71,7 +71,7 @@ defmodule Xgit.Repository.Test.RefTest do
                    target: "ref: refs/heads/other"
                  })
 
-        assert {:ok, %Xgit.Core.Ref{name: "refs/heads/mumble", target: "ref: refs/heads/other"}} =
+        assert {:ok, %Xgit.Ref{name: "refs/heads/mumble", target: "ref: refs/heads/other"}} =
                  Storage.get_ref(repo, "refs/heads/mumble", follow_link?: false)
       end
 

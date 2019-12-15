@@ -1,8 +1,8 @@
 defmodule Xgit.Repository.WorkingTree.ReadTreeTest do
   use Xgit.GitInitTestCase, async: true
 
-  alias Xgit.Core.DirCache
-  alias Xgit.Core.DirCache.Entry
+  alias Xgit.DirCache
+  alias Xgit.DirCache.Entry
   alias Xgit.GitInitTestCase
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Plumbing

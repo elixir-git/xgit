@@ -47,7 +47,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-defmodule Xgit.Core.FilePath do
+defmodule Xgit.FilePath do
   @moduledoc ~S"""
   Describes a file path as stored in a git repo.
 
@@ -66,7 +66,7 @@ defmodule Xgit.Core.FilePath do
   """
 
   use Bitwise
-  use Xgit.Core.FileMode
+  use Xgit.FileMode
 
   import Xgit.Util.ForceCoverage
 

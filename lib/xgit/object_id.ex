@@ -1,15 +1,15 @@
-defmodule Xgit.Core.ObjectId do
+defmodule Xgit.ObjectId do
   @moduledoc ~S"""
   An object ID is a string that identifies an object within a repository.
 
   This string must match the format for a SHA-1 hash (i.e. 40 characters
   of lowercase hex).
   """
-  use Xgit.Core.ObjectType
+  use Xgit.ObjectType
 
   import Xgit.Util.ForceCoverage
 
-  alias Xgit.Core.ContentSource
+  alias Xgit.ContentSource
 
   @typedoc "A string containing 40 bytes of lowercase hex digits."
   @type t :: String.t()
@@ -41,7 +41,7 @@ defmodule Xgit.Core.ObjectId do
 
   ## Return Value
 
-  The object ID rendered as lowercase hex. (See `Xgit.Core.ObjectId`.)
+  The object ID rendered as lowercase hex. (See `Xgit.ObjectId`.)
   """
   @spec from_binary_iodata(b :: iodata) :: t
   def from_binary_iodata(b) when is_list(b) do
@@ -92,12 +92,12 @@ defmodule Xgit.Core.ObjectId do
 
   ## Parameters
 
-  * `data` describes how to read the data. (See `Xgit.Core.ContentSource`.)
-  * `type` is the intended git object type for this data. (See `Xgit.Core.ObjectType`.)
+  * `data` describes how to read the data. (See `Xgit.ContentSource`.)
+  * `type` is the intended git object type for this data. (See `Xgit.ObjectType`.)
 
   ## Return Value
 
-  The object ID. (See `Xgit.Core.ObjectId`.)
+  The object ID. (See `Xgit.ObjectId`.)
   """
   @spec calculate_id(data :: ContentSource.t(), type :: ObjectType.t()) :: t()
   def calculate_id(data, type) when not is_nil(data) and is_object_type(type) do

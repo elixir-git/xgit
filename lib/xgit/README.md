@@ -15,7 +15,7 @@ within Xgit need to make to manipulate the repository.)
 
 A **typical end-user developer** will typically construct an instance of `Xgit.Repository.OnDisk`
 (or some other module that implements a different storage architecture as described
-next) and then use the modules in the `api` folder to inspect and modify the repository.
+next) and then use the functions in `Xgit.Repository` to inspect and modify the repository.
 (These modules are agnostic with regard to storage architecture to the maximum
 extent possible.)
 
@@ -25,23 +25,3 @@ the `Xgit.Repository.Storage` behaviour interface.
 
 **Guideline:** With the exception of the reference implementation `Xgit.Repository.OnDisk`,
 all code in Xgit should be implemented without knowledge of how and where content is stored.
-
-
-## Categories of Code
-
-Code in Xgit is organized into the following categories, reflected in module naming
-and corresponding folder organization, listed here roughly in order from top to bottom
-of the dependency sequence:
-
-* **`repository`**: This describes how a single git repository is persisted. A
-  reference "on-disk" implementation is provided and is designed to interoperate
-  with the existing git command-line tool.
-
-* **`core`**: The modules in this folder describe the fundamental building blocks
-  of git's data model (objects, object IDs, tags, commits, etc.). These are used
-  within Xgit to communicate about the content in a repository.
-
-* **`util`**: The modules in this folder aren't really part of the data model
-  _per se_, but provide building blocks to make higher layers of Xgit possible.
-  These are considered implementation details and not part of the public API of
-  Xgit.

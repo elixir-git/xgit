@@ -21,15 +21,15 @@ defmodule Xgit.Repository.WorkingTree do
 
   import Xgit.Util.ForceCoverage
 
-  alias Xgit.Core.DirCache
-  alias Xgit.Core.DirCache.Entry, as: DirCacheEntry
-  alias Xgit.Core.FilePath
-  alias Xgit.Core.Object
-  alias Xgit.Core.ObjectId
-  alias Xgit.Core.Tree
+  alias Xgit.DirCache
+  alias Xgit.DirCache.Entry, as: DirCacheEntry
+  alias Xgit.FilePath
+  alias Xgit.Object
+  alias Xgit.ObjectId
   alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree.ParseIndexFile
   alias Xgit.Repository.WorkingTree.WriteIndexFile
+  alias Xgit.Tree
   alias Xgit.Util.TrailingHashDevice
 
   require Logger
@@ -117,7 +117,7 @@ defmodule Xgit.Repository.WorkingTree do
   Cache state of index file so we don't have to parse it for every
   call. [Issue #87](https://github.com/elixir-git/xgit/issues/87)
 
-  Consider scalability of passing a potentially large `Xgit.Core.DirCache` structure
+  Consider scalability of passing a potentially large `Xgit.DirCache` structure
   across process boundaries. [Issue #88](https://github.com/elixir-git/xgit/issues/88)
   """
   @spec dir_cache(working_tree :: t) ::
@@ -174,7 +174,7 @@ defmodule Xgit.Repository.WorkingTree do
 
   ## Parameters
 
-  `add`: a list of `Xgit.Core.DirCache.Entry` structs to add to the dir cache.
+  `add`: a list of `Xgit.DirCache.Entry` structs to add to the dir cache.
   In the event of collisions with existing entries, the existing entries will
   be replaced with the corresponding new entries.
 
@@ -189,8 +189,8 @@ defmodule Xgit.Repository.WorkingTree do
 
   `{:error, reason}` if unable. The relevant reason codes may come from:
 
-  * `Xgit.Core.DirCache.add_entries/2`
-  * `Xgit.Core.DirCache.remove_entries/2`
+  * `Xgit.DirCache.add_entries/2`
+  * `Xgit.DirCache.remove_entries/2`
   * `Xgit.Repository.WorkingTree.ParseIndexFile.from_iodevice/1`
   * `Xgit.Repository.WorkingTree.WriteIndexFile.to_iodevice/2`.
 
@@ -258,9 +258,9 @@ defmodule Xgit.Repository.WorkingTree do
 
   Reason codes may also come from the following functions:
 
-  * `Xgit.Core.Tree.from_object/1`
   * `Xgit.Repository.Storage.get_object/2`
   * `Xgit.Repository.WorkingTree.WriteIndexFile.to_iodevice/2`
+  * `Xgit.Tree.from_object/1`
 
   ## TO DO
 
@@ -391,7 +391,7 @@ defmodule Xgit.Repository.WorkingTree do
   `:missing_ok?`: `true` to ignore any objects that are referenced by the index
   file that are not present in the object database. Normally this would be an error.
 
-  `:prefix`: (`Xgit.Core.FilePath`) if present, returns the `object_id` for the tree at
+  `:prefix`: (`Xgit.FilePath`) if present, returns the `object_id` for the tree at
   the given subdirectory. If not present, writes a tree corresponding to the root.
   (The entire tree is written in either case.)
 
@@ -411,7 +411,7 @@ defmodule Xgit.Repository.WorkingTree do
 
   Reason codes may also come from the following functions:
 
-  * `Xgit.Core.DirCache.to_tree_objects/2`
+  * `Xgit.DirCache.to_tree_objects/2`
   * `Xgit.Repository.Storage.put_loose_object/2`
   * `Xgit.Repository.WorkingTree.ParseIndexFile.from_iodevice/1`
   """

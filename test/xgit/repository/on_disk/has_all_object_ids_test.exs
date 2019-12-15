@@ -1,7 +1,7 @@
 defmodule Xgit.Repository.OnDisk.HasAllObjectIdsTest do
   use Xgit.GitInitTestCase, async: true
 
-  alias Xgit.Core.Object
+  alias Xgit.Object
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Storage
 

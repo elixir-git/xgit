@@ -46,7 +46,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-defmodule Xgit.Core.PersonIdent do
+defmodule Xgit.PersonIdent do
   @moduledoc ~S"""
   A combination of a person identity and time in git.
   """
@@ -244,6 +244,6 @@ defmodule Xgit.Core.PersonIdent do
   end
 
   defimpl String.Chars do
-    defdelegate to_string(person_ident), to: Xgit.Core.PersonIdent, as: :to_external_string
+    defdelegate to_string(person_ident), to: Xgit.PersonIdent, as: :to_external_string
   end
 end

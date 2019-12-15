@@ -3,23 +3,19 @@ let's build a microbenchmark here. As of this writing (mid-September 2019), I th
 following functions need study.
 
 ```
-Xgit.Core.DirCache
+Xgit.DirCache
 	add_entries/2
 	fully_merged?/1
 	remove_entries/2
 	to_tree_objects/2
 
-Xgit.Core.FilePath
+Xgit.FilePath
 	check_path_segment/2
 	check_path/2
 	valid?/2
 
-Xgit.Core.Object
+Xgit.Object
 	valid?/1
-
-Xgit.Core.Tree
-	from_object/1
-	to_object/1
 
 Xgit.Repository.Storage (permute on the implementations)
 	get_object/2
@@ -28,4 +24,8 @@ Xgit.Repository.Storage (permute on the implementations)
 
 Xgit.Repository.WorkingTree.WriteIndexFile
 	to_iodevice/1
+
+Xgit.Tree
+	from_object/1
+	to_object/1
 ```

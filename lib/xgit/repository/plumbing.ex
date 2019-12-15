@@ -7,24 +7,24 @@ defmodule Xgit.Repository.Plumbing do
   are the raw building-block operations that are often composed together to
   make the user-targeted "porcelain" commands.
   """
-  use Xgit.Core.FileMode
+  use Xgit.FileMode
 
   import Xgit.Util.ForceCoverage
 
-  alias Xgit.Core.Commit
-  alias Xgit.Core.ContentSource
-  alias Xgit.Core.DirCache
-  alias Xgit.Core.DirCache.Entry, as: DirCacheEntry
-  alias Xgit.Core.FilePath
-  alias Xgit.Core.Object
-  alias Xgit.Core.ObjectId
-  alias Xgit.Core.ObjectType
-  alias Xgit.Core.PersonIdent
-  alias Xgit.Core.Ref
-  alias Xgit.Core.Tree
+  alias Xgit.Commit
+  alias Xgit.ContentSource
+  alias Xgit.DirCache
+  alias Xgit.DirCache.Entry, as: DirCacheEntry
+  alias Xgit.FilePath
+  alias Xgit.Object
+  alias Xgit.ObjectId
+  alias Xgit.ObjectType
+  alias Xgit.PersonIdent
+  alias Xgit.Ref
   alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
   alias Xgit.Repository.WorkingTree.ParseIndexFile
+  alias Xgit.Tree
 
   ## --- Objects ---
 
@@ -45,12 +45,12 @@ defmodule Xgit.Repository.Plumbing do
   ## Parameters
 
   `content` describes how this function should obtain the content.
-  (See `Xgit.Core.ContentSource`.)
+  (See `Xgit.ContentSource`.)
 
   ## Options
 
   `:type`: the object's type
-    * Type: `Xgit.Core.ObjectType`
+    * Type: `Xgit.ObjectType`
     * Default: `:blob`
     * See [`-t` option on `git hash-object`](https://git-scm.com/docs/git-hash-object#Documentation/git-hash-object.txt--tlttypegt).
 
@@ -78,9 +78,9 @@ defmodule Xgit.Repository.Plumbing do
 
   `{:error, :reason}` if unable. The relevant reason codes may come from:
 
-  * `Xgit.Core.FilePath.check_path/2`
-  * `Xgit.Core.FilePath.check_path_segment/2`
-  * `Xgit.Core.Object.check/2`
+  * `Xgit.FilePath.check_path/2`
+  * `Xgit.FilePath.check_path_segment/2`
+  * `Xgit.Object.check/2`
   * `Xgit.Repository.Storage.put_loose_object/2`.
   """
   @spec hash_object(content :: ContentSource.t(),
@@ -208,7 +208,7 @@ defmodule Xgit.Repository.Plumbing do
   ## Return Value
 
   `{:ok, object}` if the object could be found. `object` is an instance of
-  `Xgit.Core.Object` and can be used to retrieve content and other information
+  `Xgit.Object` and can be used to retrieve content and other information
   about the underlying git object.
 
   `{:error, :invalid_repository}` if `repository` doesn't represent a valid
@@ -245,7 +245,7 @@ defmodule Xgit.Repository.Plumbing do
 
   @doc ~S"""
   Retrieves a `tree` object from a repository's object store and renders
-  it as an `Xgit.Core.Tree` struct.
+  it as an `Xgit.Tree` struct.
 
   Analogous to
   [`git cat-file -p`](https://git-scm.com/docs/git-cat-file#Documentation/git-cat-file.txt--p)
@@ -260,7 +260,7 @@ defmodule Xgit.Repository.Plumbing do
   ## Return Value
 
   `{:ok, tree}` if the object could be found and understood as a tree.
-  `tree` is an instance of `Xgit.Core.Tree` and can be used to retrieve
+  `tree` is an instance of `Xgit.Tree` and can be used to retrieve
   references to the members of that tree.
 
   `{:error, :invalid_repository}` if `repository` doesn't represent a valid
@@ -270,8 +270,8 @@ defmodule Xgit.Repository.Plumbing do
 
   `{:error, reason}` if otherwise unable. The relevant reason codes may come from:
 
-  * `Xgit.Core.Tree.from_object/1`.
   * `Xgit.Repository.Storage.get_object/2`
+  * `Xgit.Tree.from_object/1`.
   """
   @spec cat_file_tree(repository :: Storage.t(), object_id :: ObjectId.t()) ::
           {:ok, tree :: Tree.t()} | {:error, reason :: cat_file_tree_reason}
@@ -300,7 +300,7 @@ defmodule Xgit.Repository.Plumbing do
 
   @doc ~S"""
   Retrieves a `commit` object from a repository's object store and renders
-  it as an `Xgit.Core.Commit` struct.
+  it as an `Xgit.Commit` struct.
 
   Analogous to
   [`git cat-file -p`](https://git-scm.com/docs/git-cat-file#Documentation/git-cat-file.txt--p)
@@ -315,7 +315,7 @@ defmodule Xgit.Repository.Plumbing do
   ## Return Value
 
   `{:ok, commit}` if the object could be found and understood as a commit.
-  `commit` is an instance of `Xgit.Core.Commit` and can be used to retrieve
+  `commit` is an instance of `Xgit.Commit` and can be used to retrieve
   references to the members of that commit.
 
   `{:error, :invalid_repository}` if `repository` doesn't represent a valid
@@ -325,7 +325,7 @@ defmodule Xgit.Repository.Plumbing do
 
   `{:error, reason}` if otherwise unable. The relevant reason codes may come from:
 
-  * `Xgit.Core.Commit.from_object/1`.
+  * `Xgit.Commit.from_object/1`.
   * `Xgit.Repository.Storage.get_object/2`
   """
   @spec cat_file_commit(repository :: Storage.t(), object_id :: ObjectId.t()) ::
@@ -371,15 +371,15 @@ defmodule Xgit.Repository.Plumbing do
 
   ## Options
 
-  `tree`: (`Xgit.Core.ObjectId`, required) ID of tree object
+  `tree`: (`Xgit.ObjectId`, required) ID of tree object
 
-  `parents`: (list of `Xgit.Core.ObjectId`) parent commit object IDs
+  `parents`: (list of `Xgit.ObjectId`) parent commit object IDs
 
   `message`: (byte list, required) commit message
 
-  `author`: (`Xgit.Core.PersonIdent`, required) author name, email, timestamp
+  `author`: (`Xgit.PersonIdent`, required) author name, email, timestamp
 
-  `committer`: (`Xgit.Core.PersonIdent`) committer name, email timestamp
+  `committer`: (`Xgit.PersonIdent`) committer name, email timestamp
   (defaults to `author` if not specified)
 
   ## Return Value
@@ -527,7 +527,7 @@ defmodule Xgit.Repository.Plumbing do
 
   ## Return Value
 
-  `{:ok, entries}`. `entries` will be a list of `Xgit.Core.DirCache.Entry` structs
+  `{:ok, entries}`. `entries` will be a list of `Xgit.DirCache.Entry` structs
   in sorted order.
 
   `{:error, :invalid_repository}` if `repository` doesn't represent a valid
@@ -704,10 +704,10 @@ defmodule Xgit.Repository.Plumbing do
 
   Reason codes may also come from the following functions:
 
-  * `Xgit.Core.Tree.from_object/1`
   * `Xgit.Repository.Storage.get_object/2`
   * `Xgit.Repository.Storage.WorkingTree.read_tree/3`
   * `Xgit.Repository.Storage.WorkingTree.WriteIndexFile.to_iodevice/2`
+  * `Xgit.Tree.from_object/1`
 
   ## TO DO
 
@@ -768,7 +768,7 @@ defmodule Xgit.Repository.Plumbing do
   `:missing_ok?`: `true` to ignore any objects that are referenced by the index
   file that are not present in the object database. Normally this would be an error.
 
-  `:prefix`: (`Xgit.Core.FilePath`) if present, returns the `object_id` for the tree at
+  `:prefix`: (`Xgit.FilePath`) if present, returns the `object_id` for the tree at
   the given subdirectory. If not present, writes a tree corresponding to the root.
   (The entire tree is written in either case.)
 
@@ -784,7 +784,7 @@ defmodule Xgit.Repository.Plumbing do
 
   Reason codes may also come from the following functions:
 
-  * `Xgit.Core.DirCache.to_tree_objects/2`
+  * `Xgit.DirCache.to_tree_objects/2`
   * `Xgit.Repository.Storage.put_loose_object/2`
   * `Xgit.Repository.Storage.WorkingTree.write_tree/2`
   * `Xgit.Repository.WorkingTree.ParseIndexFile.from_iodevice/1`
@@ -835,9 +835,9 @@ defmodule Xgit.Repository.Plumbing do
 
   `repository` is the `Xgit.Repository.Storage` (PID) to search for the object.
 
-  `name` is the name of the reference to update. (See `t/Xgit.Core.Ref.name`.)
+  `name` is the name of the reference to update. (See `t/Xgit.Ref.name`.)
 
-  `new_value` is the object ID to be written at this reference. (Use `Xgit.Core.ObjectId.zero/0` to delete the reference.)
+  `new_value` is the object ID to be written at this reference. (Use `Xgit.ObjectId.zero/0` to delete the reference.)
 
   ## Options
 
@@ -918,7 +918,7 @@ defmodule Xgit.Repository.Plumbing do
 
   `repository` is the `Xgit.Repository.Storage` (PID) in which to create the symbolic reference.
 
-  `name` is the name of the symbolic reference to create or update. (See `t/Xgit.Core.Ref.name`.)
+  `name` is the name of the symbolic reference to create or update. (See `t/Xgit.Ref.name`.)
 
   `new_target` is the name of the reference that should be targeted by this symbolic reference.
   This reference need not exist.

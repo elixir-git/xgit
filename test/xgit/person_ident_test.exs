@@ -44,10 +44,10 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-defmodule Xgit.Core.PersonIdentTest do
+defmodule Xgit.PersonIdentTest do
   use ExUnit.Case, async: true
 
-  alias Xgit.Core.PersonIdent
+  alias Xgit.PersonIdent
 
   describe "from_byte_list/1" do
     defp assert_person_ident(line, expected) do

@@ -1,4 +1,4 @@
-defmodule Xgit.Core.FileMode do
+defmodule Xgit.FileMode do
   @moduledoc ~S"""
   Describes the file type as represented on disk.
   """
@@ -109,8 +109,8 @@ defmodule Xgit.Core.FileMode do
 
   defmacro __using__(opts) do
     quote location: :keep, bind_quoted: [opts: opts] do
-      alias Xgit.Core.FileMode
-      import Xgit.Core.FileMode, only: [is_file_mode: 1]
+      alias Xgit.FileMode
+      import Xgit.FileMode, only: [is_file_mode: 1]
     end
   end
 end

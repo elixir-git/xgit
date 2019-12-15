@@ -1,7 +1,7 @@
 defmodule Xgit.Repository.WorkingTree.ParseIndexFileTest do
   use Xgit.GitInitTestCase, async: true
 
-  alias Xgit.Core.DirCache
+  alias Xgit.DirCache
   alias Xgit.Repository.WorkingTree.ParseIndexFile
   alias Xgit.Test.TempDirTestCase
   alias Xgit.Util.TrailingHashDevice

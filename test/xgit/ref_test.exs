@@ -1,7 +1,7 @@
-defmodule Xgit.Core.RefTest do
+defmodule Xgit.RefTest do
   use ExUnit.Case, async: true
 
-  alias Xgit.Core.Ref
+  alias Xgit.Ref
 
   defp assert_valid_name(name, opts \\ []) do
     unless name == "HEAD" do

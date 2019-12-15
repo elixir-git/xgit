@@ -1,8 +1,8 @@
-defmodule Xgit.Core.FileContentSourceTest do
+defmodule Xgit.FileContentSourceTest do
   use ExUnit.Case, async: true
 
-  alias Xgit.Core.ContentSource
-  alias Xgit.Core.FileContentSource
+  alias Xgit.ContentSource
+  alias Xgit.FileContentSource, as: FCS
   alias Xgit.Test.TempDirTestCase
 
   describe "implementation for file that exists" do
@@ -12,7 +12,7 @@ defmodule Xgit.Core.FileContentSourceTest do
       path = Path.join(t, "example")
       File.write!(path, "example")
 
-      fcs = FileContentSource.new(path)
+      fcs = FCS.new(path)
 
       {:ok, fcs: fcs}
     end
@@ -32,7 +32,7 @@ defmodule Xgit.Core.FileContentSourceTest do
       %{tmp_dir: t} = TempDirTestCase.tmp_dir!()
 
       path = Path.join(t, "example")
-      fcs = FileContentSource.new(path)
+      fcs = FCS.new(path)
 
       {:ok, fcs: fcs}
     end

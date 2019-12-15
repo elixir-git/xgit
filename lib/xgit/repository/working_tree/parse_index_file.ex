@@ -1,19 +1,19 @@
 defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
   @moduledoc ~S"""
-  Parse a git `index` file and turn it into a corresponding `Xgit.Core.DirCache`
+  Parse a git `index` file and turn it into a corresponding `Xgit.DirCache`
   structure.
   """
 
   use Bitwise
-  use Xgit.Core.FileMode
+  use Xgit.FileMode
 
   import Xgit.Util.ForceCoverage
 
   require Logger
 
-  alias Xgit.Core.DirCache
-  alias Xgit.Core.DirCache.Entry, as: DirCacheEntry
-  alias Xgit.Core.ObjectId
+  alias Xgit.DirCache
+  alias Xgit.DirCache.Entry, as: DirCacheEntry
+  alias Xgit.ObjectId
   alias Xgit.Util.NB
   alias Xgit.Util.TrailingHashDevice
 
@@ -31,7 +31,7 @@ defmodule Xgit.Repository.WorkingTree.ParseIndexFile do
 
   @doc ~S"""
   Read index file from an `IO.device` (typically an opened file) and returns a
-  corresponding `Xgit.Core.DirCache` struct.
+  corresponding `Xgit.DirCache` struct.
 
   _IMPORTANT:_ The `IO.device` must be created using `Xgit.Util.TrailingHashDevice`.
 

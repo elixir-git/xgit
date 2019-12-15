@@ -1,7 +1,7 @@
 defmodule Xgit.Repository.InMemory.HasAllObjectIdsTest do
   use ExUnit.Case, async: true
 
-  alias Xgit.Core.Object
+  alias Xgit.Object
   alias Xgit.Repository.InMemory
   alias Xgit.Repository.Storage
 

@@ -23,9 +23,9 @@ defmodule Xgit.Repository.Storage do
 
   import Xgit.Util.ForceCoverage
 
-  alias Xgit.Core.Object
-  alias Xgit.Core.ObjectId
-  alias Xgit.Core.Ref
+  alias Xgit.Object
+  alias Xgit.ObjectId
+  alias Xgit.Ref
   alias Xgit.Repository.WorkingTree
 
   require Logger
@@ -214,7 +214,7 @@ defmodule Xgit.Repository.Storage do
 
   ## Return Value
 
-  `{:ok, refs}` if successful. `refs` will be a list of `Xgit.Core.Ref` structs.
+  `{:ok, refs}` if successful. `refs` will be a list of `Xgit.Ref` structs.
   The sequence of the list is unspecified.
 
   `{:error, reason}` if unable. See `list_refs_reason`.
@@ -232,7 +232,7 @@ defmodule Xgit.Repository.Storage do
   ## Return Value
 
   Should return `{:ok, refs, state}` if read successfully. `refs` should be a list
-  of `Xgit.Core.Ref` structs.
+  of `Xgit.Ref` structs.
 
   Should return `{:error, reason}` if unable. Currently only `File.posix` reasons
   are expected.
@@ -274,7 +274,7 @@ defmodule Xgit.Repository.Storage do
 
   `:ok` if written successfully.
 
-  `{:error, :invalid_ref}` if the `Xgit.Core.Ref` structure is invalid.
+  `{:error, :invalid_ref}` if the `Xgit.Ref` structure is invalid.
 
   `{:error, :cant_create_file}` if unable to create the storage for the reference.
 
@@ -413,7 +413,7 @@ defmodule Xgit.Repository.Storage do
   ## Parameters
 
   `name` is the name of the reference to be found. It must be a valid name
-  as per `Xgit.Core.Ref.valid_name?/1`.
+  as per `Xgit.Ref.valid_name?/1`.
 
   ## Options
 
@@ -426,7 +426,7 @@ defmodule Xgit.Repository.Storage do
   ## Return Value
 
   `{:ok, ref}` if the reference was found successfully. `ref` will be an
-  `Xgit.Core.Ref` struct.
+  `Xgit.Ref` struct.
 
   `{:error, :invalid_name}` if `name` is not a valid ref name.
 
@@ -458,12 +458,12 @@ defmodule Xgit.Repository.Storage do
   ## Return Value
 
   Should return `{:ok, ref, state}` if the reference was found successfully.
-  `ref` must be an `Xgit.Core.Ref` struct.
+  `ref` must be an `Xgit.Ref` struct.
 
   Should return `{:error, :not_found, state}` if no such reference exists.
   """
   @callback handle_get_ref(state :: any, name :: String.t(), follow_link?: boolean) ::
-              {:ok, ref :: Xgit.Core.Ref.t(), state :: any}
+              {:ok, ref :: Xgit.Ref.t(), state :: any}
               | {:error, reason :: get_ref_reason, state :: any}
 
   # TO DO: Add a `pack_refs` function. https://github.com/elixir-git/xgit/issues/223

@@ -1,10 +1,10 @@
-defmodule Xgit.Core.CommitTest do
+defmodule Xgit.CommitTest do
   use ExUnit.Case, async: true
 
-  alias Xgit.Core.Commit
-  alias Xgit.Core.Object
-  alias Xgit.Core.PersonIdent
+  alias Xgit.Commit
   alias Xgit.GitInitTestCase
+  alias Xgit.Object
+  alias Xgit.PersonIdent
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Storage
   alias Xgit.Test.OnDiskRepoTestCase
@@ -231,14 +231,14 @@ defmodule Xgit.Core.CommitTest do
       {:ok, commit_object} = Storage.get_object(repo, commit_id)
 
       assert {:ok,
-              %Xgit.Core.Commit{
-                author: %Xgit.Core.PersonIdent{
+              %Xgit.Commit{
+                author: %Xgit.PersonIdent{
                   email: "author@example.com",
                   name: "A. U. Thor",
                   tz_offset: 150,
                   when: 1_142_878_449
                 },
-                committer: %Xgit.Core.PersonIdent{
+                committer: %Xgit.PersonIdent{
                   email: "author@example.com",
                   name: "A. U. Thor",
                   tz_offset: 150,
@@ -265,14 +265,14 @@ defmodule Xgit.Core.CommitTest do
       {:ok, commit_object} = Storage.get_object(repo, commit_id)
 
       assert {:ok,
-              %Xgit.Core.Commit{
-                author: %Xgit.Core.PersonIdent{
+              %Xgit.Commit{
+                author: %Xgit.PersonIdent{
                   email: "author@example.com",
                   name: "A. U. Thor",
                   tz_offset: 150,
                   when: 1_142_878_449
                 },
-                committer: %Xgit.Core.PersonIdent{
+                committer: %Xgit.PersonIdent{
                   email: "author@example.com",
                   name: "A. U. Thor",
                   tz_offset: 150,
@@ -286,14 +286,14 @@ defmodule Xgit.Core.CommitTest do
 
     test "valid: no parent" do
       assert {:ok,
-              %Xgit.Core.Commit{
-                author: %Xgit.Core.PersonIdent{
+              %Xgit.Commit{
+                author: %Xgit.PersonIdent{
                   email: "author@localhost",
                   name: "A. U. Thor",
                   tz_offset: 0,
                   when: 1
                 },
-                committer: %Xgit.Core.PersonIdent{
+                committer: %Xgit.PersonIdent{
                   email: "author@localhost",
                   name: "A. U. Thor",
                   tz_offset: 0,
@@ -315,14 +315,14 @@ defmodule Xgit.Core.CommitTest do
 
     test "valid: message" do
       assert {:ok,
-              %Xgit.Core.Commit{
-                author: %Xgit.Core.PersonIdent{
+              %Xgit.Commit{
+                author: %Xgit.PersonIdent{
                   email: "author@localhost",
                   name: "A. U. Thor",
                   tz_offset: 0,
                   when: 1
                 },
-                committer: %Xgit.Core.PersonIdent{
+                committer: %Xgit.PersonIdent{
                   email: "author@localhost",
                   name: "A. U. Thor",
                   tz_offset: 0,
@@ -364,14 +364,14 @@ defmodule Xgit.Core.CommitTest do
 
     test "valid: blank author" do
       assert {:ok,
-              %Xgit.Core.Commit{
-                author: %Xgit.Core.PersonIdent{
+              %Xgit.Commit{
+                author: %Xgit.PersonIdent{
                   email: "",
                   name: "",
                   tz_offset: 0,
                   when: 0
                 },
-                committer: %Xgit.Core.PersonIdent{
+                committer: %Xgit.PersonIdent{
                   email: "",
                   name: "",
                   tz_offset: 0,
@@ -405,14 +405,14 @@ defmodule Xgit.Core.CommitTest do
 
     test "fuzzy, but valid: corrupt committer" do
       assert {:ok,
-              %Xgit.Core.Commit{
-                author: %Xgit.Core.PersonIdent{
+              %Xgit.Commit{
+                author: %Xgit.PersonIdent{
                   email: "a@b.com",
                   name: "",
                   tz_offset: 0,
                   when: 0
                 },
-                committer: %Xgit.Core.PersonIdent{
+                committer: %Xgit.PersonIdent{
                   email: "b@c",
                   name: "b",
                   tz_offset: 0,
@@ -434,14 +434,14 @@ defmodule Xgit.Core.CommitTest do
 
     test "valid: one parent" do
       assert {:ok,
-              %Xgit.Core.Commit{
-                author: %Xgit.Core.PersonIdent{
+              %Xgit.Commit{
+                author: %Xgit.PersonIdent{
                   email: "author@localhost",
                   name: "A. U. Thor",
                   tz_offset: 0,
                   when: 1
                 },
-                committer: %Xgit.Core.PersonIdent{
+                committer: %Xgit.PersonIdent{
                   email: "author@localhost",
                   name: "A. U. Thor",
                   tz_offset: 0,
@@ -464,14 +464,14 @@ defmodule Xgit.Core.CommitTest do
 
     test "valid: two parents" do
       assert {:ok,
-              %Xgit.Core.Commit{
-                author: %Xgit.Core.PersonIdent{
+              %Xgit.Commit{
+                author: %Xgit.PersonIdent{
                   email: "author@localhost",
                   name: "A. U. Thor",
                   tz_offset: 0,
                   when: 1
                 },
-                committer: %Xgit.Core.PersonIdent{
+                committer: %Xgit.PersonIdent{
                   email: "author@localhost",
                   name: "A. U. Thor",
                   tz_offset: 0,
@@ -498,14 +498,14 @@ defmodule Xgit.Core.CommitTest do
 
     test "valid: normal time" do
       assert {:ok,
-              %Xgit.Core.Commit{
-                author: %Xgit.Core.PersonIdent{
+              %Xgit.Commit{
+                author: %Xgit.PersonIdent{
                   email: "author@localhost",
                   name: "A. U. Thor",
                   tz_offset: -450,
                   when: 1_222_757_360
                 },
-                committer: %Xgit.Core.PersonIdent{
+                committer: %Xgit.PersonIdent{
                   email: "author@localhost",
                   name: "A. U. Thor",
                   tz_offset: -450,
@@ -1013,7 +1013,7 @@ defmodule Xgit.Core.CommitTest do
     end
 
     test "raises ArgumentError if commit is invalid" do
-      assert_raise ArgumentError, "Xgit.Core.Commit.to_object/1: commit is not valid", fn ->
+      assert_raise ArgumentError, "Xgit.Commit.to_object/1: commit is not valid", fn ->
         Commit.to_object(%Commit{
           tree: "be9bfa841874ccc9f2ef7c48d0c76226f89b7189",
           author: @invalid_pi,

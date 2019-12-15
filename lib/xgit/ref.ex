@@ -1,4 +1,4 @@
-defmodule Xgit.Core.Ref do
+defmodule Xgit.Ref do
   @moduledoc ~S"""
   A reference is a struct that describes a mutable pointer to a commit or similar object.
 
@@ -12,7 +12,7 @@ defmodule Xgit.Core.Ref do
 
   import Xgit.Util.ForceCoverage
 
-  alias Xgit.Core.ObjectId
+  alias Xgit.ObjectId
 
   @typedoc ~S"""
   Name of a ref (typically `refs/heads/master` or similar).
@@ -20,7 +20,7 @@ defmodule Xgit.Core.Ref do
   @type name :: String.t()
 
   @typedoc ~S"""
-  Target for a ref. Can be either an `Xgit.Core.ObjectId` or a string of the form
+  Target for a ref. Can be either an `Xgit.ObjectId` or a string of the form
   `"ref: refs/..."`.
   """
   @type target :: ObjectId.t() | String.t()

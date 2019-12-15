@@ -1,8 +1,8 @@
 defmodule Xgit.Repository.Plumbing.CatFileCommitTest do
   use Xgit.Test.OnDiskRepoTestCase, async: true
 
-  alias Xgit.Core.Commit
-  alias Xgit.Core.PersonIdent
+  alias Xgit.Commit
+  alias Xgit.PersonIdent
   alias Xgit.Repository.InMemory
   alias Xgit.Repository.Plumbing
   alias Xgit.Test.OnDiskRepoTestCase
@@ -88,14 +88,14 @@ defmodule Xgit.Repository.Plumbing.CatFileCommitTest do
 
     test "valid: message" do
       assert {:ok,
-              %Xgit.Core.Commit{
-                author: %Xgit.Core.PersonIdent{
+              %Xgit.Commit{
+                author: %Xgit.PersonIdent{
                   email: "author@localhost",
                   name: "A. U. Thor",
                   tz_offset: 0,
                   when: 1
                 },
-                committer: %Xgit.Core.PersonIdent{
+                committer: %Xgit.PersonIdent{
                   email: "author@localhost",
                   name: "A. U. Thor",
                   tz_offset: 0,
@@ -131,14 +131,14 @@ defmodule Xgit.Repository.Plumbing.CatFileCommitTest do
 
     test "valid: blank author" do
       assert {:ok,
-              %Xgit.Core.Commit{
-                author: %Xgit.Core.PersonIdent{
+              %Xgit.Commit{
+                author: %Xgit.PersonIdent{
                   email: "",
                   name: "",
                   tz_offset: 0,
                   when: 0
                 },
-                committer: %Xgit.Core.PersonIdent{
+                committer: %Xgit.PersonIdent{
                   email: "",
                   name: "",
                   tz_offset: 0,
@@ -166,14 +166,14 @@ defmodule Xgit.Repository.Plumbing.CatFileCommitTest do
 
     test "fuzzy, but valid: corrupt committer" do
       assert {:ok,
-              %Xgit.Core.Commit{
-                author: %Xgit.Core.PersonIdent{
+              %Xgit.Commit{
+                author: %Xgit.PersonIdent{
                   email: "a@b.com",
                   name: "",
                   tz_offset: 0,
                   when: 0
                 },
-                committer: %Xgit.Core.PersonIdent{
+                committer: %Xgit.PersonIdent{
                   email: "b@c",
                   name: "b",
                   tz_offset: 0,
@@ -192,14 +192,14 @@ defmodule Xgit.Repository.Plumbing.CatFileCommitTest do
 
     test "valid: one parent" do
       assert {:ok,
-              %Xgit.Core.Commit{
-                author: %Xgit.Core.PersonIdent{
+              %Xgit.Commit{
+                author: %Xgit.PersonIdent{
                   email: "author@localhost",
                   name: "A. U. Thor",
                   tz_offset: 0,
                   when: 1
                 },
-                committer: %Xgit.Core.PersonIdent{
+                committer: %Xgit.PersonIdent{
                   email: "author@localhost",
                   name: "A. U. Thor",
                   tz_offset: 0,
@@ -219,14 +219,14 @@ defmodule Xgit.Repository.Plumbing.CatFileCommitTest do
 
     test "valid: two parents" do
       assert {:ok,
-              %Xgit.Core.Commit{
-                author: %Xgit.Core.PersonIdent{
+              %Xgit.Commit{
+                author: %Xgit.PersonIdent{
                   email: "author@localhost",
                   name: "A. U. Thor",
                   tz_offset: 0,
                   when: 1
                 },
-                committer: %Xgit.Core.PersonIdent{
+                committer: %Xgit.PersonIdent{
                   email: "author@localhost",
                   name: "A. U. Thor",
                   tz_offset: 0,
@@ -250,14 +250,14 @@ defmodule Xgit.Repository.Plumbing.CatFileCommitTest do
 
     test "valid: normal time" do
       assert {:ok,
-              %Xgit.Core.Commit{
-                author: %Xgit.Core.PersonIdent{
+              %Xgit.Commit{
+                author: %Xgit.PersonIdent{
                   email: "author@localhost",
                   name: "A. U. Thor",
                   tz_offset: -450,
                   when: 1_222_757_360
                 },
-                committer: %Xgit.Core.PersonIdent{
+                committer: %Xgit.PersonIdent{
                   email: "author@localhost",
                   name: "A. U. Thor",
                   tz_offset: -450,
