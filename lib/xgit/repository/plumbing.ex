@@ -270,8 +270,8 @@ defmodule Xgit.Repository.Plumbing do
 
   `{:error, reason}` if otherwise unable. The relevant reason codes may come from:
 
-  * `Xgit.Tree.from_object/1`.
   * `Xgit.Repository.Storage.get_object/2`
+  * `Xgit.Tree.from_object/1`.
   """
   @spec cat_file_tree(repository :: Storage.t(), object_id :: ObjectId.t()) ::
           {:ok, tree :: Tree.t()} | {:error, reason :: cat_file_tree_reason}
