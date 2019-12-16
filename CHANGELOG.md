@@ -1,10 +1,23 @@
 # Changelog for v0.x Series
 
+## v0.6.0
+
+_15 December 2019_
+
+**This is a significant refactoring release aimed at making Xgit's APIs easier to understand.**
+
+* Documentation tweak: Put `Xgit.Repository.WorkingTree` in repository group. (#259)
+* [API BREAKING] Move index file format parsing into `Xgit.DirCache` module. (#258)
+* [API BREAKING] Rename `Xgit.Core.*` modules to `Xgit.*`. (#257)
+* Introduce new `Xgit.Repository` module. (#256)
+* Merge all the plumbing commands together into a single module. (#255)
+* Rename `Xgit.Repository` to `Xgit.Repository.Storage`. (#254)
+
 ## v0.5.0
 
 _05 December 2019_
 
-* **Implement `Xgit.Plumbing.SymbolicRef.Put`. (#252) This is an API analogue to the 2-argument form of `git symbolic-ref`.
+* **Implement `Xgit.Plumbing.SymbolicRef.Put`.** (#252) This is an API analogue to the 2-argument form of `git symbolic-ref`.
 * [API BREAKING] `Xgit.Repository.put_ref/4`: Add `:follow_link?` option. (#250)
 * `Xgit.Repository.put_ref/4`: Should not fail if creating a sym ref to a non-existent ref. (#247)
 * Share the code for ref-related tests in `Xgit.Repository` implementations. (#246)
