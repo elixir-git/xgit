@@ -904,7 +904,8 @@ defmodule Xgit.Repository.Plumbing do
   @typedoc ~S"""
   Reason codes that can be returned by `get_symbolic_ref/2`.
   """
-  @type get_symbolic_ref_reason :: :invalid_repository | Storage.get_ref_reason()
+  @type get_symbolic_ref_reason ::
+          :invalid_repository | :not_symbolic_ref | Storage.get_ref_reason()
 
   @doc ~S"""
   Returns the target ref for an existing symbolic ref.
@@ -937,14 +938,14 @@ defmodule Xgit.Repository.Plumbing do
         ) :: {:ok, name :: Ref.name()} | {:error, reason :: get_symbolic_ref_reason}
   def get_symbolic_ref(repository, name) when is_pid(repository) and is_binary(name) do
     with {:valid?, true} <- {:valid?, Storage.valid?(repository)},
-         {:ok, %Ref{target: target}} when is_binary(target) <-
+         {:ok, %Ref{target: "ref: " <> target}} when is_binary(target) <-
            Storage.get_ref(repository, name, follow_link?: false) do
-      cover {:ok, String.replace_prefix(target, "ref: ", "")}
+      cover {:ok, target}
     else
       {:valid?, _} -> cover {:error, :invalid_repository}
       {:error, :enotdir} -> cover {:error, :not_found}
       {:error, reason} -> cover {:error, reason}
-      {:ok, _} -> cover {:ok, :not_symbolic_ref}
+      {:ok, _} -> cover {:error, :not_symbolic_ref}
     end
   end
 

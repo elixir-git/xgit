@@ -1,7 +1,6 @@
 defmodule Xgit.Repository.Plumbing.GetSymbolicRefTest do
   use ExUnit.Case, async: true
 
-  # alias Xgit.Ref
   alias Xgit.Repository.Plumbing
   alias Xgit.Test.OnDiskRepoTestCase
 
@@ -17,6 +16,22 @@ defmodule Xgit.Repository.Plumbing.GetSymbolicRefTest do
       assert :ok = Plumbing.put_symbolic_ref(repo, "HEAD", "refs/heads/nope")
 
       assert {:ok, "refs/heads/nope"} = Plumbing.get_symbolic_ref(repo, "HEAD")
+    end
+
+    test "error: not a symbolic references" do
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
+
+      {:ok, commit_id_master} =
+        Plumbing.hash_object('shhh... not really a commit',
+          repo: repo,
+          type: :commit,
+          validate?: false,
+          write?: true
+        )
+
+      assert :ok = Plumbing.update_ref(repo, "HEAD", commit_id_master)
+
+      assert {:error, :not_symbolic_ref} = Plumbing.get_symbolic_ref(repo, "refs/heads/master")
     end
 
     test "error: posix error (dir where file should be)" do
