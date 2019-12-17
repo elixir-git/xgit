@@ -902,6 +902,54 @@ defmodule Xgit.Repository.Plumbing do
   end
 
   @typedoc ~S"""
+  Reason codes that can be returned by `get_symbolic_ref/2`.
+  """
+  @type get_symbolic_ref_reason ::
+          :invalid_repository | :not_symbolic_ref | Storage.get_ref_reason()
+
+  @doc ~S"""
+  Returns the target ref for an existing symbolic ref.
+
+  Analogous to the one-argument form of
+  [`git symbolic-ref`](https://git-scm.com/docs/git-symbolic-ref).
+
+  ## Parameters
+
+  `repository` is the `Xgit.Repository.Storage` (PID) in which to create the symbolic reference.
+
+  `name` is the name of the symbolic reference to read. (See `t/Xgit.Ref.name`.)
+
+  ## Return Value
+
+  `{:ok, ref_name}` if read successfully. `ref_name` is the name of the targeted reference.
+
+  `{:error, :invalid_repository}` if `repository` doesn't represent a valid
+  `Xgit.Repository.Storage` process.
+
+  `{:error, :not_symbolic_ref}` if `name` refers to a ref that is not a symbolic ref.
+
+  Reason codes may also come from the following functions:
+
+  * `Xgit.Repository.Storage.get_ref/3`
+  """
+  @spec get_symbolic_ref(
+          repository :: Storage.t(),
+          name :: Ref.name()
+        ) :: {:ok, name :: Ref.name()} | {:error, reason :: get_symbolic_ref_reason}
+  def get_symbolic_ref(repository, name) when is_pid(repository) and is_binary(name) do
+    with {:valid?, true} <- {:valid?, Storage.valid?(repository)},
+         {:ok, %Ref{target: "ref: " <> target}} when is_binary(target) <-
+           Storage.get_ref(repository, name, follow_link?: false) do
+      cover {:ok, target}
+    else
+      {:valid?, _} -> cover {:error, :invalid_repository}
+      {:error, :enotdir} -> cover {:error, :not_found}
+      {:error, reason} -> cover {:error, reason}
+      {:ok, _} -> cover {:error, :not_symbolic_ref}
+    end
+  end
+
+  @typedoc ~S"""
   Reason codes that can be returned by `put_symbolic_ref/4`.
   """
   @type put_symbolic_ref_reason :: :invalid_repository | Storage.put_ref_reason()
