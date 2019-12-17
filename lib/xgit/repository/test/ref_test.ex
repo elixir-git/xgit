@@ -395,6 +395,35 @@ defmodule Xgit.Repository.Test.RefTest do
         assert {:ok, []} = Storage.list_refs(repo)
       end
 
+      test "removes symbolic ref but not underlying ref", %{repo: repo} do
+        {:ok, commit_id_master} =
+          Plumbing.hash_object('shhh... not really a commit',
+            repo: repo,
+            type: :commit,
+            validate?: false,
+            write?: true
+          )
+
+        master_ref = %Ref{
+          name: "refs/heads/master",
+          target: commit_id_master
+        }
+
+        assert :ok = Storage.put_ref(repo, master_ref)
+
+        other_ref = %Ref{
+          name: "refs/heads/other",
+          target: "ref: refs/heads/master"
+        }
+
+        assert :ok = Storage.put_ref(repo, other_ref)
+
+        assert :ok = Storage.delete_ref(repo, "refs/heads/other", follow_link?: false)
+
+        assert {:error, :not_found} = Storage.get_ref(repo, "refs/heads/other")
+        assert {:ok, [^master_ref]} = Storage.list_refs(repo)
+      end
+
       test "quietly 'succeeds' if ref didn't exist", %{repo: repo} do
         assert {:ok, []} = Storage.list_refs(repo)
 
