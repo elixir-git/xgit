@@ -344,12 +344,12 @@ defmodule Xgit.Repository.Storage do
 
   ## Options
 
+  `follow_link?`: (default: `true`) `true` to follow symbolic refs
+
   `old_target`: If present, a ref with this name must already exist and the `target`
   value must match the object ID provided in this option.
 
   ## TO DO
-
-  `follow_link?` option. https://github.com/elixir-git/xgit/issues/249
 
   Support for ref log. https://github.com/elixir-git/xgit/issues/224
 
@@ -366,7 +366,10 @@ defmodule Xgit.Repository.Storage do
   `{:error, :old_target_not_matched}` if `old_target` was specified and the target ref points
   to a different object ID or did not exist.
   """
-  @spec delete_ref(repository :: t, name :: Ref.name(), old_target: ObjectId.t()) ::
+  @spec delete_ref(repository :: t, name :: Ref.name(),
+          follow_link?: boolean,
+          old_target: ObjectId.t()
+        ) ::
           :ok | {:error, reason :: delete_ref_reason}
   def delete_ref(repository, name, opts \\ [])
       when is_pid(repository) and is_binary(name) and is_list(opts) do
@@ -384,6 +387,8 @@ defmodule Xgit.Repository.Storage do
 
   ## Options
 
+  `follow_link?`: `true` to follow symbolic refs
+
   `old_target`: If present, a ref with this name must already exist and the `target`
   value must match the object ID provided in this option.
 
@@ -397,7 +402,10 @@ defmodule Xgit.Repository.Storage do
   Should return `{:error, :old_target_not_matched}` if `old_target` was specified and the
   target ref points to a different object ID or the ref did not exist.
   """
-  @callback handle_delete_ref(state :: any, name :: Ref.name(), old_target: ObjectId.t()) ::
+  @callback handle_delete_ref(state :: any, name :: Ref.name(),
+              follow_link?: boolean,
+              old_target: ObjectId.t()
+            ) ::
               {:ok, state :: any} | {:error, reason :: delete_ref_reason, state :: any}
 
   @typedoc ~S"""
