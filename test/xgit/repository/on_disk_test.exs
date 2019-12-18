@@ -16,6 +16,7 @@ defmodule Xgit.Repository.OnDiskTest do
       assert is_pid(repo)
       assert Repository.valid?(repo)
       assert Storage.valid?(repo)
+      Storage.assert_valid(repo)
 
       assert working_tree = Storage.default_working_tree(repo)
       assert is_pid(working_tree)

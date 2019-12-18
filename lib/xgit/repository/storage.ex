@@ -26,6 +26,7 @@ defmodule Xgit.Repository.Storage do
   alias Xgit.Object
   alias Xgit.ObjectId
   alias Xgit.Ref
+  alias Xgit.Repository.InvalidRepositoryError
   alias Xgit.Repository.WorkingTree
 
   require Logger
@@ -76,6 +77,16 @@ defmodule Xgit.Repository.Storage do
   end
 
   def valid?(_), do: cover(false)
+
+  @doc ~S"""
+  Raises `Xgit.Repository.InvalidRepositoryError` if the value provided is anything
+  other than the process ID for a valid `Xgit.Repository.Storage` process.
+  """
+  def assert_valid(repository) do
+    unless is_pid(repository) && valid?(repository) do
+      raise InvalidRepositoryError
+    end
+  end
 
   @doc ~S"""
   Get the default working tree if one has been attached.
