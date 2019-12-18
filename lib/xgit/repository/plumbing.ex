@@ -1002,6 +1002,48 @@ defmodule Xgit.Repository.Plumbing do
     end
   end
 
+  @typedoc ~S"""
+  Reason codes that can be returned by `delete_symbolic_ref/2`.
+  """
+  @type delete_symbolic_ref_reason :: :invalid_repository | Storage.delete_ref_reason()
+
+  @doc ~S"""
+  Deletes a symbolic ref.
+
+  Analogous to [`git symbolic-ref --delete`](https://git-scm.com/docs/git-symbolic-ref#Documentation/git-symbolic-ref.txt---delete).
+
+  ## Parameters
+
+  `repository` is the `Xgit.Repository.Storage` (PID) in which to create the symbolic reference.
+
+  `name` is the name of the symbolic reference to delete. (See `t/Xgit.Ref.name`.)
+
+  ## Return Value
+
+  `:ok` if deleted successfully.
+
+  `{:error, :invalid_repository}` if `repository` doesn't represent a valid
+  `Xgit.Repository.Storage` process.
+
+  Reason codes may also come from the following functions:
+
+  * `Xgit.Repository.Storage.delete_ref/3`
+  """
+  @spec delete_symbolic_ref(
+          repository :: Storage.t(),
+          name :: Ref.name()
+        ) :: :ok | {:error, reason :: delete_symbolic_ref_reason}
+  def delete_symbolic_ref(repository, name)
+      when is_pid(repository) and is_binary(name) do
+    with {:valid?, true} <- {:valid?, Storage.valid?(repository)},
+         :ok <- Storage.delete_ref(repository, name, follow_link?: false) do
+      cover :ok
+    else
+      {:valid?, _} -> cover {:error, :invalid_repository}
+      {:error, reason} -> cover {:error, reason}
+    end
+  end
+
   ## --- Options ---
 
   # Parse working tree and repository from arguments and options.
