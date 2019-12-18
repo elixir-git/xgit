@@ -1037,7 +1037,7 @@ defmodule Xgit.Repository.Plumbing do
       when is_pid(repository) and is_binary(name) do
     with {:valid?, true} <- {:valid?, Storage.valid?(repository)},
          :ok <- Storage.delete_ref(repository, name, follow_link?: false) do
-      :ok
+      cover :ok
     else
       {:valid?, _} -> cover {:error, :invalid_repository}
       {:error, reason} -> cover {:error, reason}
