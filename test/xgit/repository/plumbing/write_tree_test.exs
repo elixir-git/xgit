@@ -487,6 +487,14 @@ defmodule Xgit.Repository.Plumbing.WriteTreeTest do
                    end
     end
 
+    test "error: repository invalid (PID, but not repo)" do
+      {:ok, not_repo} = GenServer.start_link(NotValid, nil)
+
+      assert_raise InvalidRepositoryError, fn ->
+        Plumbing.write_tree(not_repo, missing_ok?: true)
+      end
+    end
+
     defp assert_same_output(git_ref_fn, xgit_fn, opts \\ []) do
       {:ok, ref: ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
 
