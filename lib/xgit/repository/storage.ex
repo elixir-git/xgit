@@ -82,6 +82,7 @@ defmodule Xgit.Repository.Storage do
   Raises `Xgit.Repository.InvalidRepositoryError` if the value provided is anything
   other than the process ID for a valid `Xgit.Repository.Storage` process.
   """
+  @spec assert_valid(repository :: t) :: any
   def assert_valid(repository) do
     unless is_pid(repository) && valid?(repository) do
       raise InvalidRepositoryError
