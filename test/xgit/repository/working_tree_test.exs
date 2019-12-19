@@ -2,6 +2,7 @@ defmodule Xgit.Repository.WorkingTreeTest do
   use ExUnit.Case, async: true
 
   alias Xgit.Repository.InMemory
+  alias Xgit.Repository.InvalidRepositoryError
   alias Xgit.Repository.WorkingTree
 
   import ExUnit.CaptureLog
@@ -53,7 +54,10 @@ defmodule Xgit.Repository.WorkingTreeTest do
       path = Temp.path!()
 
       {:ok, not_repo} = GenServer.start_link(NotValid, nil)
-      assert {:error, :invalid_repository} = WorkingTree.start_link(not_repo, path)
+
+      assert_raise InvalidRepositoryError, fn ->
+        WorkingTree.start_link(not_repo, path)
+      end
     end
 
     test "error: can't create working dir" do

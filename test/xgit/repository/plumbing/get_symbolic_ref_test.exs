@@ -1,6 +1,7 @@
 defmodule Xgit.Repository.Plumbing.GetSymbolicRefTest do
   use ExUnit.Case, async: true
 
+  alias Xgit.Repository.InvalidRepositoryError
   alias Xgit.Repository.Plumbing
   alias Xgit.Test.OnDiskRepoTestCase
 
@@ -59,7 +60,9 @@ defmodule Xgit.Repository.Plumbing.GetSymbolicRefTest do
     test "error: repository invalid (PID, but not repo)" do
       {:ok, not_repo} = GenServer.start_link(NotValid, nil)
 
-      assert {:error, :invalid_repository} = Plumbing.get_symbolic_ref(not_repo, "HEAD")
+      assert_raise InvalidRepositoryError, fn ->
+        Plumbing.get_symbolic_ref(not_repo, "HEAD")
+      end
     end
   end
 end

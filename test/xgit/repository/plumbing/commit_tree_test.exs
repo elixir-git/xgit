@@ -3,6 +3,7 @@ defmodule Xgit.Repository.Plumbing.CommitTreeTest do
 
   alias Xgit.Object
   alias Xgit.PersonIdent
+  alias Xgit.Repository.InvalidRepositoryError
   alias Xgit.Repository.Plumbing
   alias Xgit.Repository.Storage
   alias Xgit.Test.OnDiskRepoTestCase
@@ -168,11 +169,12 @@ defmodule Xgit.Repository.Plumbing.CommitTreeTest do
     test "error: invalid repo" do
       {:ok, not_repo} = GenServer.start_link(NotValid, nil)
 
-      assert {:error, :invalid_repository} =
-               Plumbing.commit_tree(not_repo,
-                 tree: "9d252945c1d3c553a30361214db02892d1ea4876",
-                 author: @valid_pi
-               )
+      assert_raise InvalidRepositoryError, fn ->
+        Plumbing.commit_tree(not_repo,
+          tree: "9d252945c1d3c553a30361214db02892d1ea4876",
+          author: @valid_pi
+        )
+      end
     end
 
     test "error: invalid tree object ID" do

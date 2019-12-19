@@ -59,11 +59,8 @@ defmodule Xgit.Repository.WorkingTree do
           GenServer.on_start()
   def start_link(repository, work_dir, options \\ [])
       when is_pid(repository) and is_binary(work_dir) and is_list(options) do
-    if Storage.valid?(repository) do
-      GenServer.start_link(__MODULE__, {repository, work_dir}, options)
-    else
-      cover {:error, :invalid_repository}
-    end
+    Storage.assert_valid(repository)
+    GenServer.start_link(__MODULE__, {repository, work_dir}, options)
   end
 
   @impl true
