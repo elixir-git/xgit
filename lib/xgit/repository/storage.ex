@@ -26,6 +26,7 @@ defmodule Xgit.Repository.Storage do
   alias Xgit.Object
   alias Xgit.ObjectId
   alias Xgit.Ref
+  alias Xgit.Repository.InvalidRepositoryError
   alias Xgit.Repository.WorkingTree
 
   require Logger
@@ -76,6 +77,17 @@ defmodule Xgit.Repository.Storage do
   end
 
   def valid?(_), do: cover(false)
+
+  @doc ~S"""
+  Raises `Xgit.Repository.InvalidRepositoryError` if the value provided is anything
+  other than the process ID for a valid `Xgit.Repository.Storage` process.
+  """
+  @spec assert_valid(repository :: t) :: any
+  def assert_valid(repository) do
+    unless is_pid(repository) && valid?(repository) do
+      raise InvalidRepositoryError
+    end
+  end
 
   @doc ~S"""
   Get the default working tree if one has been attached.
@@ -411,7 +423,7 @@ defmodule Xgit.Repository.Storage do
   @typedoc ~S"""
   Error codes that can be returned by `get_ref/2`.
   """
-  @type get_ref_reason :: :invalid_name | :not_found
+  @type get_ref_reason :: File.posix() | :invalid_name | :not_found
 
   @doc ~S"""
   Reads a reference from the repository.

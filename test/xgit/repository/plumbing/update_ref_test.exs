@@ -4,6 +4,7 @@ defmodule Xgit.Repository.Plumbing.UpdateRefTest do
   alias Xgit.Object
   alias Xgit.ObjectId
   alias Xgit.Ref
+  alias Xgit.Repository.InvalidRepositoryError
   alias Xgit.Repository.Plumbing
   alias Xgit.Repository.Storage
   alias Xgit.Test.OnDiskRepoTestCase
@@ -519,12 +520,13 @@ defmodule Xgit.Repository.Plumbing.UpdateRefTest do
     test "error: repository invalid (PID, but not repo)" do
       {:ok, not_repo} = GenServer.start_link(NotValid, nil)
 
-      assert {:error, :invalid_repository} =
-               Plumbing.update_ref(
-                 not_repo,
-                 "refs/heads/master",
-                 "18a4a651653d7caebd3af9c05b0dc7ffa2cd0ae0"
-               )
+      assert_raise InvalidRepositoryError, fn ->
+        Plumbing.update_ref(
+          not_repo,
+          "refs/heads/master",
+          "18a4a651653d7caebd3af9c05b0dc7ffa2cd0ae0"
+        )
+      end
     end
 
     test "error: old_target invalid" do

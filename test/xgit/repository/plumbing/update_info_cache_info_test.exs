@@ -2,6 +2,7 @@ defmodule Xgit.Repository.Plumbing.UpdateInfoCacheInfoTest do
   use Xgit.GitInitTestCase, async: true
 
   alias Xgit.Repository.InMemory
+  alias Xgit.Repository.InvalidRepositoryError
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Plumbing
 
@@ -210,7 +211,10 @@ defmodule Xgit.Repository.Plumbing.UpdateInfoCacheInfoTest do
 
     test "error: repository invalid (PID, but not repo)" do
       {:ok, not_repo} = GenServer.start_link(NotValid, nil)
-      assert {:error, :invalid_repository} = Plumbing.update_index_cache_info(not_repo, [])
+
+      assert_raise InvalidRepositoryError, fn ->
+        Plumbing.update_index_cache_info(not_repo, [])
+      end
     end
 
     test "error: no working tree" do

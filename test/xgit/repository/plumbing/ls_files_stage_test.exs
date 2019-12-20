@@ -3,6 +3,7 @@ defmodule Xgit.Repository.Plumbing.LsFilesStageTest do
 
   alias Xgit.DirCache.Entry, as: DirCacheEntry
   alias Xgit.Repository.InMemory
+  alias Xgit.Repository.InvalidRepositoryError
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Plumbing
   alias Xgit.Repository.Storage
@@ -134,7 +135,10 @@ defmodule Xgit.Repository.Plumbing.LsFilesStageTest do
 
     test "error: repository invalid (PID, but not repo)" do
       {:ok, not_repo} = GenServer.start_link(NotValid, nil)
-      assert {:error, :invalid_repository} = Plumbing.ls_files_stage(not_repo)
+
+      assert_raise InvalidRepositoryError, fn ->
+        Plumbing.ls_files_stage(not_repo)
+      end
     end
 
     test "error: no working tree" do

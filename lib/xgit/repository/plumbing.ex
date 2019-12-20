@@ -6,6 +6,12 @@ defmodule Xgit.Repository.Plumbing do
   git, are typically not of interest to an end-user developer. Instead, these
   are the raw building-block operations that are often composed together to
   make the user-targeted "porcelain" commands.
+
+  Most of the functions in this module expect a `repository` argument, which
+  should be the process ID (PID) for a process that implements the `Xgit.Repository.Storage`
+  behaviour. It's not stated for each individual function, but if `repository`
+  is some other value, the error `Xgit.Repository.InvalidRepositoryError` is
+  raised.
   """
   use Xgit.FileMode
 
@@ -190,7 +196,7 @@ defmodule Xgit.Repository.Plumbing do
   @typedoc ~S"""
   Reason codes that can be returned by `cat_file/2`.
   """
-  @type cat_file_reason :: :invalid_repository | :invalid_object_id | Storage.get_object_reason()
+  @type cat_file_reason :: :invalid_object_id | Storage.get_object_reason()
 
   @doc ~S"""
   Retrieves the content, type, and size information for a single object in a
@@ -210,9 +216,6 @@ defmodule Xgit.Repository.Plumbing do
   `Xgit.Object` and can be used to retrieve content and other information
   about the underlying git object.
 
-  `{:error, :invalid_repository}` if `repository` doesn't represent a valid
-  `Xgit.Repository.Storage` process.
-
   `{:error, :invalid_object_id}` if `object_id` can't be parsed as a valid git object ID.
 
   `{:error, :not_found}` if the object does not exist in the database.
@@ -222,12 +225,12 @@ defmodule Xgit.Repository.Plumbing do
   @spec cat_file(repository :: Storage.t(), object_id :: ObjectId.t()) ::
           {:ok, Object} | {:error, reason :: cat_file_reason}
   def cat_file(repository, object_id) when is_pid(repository) and is_binary(object_id) do
-    with {:repository_valid?, true} <- {:repository_valid?, Storage.valid?(repository)},
-         {:object_id_valid?, true} <- {:object_id_valid?, ObjectId.valid?(object_id)} do
+    Storage.assert_valid(repository)
+
+    if ObjectId.valid?(object_id) do
       Storage.get_object(repository, object_id)
     else
-      {:repository_valid?, false} -> cover {:error, :invalid_repository}
-      {:object_id_valid?, false} -> cover {:error, :invalid_object_id}
+      cover {:error, :invalid_object_id}
     end
   end
 
@@ -237,8 +240,7 @@ defmodule Xgit.Repository.Plumbing do
   Reason codes that can be returned by `cat_file_tree/2`.
   """
   @type cat_file_tree_reason ::
-          :invalid_repository
-          | :invalid_object_id
+          :invalid_object_id
           | Storage.get_object_reason()
           | Tree.from_object_reason()
 
@@ -262,9 +264,6 @@ defmodule Xgit.Repository.Plumbing do
   `tree` is an instance of `Xgit.Tree` and can be used to retrieve
   references to the members of that tree.
 
-  `{:error, :invalid_repository}` if `repository` doesn't represent a valid
-  `Xgit.Repository.Storage` process.
-
   `{:error, :invalid_object_id}` if `object_id` can't be parsed as a valid git object ID.
 
   `{:error, reason}` if otherwise unable. The relevant reason codes may come from:
@@ -275,13 +274,13 @@ defmodule Xgit.Repository.Plumbing do
   @spec cat_file_tree(repository :: Storage.t(), object_id :: ObjectId.t()) ::
           {:ok, tree :: Tree.t()} | {:error, reason :: cat_file_tree_reason}
   def cat_file_tree(repository, object_id) when is_pid(repository) and is_binary(object_id) do
-    with {:repository_valid?, true} <- {:repository_valid?, Storage.valid?(repository)},
-         {:object_id_valid?, true} <- {:object_id_valid?, ObjectId.valid?(object_id)},
+    Storage.assert_valid(repository)
+
+    with {:object_id_valid?, true} <- {:object_id_valid?, ObjectId.valid?(object_id)},
          {:ok, object} <- Storage.get_object(repository, object_id) do
       Tree.from_object(object)
     else
       {:error, reason} -> cover {:error, reason}
-      {:repository_valid?, false} -> cover {:error, :invalid_repository}
       {:object_id_valid?, false} -> cover {:error, :invalid_object_id}
     end
   end
@@ -292,8 +291,7 @@ defmodule Xgit.Repository.Plumbing do
   Reason codes that can be returned by `cat_file_commit/2`.
   """
   @type cat_file_commit_reason ::
-          :invalid_repository
-          | :invalid_object_id
+          :invalid_object_id
           | Commit.from_object_reason()
           | Storage.get_object_reason()
 
@@ -317,9 +315,6 @@ defmodule Xgit.Repository.Plumbing do
   `commit` is an instance of `Xgit.Commit` and can be used to retrieve
   references to the members of that commit.
 
-  `{:error, :invalid_repository}` if `repository` doesn't represent a valid
-  `Xgit.Repository.Storage` process.
-
   `{:error, :invalid_object_id}` if `object_id` can't be parsed as a valid git object ID.
 
   `{:error, reason}` if otherwise unable. The relevant reason codes may come from:
@@ -330,13 +325,13 @@ defmodule Xgit.Repository.Plumbing do
   @spec cat_file_commit(repository :: Storage.t(), object_id :: ObjectId.t()) ::
           {:ok, commit :: Commit.t()} | {:error, reason :: cat_file_commit_reason}
   def cat_file_commit(repository, object_id) when is_pid(repository) and is_binary(object_id) do
-    with {:repository_valid?, true} <- {:repository_valid?, Storage.valid?(repository)},
-         {:object_id_valid?, true} <- {:object_id_valid?, ObjectId.valid?(object_id)},
+    Storage.assert_valid(repository)
+
+    with {:object_id_valid?, true} <- {:object_id_valid?, ObjectId.valid?(object_id)},
          {:ok, object} <- Storage.get_object(repository, object_id) do
       Commit.from_object(object)
     else
       {:error, reason} -> cover {:error, reason}
-      {:repository_valid?, false} -> cover {:error, :invalid_repository}
       {:object_id_valid?, false} -> cover {:error, :invalid_object_id}
     end
   end
@@ -345,8 +340,7 @@ defmodule Xgit.Repository.Plumbing do
   Reason codes that can be returned by `commit_tree/2`.
   """
   @type commit_tree_reason ::
-          :invalid_repository
-          | :invalid_tree
+          :invalid_tree
           | :invalid_parents
           | :invalid_parent_ids
           | :invalid_message
@@ -385,9 +379,6 @@ defmodule Xgit.Repository.Plumbing do
 
   `{:ok, object_id}` with the object ID for the commit that was generated.
 
-  `{:error, :invalid_repository}` if `repository` doesn't represent a valid
-  `Xgit.Repository.Storage` process.
-
   `{:error, :invalid_tree}` if the `:tree` option refers to a tree that
   does not exist.
 
@@ -414,15 +405,15 @@ defmodule Xgit.Repository.Plumbing do
           {:ok, object_id :: ObjectId.t()}
           | {:error, reason :: commit_tree_reason}
   def commit_tree(repository, opts \\ []) when is_pid(repository) do
-    with {:repository_valid?, true} <- {:repository_valid?, Storage.valid?(repository)},
-         {_tree, _parents, _message, _author, _committer} = verified_args <-
+    Storage.assert_valid(repository)
+
+    with {_tree, _parents, _message, _author, _committer} = verified_args <-
            validate_commit_tree_options(repository, opts),
          commit <- make_commit(verified_args),
          %{id: id} = object <- Commit.to_object(commit),
          :ok <- Storage.put_loose_object(repository, object) do
       cover {:ok, id}
     else
-      {:repository_valid?, _} -> cover {:error, :invalid_repository}
       {:error, reason} -> cover {:error, reason}
     end
   end
@@ -512,7 +503,7 @@ defmodule Xgit.Repository.Plumbing do
   @typedoc ~S"""
   Reason codes that can be returned by `ls_files_stage_/1`.
   """
-  @type ls_files_stage_reason :: :invalid_repository | DirCache.from_iodevice_reason()
+  @type ls_files_stage_reason :: DirCache.from_iodevice_reason()
 
   @doc ~S"""
   Retrieves information about files in the working tree as described by the index file.
@@ -528,9 +519,6 @@ defmodule Xgit.Repository.Plumbing do
 
   `{:ok, entries}`. `entries` will be a list of `Xgit.DirCache.Entry` structs
   in sorted order.
-
-  `{:error, :invalid_repository}` if `repository` doesn't represent a valid
-  `Xgit.Repository.Storage` process.
 
   `{:error, :bare}` if `repository` doesn't have a working tree.
 
@@ -559,8 +547,7 @@ defmodule Xgit.Repository.Plumbing do
   Reason codes that can be returned by `update_index_cache_info/2`.
   """
   @type update_index_cache_info_reason ::
-          :invalid_repository
-          | :invalid_entry
+          :invalid_entry
           | :bare
           | Xgit.Repository.WorkingTree.update_dir_cache_reason()
 
@@ -584,9 +571,6 @@ defmodule Xgit.Repository.Plumbing do
   ## Return Value
 
   `:ok` if successful.
-
-  `{:error, :invalid_repository}` if `repository` doesn't represent a valid
-  `Xgit.Repository.Storage` process.
 
   `{:error, :bare}` if `repository` doesn't have a working tree.
 
@@ -667,10 +651,7 @@ defmodule Xgit.Repository.Plumbing do
   @typedoc ~S"""
   Reason codes that can be returned by `read_tree/3`.
   """
-  @type read_tree_reason ::
-          :invalid_repository
-          | :bare
-          | WorkingTree.read_tree_reason()
+  @type read_tree_reason :: :bare | WorkingTree.read_tree_reason()
 
   @doc ~S"""
   Read a `tree` object (and its descendants) and populate the index accordingly.
@@ -694,9 +675,6 @@ defmodule Xgit.Repository.Plumbing do
   ## Return Value
 
   `:ok` if successful.
-
-  `{:error, :invalid_repository}` if `repository` doesn't represent a valid
-  `Xgit.Repository.Storage` process.
 
   `{:error, :bare}` if `repository` doesn't have a working tree.
 
@@ -742,8 +720,7 @@ defmodule Xgit.Repository.Plumbing do
   Reason codes that can be returned by `write_tree/2`.
   """
   @type write_tree_reason ::
-          :invalid_repository
-          | :bare
+          :bare
           | DirCache.to_tree_objects_reason()
           | DirCache.from_iodevice_reason()
           | Storage.put_loose_object_reason()
@@ -774,9 +751,6 @@ defmodule Xgit.Repository.Plumbing do
 
   `{:ok, object_id}` with the object ID for the tree that was generated. (If the exact tree
   specified by the index already existed, it will return that existing tree's ID.)
-
-  `{:error, :invalid_repository}` if `repository` doesn't represent a valid
-  `Xgit.Repository.Storage` process.
 
   `{:error, :bare}` if `repository` doesn't have a working tree.
 
@@ -822,7 +796,7 @@ defmodule Xgit.Repository.Plumbing do
   @typedoc ~S"""
   Reason codes that can be returned by `update_ref/4`.
   """
-  @type update_ref_reason :: :invalid_repository | Storage.put_ref_reason()
+  @type update_ref_reason :: Storage.put_ref_reason()
 
   @doc ~S"""
   Update the object name stored in a ref.
@@ -852,9 +826,6 @@ defmodule Xgit.Repository.Plumbing do
 
   `:ok` if written successfully.
 
-  `{:error, :invalid_repository}` if `repository` doesn't represent a valid
-  `Xgit.Repository.Storage` process.
-
   Reason codes may also come from the following functions:
 
   * `Xgit.Repository.Storage.put_ref/3`
@@ -865,15 +836,13 @@ defmodule Xgit.Repository.Plumbing do
         ) :: :ok | {:error, reason :: update_ref_reason}
   def update_ref(repository, name, new_value, opts \\ [])
       when is_pid(repository) and is_binary(name) and is_binary(new_value) and is_list(opts) do
-    with {:repository_valid?, true} <- {:repository_valid?, Storage.valid?(repository)},
-         repo_opts <- validate_update_ref_opts(opts) do
-      if new_value == ObjectId.zero() do
-        Storage.delete_ref(repository, name, repo_opts)
-      else
-        Storage.put_ref(repository, %Ref{name: name, target: new_value}, repo_opts)
-      end
+    Storage.assert_valid(repository)
+    repo_opts = validate_update_ref_opts(opts)
+
+    if new_value == ObjectId.zero() do
+      Storage.delete_ref(repository, name, repo_opts)
     else
-      {:repository_valid?, false} -> cover {:error, :invalid_repository}
+      Storage.put_ref(repository, %Ref{name: name, target: new_value}, repo_opts)
     end
   end
 
@@ -904,8 +873,7 @@ defmodule Xgit.Repository.Plumbing do
   @typedoc ~S"""
   Reason codes that can be returned by `get_symbolic_ref/2`.
   """
-  @type get_symbolic_ref_reason ::
-          :invalid_repository | :not_symbolic_ref | Storage.get_ref_reason()
+  @type get_symbolic_ref_reason :: :not_symbolic_ref | Storage.get_ref_reason()
 
   @doc ~S"""
   Returns the target ref for an existing symbolic ref.
@@ -923,9 +891,6 @@ defmodule Xgit.Repository.Plumbing do
 
   `{:ok, ref_name}` if read successfully. `ref_name` is the name of the targeted reference.
 
-  `{:error, :invalid_repository}` if `repository` doesn't represent a valid
-  `Xgit.Repository.Storage` process.
-
   `{:error, :not_symbolic_ref}` if `name` refers to a ref that is not a symbolic ref.
 
   Reason codes may also come from the following functions:
@@ -937,22 +902,27 @@ defmodule Xgit.Repository.Plumbing do
           name :: Ref.name()
         ) :: {:ok, name :: Ref.name()} | {:error, reason :: get_symbolic_ref_reason}
   def get_symbolic_ref(repository, name) when is_pid(repository) and is_binary(name) do
-    with {:valid?, true} <- {:valid?, Storage.valid?(repository)},
-         {:ok, %Ref{target: "ref: " <> target}} when is_binary(target) <-
-           Storage.get_ref(repository, name, follow_link?: false) do
-      cover {:ok, target}
-    else
-      {:valid?, _} -> cover {:error, :invalid_repository}
-      {:error, :enotdir} -> cover {:error, :not_found}
-      {:error, reason} -> cover {:error, reason}
-      {:ok, _} -> cover {:error, :not_symbolic_ref}
+    Storage.assert_valid(repository)
+
+    case Storage.get_ref(repository, name, follow_link?: false) do
+      {:ok, %Ref{target: "ref: " <> target}} ->
+        cover {:ok, target}
+
+      {:error, :enotdir} ->
+        cover {:error, :not_found}
+
+      {:error, reason} ->
+        cover {:error, reason}
+
+      {:ok, _} ->
+        cover {:error, :not_symbolic_ref}
     end
   end
 
   @typedoc ~S"""
   Reason codes that can be returned by `put_symbolic_ref/4`.
   """
-  @type put_symbolic_ref_reason :: :invalid_repository | Storage.put_ref_reason()
+  @type put_symbolic_ref_reason :: Storage.put_ref_reason()
 
   @doc ~S"""
   Creates or updates a symbolic ref to point at a specific branch.
@@ -978,9 +948,6 @@ defmodule Xgit.Repository.Plumbing do
 
   `:ok` if written successfully.
 
-  `{:error, :invalid_repository}` if `repository` doesn't represent a valid
-  `Xgit.Repository.Storage` process.
-
   Reason codes may also come from the following functions:
 
   * `Xgit.Repository.Storage.put_ref/3`
@@ -993,19 +960,17 @@ defmodule Xgit.Repository.Plumbing do
         ) :: :ok | {:error, reason :: put_symbolic_ref_reason}
   def put_symbolic_ref(repository, name, new_target, opts \\ [])
       when is_pid(repository) and is_binary(name) and is_binary(new_target) and is_list(opts) do
-    if Storage.valid?(repository) do
-      Storage.put_ref(repository, %Ref{name: name, target: "ref: #{new_target}"},
-        follow_link?: false
-      )
-    else
-      cover {:error, :invalid_repository}
-    end
+    Storage.assert_valid(repository)
+
+    Storage.put_ref(repository, %Ref{name: name, target: "ref: #{new_target}"},
+      follow_link?: false
+    )
   end
 
   @typedoc ~S"""
   Reason codes that can be returned by `delete_symbolic_ref/2`.
   """
-  @type delete_symbolic_ref_reason :: :invalid_repository | Storage.delete_ref_reason()
+  @type delete_symbolic_ref_reason :: Storage.delete_ref_reason()
 
   @doc ~S"""
   Deletes a symbolic ref.
@@ -1022,9 +987,6 @@ defmodule Xgit.Repository.Plumbing do
 
   `:ok` if deleted successfully.
 
-  `{:error, :invalid_repository}` if `repository` doesn't represent a valid
-  `Xgit.Repository.Storage` process.
-
   Reason codes may also come from the following functions:
 
   * `Xgit.Repository.Storage.delete_ref/3`
@@ -1035,13 +997,8 @@ defmodule Xgit.Repository.Plumbing do
         ) :: :ok | {:error, reason :: delete_symbolic_ref_reason}
   def delete_symbolic_ref(repository, name)
       when is_pid(repository) and is_binary(name) do
-    with {:valid?, true} <- {:valid?, Storage.valid?(repository)},
-         :ok <- Storage.delete_ref(repository, name, follow_link?: false) do
-      cover :ok
-    else
-      {:valid?, _} -> cover {:error, :invalid_repository}
-      {:error, reason} -> cover {:error, reason}
-    end
+    Storage.assert_valid(repository)
+    Storage.delete_ref(repository, name, follow_link?: false)
   end
 
   ## --- Options ---
@@ -1049,13 +1006,11 @@ defmodule Xgit.Repository.Plumbing do
   # Parse working tree and repository from arguments and options.
 
   defp working_tree_from_opts(repository, opts \\ []) when is_pid(repository) and is_list(opts) do
-    with {:repository_valid?, true} <- {:repository_valid?, Storage.valid?(repository)},
-         {:working_tree, working_tree} when is_pid(working_tree) <-
-           {:working_tree, working_tree_from_repo_or_opts(repository, opts)} do
-      cover {:ok, working_tree}
-    else
-      {:repository_valid?, false} -> cover {:error, :invalid_repository}
-      {:working_tree, nil} -> cover {:error, :bare}
+    Storage.assert_valid(repository)
+
+    case working_tree_from_repo_or_opts(repository, opts) do
+      working_tree when is_pid(working_tree) -> cover {:ok, working_tree}
+      nil -> cover {:error, :bare}
     end
   end
 

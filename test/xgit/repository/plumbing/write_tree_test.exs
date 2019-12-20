@@ -3,6 +3,7 @@ defmodule Xgit.Repository.Plumbing.WriteTreeTest do
 
   alias Xgit.DirCache.Entry
   alias Xgit.GitInitTestCase
+  alias Xgit.Repository.InvalidRepositoryError
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Plumbing
   alias Xgit.Repository.Storage
@@ -388,7 +389,9 @@ defmodule Xgit.Repository.Plumbing.WriteTreeTest do
     test "error: invalid repo" do
       {:ok, not_repo} = GenServer.start_link(NotValid, nil)
 
-      assert {:error, :invalid_repository} = Plumbing.write_tree(not_repo, missing_ok?: true)
+      assert_raise InvalidRepositoryError, fn ->
+        Plumbing.write_tree(not_repo, missing_ok?: true)
+      end
     end
 
     test "error: invalid dir cache" do
@@ -482,6 +485,14 @@ defmodule Xgit.Repository.Plumbing.WriteTreeTest do
                    fn ->
                      Plumbing.write_tree(repo, prefix: "a/b/c")
                    end
+    end
+
+    test "error: repository invalid (PID, but not repo)" do
+      {:ok, not_repo} = GenServer.start_link(NotValid, nil)
+
+      assert_raise InvalidRepositoryError, fn ->
+        Plumbing.write_tree(not_repo, missing_ok?: true)
+      end
     end
 
     defp assert_same_output(git_ref_fn, xgit_fn, opts \\ []) do

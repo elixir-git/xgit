@@ -2,6 +2,7 @@ defmodule Xgit.Repository.Plumbing.CatFileTreeTest do
   use Xgit.Test.OnDiskRepoTestCase, async: true
 
   alias Xgit.Repository.InMemory
+  alias Xgit.Repository.InvalidRepositoryError
   alias Xgit.Repository.Plumbing
   alias Xgit.Tree
 
@@ -136,8 +137,9 @@ defmodule Xgit.Repository.Plumbing.CatFileTreeTest do
     test "error: repository invalid (PID, but not repo)" do
       {:ok, not_repo} = GenServer.start_link(NotValid, nil)
 
-      assert {:error, :invalid_repository} =
-               Plumbing.cat_file_tree(not_repo, "18a4a651653d7caebd3af9c05b0dc7ffa2cd0ae0")
+      assert_raise InvalidRepositoryError, fn ->
+        Plumbing.cat_file_tree(not_repo, "18a4a651653d7caebd3af9c05b0dc7ffa2cd0ae0")
+      end
     end
 
     test "error: object_id invalid (not binary)" do
