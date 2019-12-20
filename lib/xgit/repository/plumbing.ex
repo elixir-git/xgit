@@ -227,10 +227,10 @@ defmodule Xgit.Repository.Plumbing do
   def cat_file(repository, object_id) when is_pid(repository) and is_binary(object_id) do
     Storage.assert_valid(repository)
 
-    with {:object_id_valid?, true} <- {:object_id_valid?, ObjectId.valid?(object_id)} do
+    if ObjectId.valid?(object_id) do
       Storage.get_object(repository, object_id)
     else
-      {:object_id_valid?, false} -> cover {:error, :invalid_object_id}
+      cover {:error, :invalid_object_id}
     end
   end
 
@@ -904,13 +904,18 @@ defmodule Xgit.Repository.Plumbing do
   def get_symbolic_ref(repository, name) when is_pid(repository) and is_binary(name) do
     Storage.assert_valid(repository)
 
-    with {:ok, %Ref{target: "ref: " <> target}} when is_binary(target) <-
-           Storage.get_ref(repository, name, follow_link?: false) do
-      cover {:ok, target}
-    else
-      {:error, :enotdir} -> cover {:error, :not_found}
-      {:error, reason} -> cover {:error, reason}
-      {:ok, _} -> cover {:error, :not_symbolic_ref}
+    case Storage.get_ref(repository, name, follow_link?: false) do
+      {:ok, %Ref{target: "ref: " <> target}} ->
+        cover {:ok, target}
+
+      {:error, :enotdir} ->
+        cover {:error, :not_found}
+
+      {:error, reason} ->
+        cover {:error, reason}
+
+      {:ok, _} ->
+        cover {:error, :not_symbolic_ref}
     end
   end
 
@@ -1003,11 +1008,9 @@ defmodule Xgit.Repository.Plumbing do
   defp working_tree_from_opts(repository, opts \\ []) when is_pid(repository) and is_list(opts) do
     Storage.assert_valid(repository)
 
-    with {:working_tree, working_tree} when is_pid(working_tree) <-
-           {:working_tree, working_tree_from_repo_or_opts(repository, opts)} do
-      cover {:ok, working_tree}
-    else
-      {:working_tree, nil} -> cover {:error, :bare}
+    case working_tree_from_repo_or_opts(repository, opts) do
+      working_tree when is_pid(working_tree) -> cover {:ok, working_tree}
+      nil -> cover {:error, :bare}
     end
   end
 

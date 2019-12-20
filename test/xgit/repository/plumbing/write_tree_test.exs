@@ -3,8 +3,8 @@ defmodule Xgit.Repository.Plumbing.WriteTreeTest do
 
   alias Xgit.DirCache.Entry
   alias Xgit.GitInitTestCase
-  alias Xgit.Repository.OnDisk
   alias Xgit.Repository.InvalidRepositoryError
+  alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Plumbing
   alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree

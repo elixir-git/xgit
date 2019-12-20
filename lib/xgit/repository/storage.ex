@@ -423,7 +423,7 @@ defmodule Xgit.Repository.Storage do
   @typedoc ~S"""
   Error codes that can be returned by `get_ref/2`.
   """
-  @type get_ref_reason :: :invalid_name | :not_found
+  @type get_ref_reason :: File.posix() | :invalid_name | :not_found
 
   @doc ~S"""
   Reads a reference from the repository.
