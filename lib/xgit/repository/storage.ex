@@ -34,7 +34,7 @@ defmodule Xgit.Repository.Storage do
   @typedoc ~S"""
   The process ID for an `Xgit.Repository.Storage` process.
   """
-  @type t :: pid
+  @type t :: pid | {:xgit_repo, pid}
 
   @doc """
   Starts an `Xgit.Repository.Storage` process linked to the current process.
@@ -76,15 +76,22 @@ defmodule Xgit.Repository.Storage do
       GenServer.call(repository, :valid_repository?) == :valid_repository
   end
 
+  def valid?({:xgit_repo, repository}) when is_pid(repository), do: cover(true)
+
   def valid?(_), do: cover(false)
 
   @doc ~S"""
   Raises `Xgit.Repository.InvalidRepositoryError` if the value provided is anything
   other than the process ID for a valid `Xgit.Repository.Storage` process.
   """
-  @spec assert_valid(repository :: t) :: any
+  @spec assert_valid(repository :: t) :: t | no_return
+  def assert_valid({:xgit_repo, repository} = checked_repo) when is_pid(repository),
+    do: cover(checked_repo)
+
   def assert_valid(repository) do
-    unless is_pid(repository) && valid?(repository) do
+    if is_pid(repository) && valid?(repository) do
+      cover {:xgit_repo, repository}
+    else
       raise InvalidRepositoryError
     end
   end
@@ -96,8 +103,15 @@ defmodule Xgit.Repository.Storage do
   special status with regard to the repository.
   """
   @spec default_working_tree(repository :: t) :: WorkingTree.t() | nil
-  def default_working_tree(repository) when is_pid(repository),
-    do: GenServer.call(repository, :default_working_tree)
+  def default_working_tree(repository) when is_pid(repository) do
+    repository
+    |> assert_valid()
+    |> default_working_tree()
+  end
+
+  def default_working_tree({:xgit_repo, repository}) when is_pid(repository) do
+    GenServer.call(repository, :default_working_tree)
+  end
 
   @doc ~S"""
   Attach a working tree to this repository as the default working tree.
@@ -113,9 +127,17 @@ defmodule Xgit.Repository.Storage do
   was not valid.
   """
   @spec set_default_working_tree(repository :: t, working_tree :: WorkingTree.t()) :: :ok | :error
+  def set_default_working_tree({:xgit_repo, repository}, working_tree)
+      when is_pid(repository) and is_pid(working_tree) do
+    GenServer.call(repository, {:set_default_working_tree, working_tree})
+  end
+
   def set_default_working_tree(repository, working_tree)
-      when is_pid(repository) and is_pid(working_tree),
-      do: GenServer.call(repository, {:set_default_working_tree, working_tree})
+      when is_pid(repository) and is_pid(working_tree) do
+    repository
+    |> assert_valid()
+    |> set_default_working_tree(working_tree)
+  end
 
   @doc ~S"""
   Returns `true` if all objects in the list are present in the object dictionary.
@@ -124,8 +146,17 @@ defmodule Xgit.Repository.Storage do
   IDs at a time.
   """
   @spec has_all_object_ids?(repository :: t, object_ids :: [ObjectId.t()]) :: boolean
-  def has_all_object_ids?(repository, object_ids) when is_pid(repository) and is_list(object_ids),
-    do: GenServer.call(repository, {:has_all_object_ids?, object_ids})
+  def has_all_object_ids?({:xgit_repo, repository}, object_ids)
+      when is_pid(repository) and is_list(object_ids) do
+    GenServer.call(repository, {:has_all_object_ids?, object_ids})
+  end
+
+  def has_all_object_ids?(repository, object_ids)
+      when is_pid(repository) and is_list(object_ids) do
+    repository
+    |> assert_valid()
+    |> has_all_object_ids?(object_ids)
+  end
 
   @doc ~S"""
   Checks for presence of multiple object Ids.
@@ -158,8 +189,16 @@ defmodule Xgit.Repository.Storage do
   """
   @spec get_object(repository :: t, object_id :: ObjectId.t()) ::
           {:ok, object :: Object.t()} | {:error, reason :: get_object_reason}
-  def get_object(repository, object_id) when is_pid(repository) and is_binary(object_id),
-    do: GenServer.call(repository, {:get_object, object_id})
+  def get_object({:xgit_repo, repository}, object_id)
+      when is_pid(repository) and is_binary(object_id) do
+    GenServer.call(repository, {:get_object, object_id})
+  end
+
+  def get_object(repository, object_id) when is_pid(repository) and is_binary(object_id) do
+    repository
+    |> assert_valid()
+    |> get_object(object_id)
+  end
 
   @doc ~S"""
   Retrieves an object from the repository.
@@ -196,8 +235,15 @@ defmodule Xgit.Repository.Storage do
   """
   @spec put_loose_object(repository :: t, object :: Object.t()) ::
           :ok | {:error, reason :: put_loose_object_reason}
-  def put_loose_object(repository, %Object{} = object) when is_pid(repository),
-    do: GenServer.call(repository, {:put_loose_object, object})
+  def put_loose_object({:xgit_repo, repository}, %Object{} = object) when is_pid(repository) do
+    GenServer.call(repository, {:put_loose_object, object})
+  end
+
+  def put_loose_object(repository, %Object{} = object) when is_pid(repository) do
+    repository
+    |> assert_valid()
+    |> put_loose_object(object)
+  end
 
   @doc ~S"""
   Writes a loose object to the repository.
@@ -233,8 +279,15 @@ defmodule Xgit.Repository.Storage do
   """
   @spec list_refs(repository :: t) ::
           {:ok, refs :: [Ref.t()]} | {:error, reason :: list_refs_reason}
-  def list_refs(repository) when is_pid(repository),
-    do: GenServer.call(repository, :list_refs)
+  def list_refs({:xgit_repo, repository}) when is_pid(repository) do
+    GenServer.call(repository, :list_refs)
+  end
+
+  def list_refs(repository) when is_pid(repository) do
+    repository
+    |> assert_valid()
+    |> list_refs()
+  end
 
   @doc ~S"""
   Lists all references in the repository.
@@ -299,12 +352,21 @@ defmodule Xgit.Repository.Storage do
   """
   @spec put_ref(repository :: t, ref :: Ref.t(), follow_link?: boolean, old_target: ObjectId.t()) ::
           :ok | {:error, reason :: put_ref_reason}
-  def put_ref(repository, %Ref{} = ref, opts \\ []) when is_pid(repository) and is_list(opts) do
+  def put_ref(repository, ref, opts \\ [])
+
+  def put_ref({:xgit_repo, repository}, %Ref{} = ref, opts)
+      when is_pid(repository) and is_list(opts) do
     if Ref.valid?(ref) do
       GenServer.call(repository, {:put_ref, ref, opts})
     else
       cover {:error, :invalid_ref}
     end
+  end
+
+  def put_ref(repository, ref, opts) when is_pid(repository) and is_list(opts) do
+    repository
+    |> assert_valid()
+    |> put_ref(ref, opts)
   end
 
   @doc ~S"""
@@ -384,12 +446,21 @@ defmodule Xgit.Repository.Storage do
         ) ::
           :ok | {:error, reason :: delete_ref_reason}
   def delete_ref(repository, name, opts \\ [])
+
+  def delete_ref({:xgit_repo, repository}, name, opts)
       when is_pid(repository) and is_binary(name) and is_list(opts) do
     if Ref.valid_name?(name) do
       GenServer.call(repository, {:delete_ref, name, opts})
     else
       cover {:error, :invalid_ref}
     end
+  end
+
+  def delete_ref(repository, name, opts)
+      when is_pid(repository) and is_binary(name) and is_list(opts) do
+    repository
+    |> assert_valid()
+    |> delete_ref(name, opts)
   end
 
   @doc ~S"""
@@ -455,12 +526,21 @@ defmodule Xgit.Repository.Storage do
   @spec get_ref(repository :: t, name :: String.t(), follow_link?: boolean) ::
           {:ok, ref :: Ref.t()} | {:error, reason :: get_ref_reason}
   def get_ref(repository, name, opts \\ [])
+
+  def get_ref({:xgit_repo, repository}, name, opts)
       when is_pid(repository) and is_binary(name) and is_list(opts) do
     if valid_ref_name?(name) do
       GenServer.call(repository, {:get_ref, name, opts})
     else
       cover {:error, :invalid_name}
     end
+  end
+
+  def get_ref(repository, name, opts)
+      when is_pid(repository) and is_binary(name) and is_list(opts) do
+    repository
+    |> assert_valid()
+    |> get_ref(name, opts)
   end
 
   defp valid_ref_name?("HEAD"), do: cover(true)
