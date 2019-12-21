@@ -49,7 +49,7 @@ defmodule Xgit.Repository.OnDisk do
     with {:ok, work_dir} <- get_work_dir_opt(opts),
          {:ok, repo} <- Storage.start_link(__MODULE__, work_dir, opts),
          {:ok, working_tree} <- WorkingTree.start_link(repo, work_dir),
-         :ok <- Storage.set_default_working_tree(repo, working_tree) do
+         :ok <- Storage.set_default_working_tree({:xgit_repo, repo}, working_tree) do
       cover {:ok, repo}
     else
       err -> err
