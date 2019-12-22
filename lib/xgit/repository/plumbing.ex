@@ -225,7 +225,7 @@ defmodule Xgit.Repository.Plumbing do
   @spec cat_file(repository :: Storage.t(), object_id :: ObjectId.t()) ::
           {:ok, Object} | {:error, reason :: cat_file_reason}
   def cat_file(repository, object_id) when is_pid(repository) and is_binary(object_id) do
-    Storage.assert_valid(repository)
+    repository = Storage.assert_valid(repository)
 
     if ObjectId.valid?(object_id) do
       Storage.get_object(repository, object_id)
@@ -274,7 +274,7 @@ defmodule Xgit.Repository.Plumbing do
   @spec cat_file_tree(repository :: Storage.t(), object_id :: ObjectId.t()) ::
           {:ok, tree :: Tree.t()} | {:error, reason :: cat_file_tree_reason}
   def cat_file_tree(repository, object_id) when is_pid(repository) and is_binary(object_id) do
-    Storage.assert_valid(repository)
+    repository = Storage.assert_valid(repository)
 
     with {:object_id_valid?, true} <- {:object_id_valid?, ObjectId.valid?(object_id)},
          {:ok, object} <- Storage.get_object(repository, object_id) do
@@ -325,7 +325,7 @@ defmodule Xgit.Repository.Plumbing do
   @spec cat_file_commit(repository :: Storage.t(), object_id :: ObjectId.t()) ::
           {:ok, commit :: Commit.t()} | {:error, reason :: cat_file_commit_reason}
   def cat_file_commit(repository, object_id) when is_pid(repository) and is_binary(object_id) do
-    Storage.assert_valid(repository)
+    repository = Storage.assert_valid(repository)
 
     with {:object_id_valid?, true} <- {:object_id_valid?, ObjectId.valid?(object_id)},
          {:ok, object} <- Storage.get_object(repository, object_id) do
@@ -405,7 +405,7 @@ defmodule Xgit.Repository.Plumbing do
           {:ok, object_id :: ObjectId.t()}
           | {:error, reason :: commit_tree_reason}
   def commit_tree(repository, opts \\ []) when is_pid(repository) do
-    Storage.assert_valid(repository)
+    repository = Storage.assert_valid(repository)
 
     with {_tree, _parents, _message, _author, _committer} = verified_args <-
            validate_commit_tree_options(repository, opts),
@@ -836,7 +836,7 @@ defmodule Xgit.Repository.Plumbing do
         ) :: :ok | {:error, reason :: update_ref_reason}
   def update_ref(repository, name, new_value, opts \\ [])
       when is_pid(repository) and is_binary(name) and is_binary(new_value) and is_list(opts) do
-    Storage.assert_valid(repository)
+    repository = Storage.assert_valid(repository)
     repo_opts = validate_update_ref_opts(opts)
 
     if new_value == ObjectId.zero() do
@@ -902,7 +902,7 @@ defmodule Xgit.Repository.Plumbing do
           name :: Ref.name()
         ) :: {:ok, name :: Ref.name()} | {:error, reason :: get_symbolic_ref_reason}
   def get_symbolic_ref(repository, name) when is_pid(repository) and is_binary(name) do
-    Storage.assert_valid(repository)
+    repository = Storage.assert_valid(repository)
 
     case Storage.get_ref(repository, name, follow_link?: false) do
       {:ok, %Ref{target: "ref: " <> target}} ->
@@ -960,7 +960,7 @@ defmodule Xgit.Repository.Plumbing do
         ) :: :ok | {:error, reason :: put_symbolic_ref_reason}
   def put_symbolic_ref(repository, name, new_target, opts \\ [])
       when is_pid(repository) and is_binary(name) and is_binary(new_target) and is_list(opts) do
-    Storage.assert_valid(repository)
+    repository = Storage.assert_valid(repository)
 
     Storage.put_ref(repository, %Ref{name: name, target: "ref: #{new_target}"},
       follow_link?: false
@@ -997,8 +997,9 @@ defmodule Xgit.Repository.Plumbing do
         ) :: :ok | {:error, reason :: delete_symbolic_ref_reason}
   def delete_symbolic_ref(repository, name)
       when is_pid(repository) and is_binary(name) do
-    Storage.assert_valid(repository)
-    Storage.delete_ref(repository, name, follow_link?: false)
+    repository
+    |> Storage.assert_valid()
+    |> Storage.delete_ref(name, follow_link?: false)
   end
 
   ## --- Options ---
@@ -1006,7 +1007,7 @@ defmodule Xgit.Repository.Plumbing do
   # Parse working tree and repository from arguments and options.
 
   defp working_tree_from_opts(repository, opts \\ []) when is_pid(repository) and is_list(opts) do
-    Storage.assert_valid(repository)
+    repository = Storage.assert_valid(repository)
 
     case working_tree_from_repo_or_opts(repository, opts) do
       working_tree when is_pid(working_tree) -> cover {:ok, working_tree}
