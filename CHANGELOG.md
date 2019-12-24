@@ -1,5 +1,16 @@
 # Changelog for v0.x Series
 
+## v0.7.0
+
+_21 December 2019_
+
+* **Implement `Xgit.Repository.Plumbing.delete_symbolic_ref/2`.** (#263) This is an API analogue for `git symbolic-ref --delete (ref_name)`.
+
+* Parse, don't validate. Redefine Storage type to be `{:xgit_repo, pid}` and optimize for the case where the PID has been remembered. (#265)
+* [API BREAKING] Replace `{:error, :invalid_repository}` response with error. (#264)
+* [API BREAKING] Rework `Xgit.Repository.Plumbing.delete_ref/3` to trace (or not) symbolic links. (#262)
+* Implement `Xgit.Repository.Plumbing.get_symbolic_ref/2`. (#261)
+
 ## v0.6.0
 
 _15 December 2019_
