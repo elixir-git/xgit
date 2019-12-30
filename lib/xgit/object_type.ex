@@ -16,6 +16,8 @@ defmodule Xgit.ObjectType do
   `is_object_type/1` guard.
   """
 
+  import Xgit.Util.ForceCoverage
+
   @object_types [:blob, :tree, :commit, :tag]
 
   @typedoc ~S"""
@@ -33,6 +35,20 @@ defmodule Xgit.ObjectType do
   This guard requires the value to be one of the four known git object types.
   """
   defguard is_object_type(t) when t in @object_types
+
+  @doc ~S"""
+  Parses a byte list and converts it to an object-type atom.
+
+  Returns `:error` if the byte list doesn't match any of the known-valid object types.
+  """
+  @spec from_bytelist(value :: [byte]) :: t | :error
+  def from_bytelist(value)
+
+  def from_bytelist('blob'), do: cover(:blob)
+  def from_bytelist('tree'), do: cover(:tree)
+  def from_bytelist('commit'), do: cover(:commit)
+  def from_bytelist('tag'), do: cover(:tag)
+  def from_bytelist(value) when is_list(value), do: cover(:error)
 
   defmacro __using__(opts) do
     quote location: :keep, bind_quoted: [opts: opts] do
