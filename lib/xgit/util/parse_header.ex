@@ -19,7 +19,7 @@ defmodule Xgit.Util.ParseHeader do
   `:no_header_found` if unable to find a header at this location.
   """
   @spec next_header(b :: charlist) ::
-          {header :: charlist, value :: charlist, next_data :: charlist}
+          {header :: charlist, value :: charlist, next_data :: charlist} | :no_header_found
   def next_header(b) when is_list(b) do
     with {[_ | _] = header, [?\s | next]} <- Enum.split_while(b, &header_char?/1),
          {value, next} <- Enum.split_while(next, &value_char?/1) do
