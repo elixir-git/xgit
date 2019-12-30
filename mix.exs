@@ -75,6 +75,7 @@ defmodule Xgit.MixProject do
           "Xgit.ObjectType",
           "Xgit.PersonIdent",
           "Xgit.Ref",
+          "Xgit.Tag",
           "Xgit.Tree",
           "Xgit.Tree.Entry"
         ]
