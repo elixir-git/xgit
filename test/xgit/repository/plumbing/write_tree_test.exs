@@ -3,6 +3,7 @@ defmodule Xgit.Repository.Plumbing.WriteTreeTest do
 
   alias Xgit.DirCache.Entry
   alias Xgit.GitInitTestCase
+  alias Xgit.Repository.InMemory
   alias Xgit.Repository.InvalidRepositoryError
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Plumbing
@@ -485,6 +486,11 @@ defmodule Xgit.Repository.Plumbing.WriteTreeTest do
                    fn ->
                      Plumbing.write_tree(repo, prefix: "a/b/c")
                    end
+    end
+
+    test "error: bare" do
+      {:ok, repo} = InMemory.start_link()
+      assert {:error, :bare} = Plumbing.write_tree(repo, missing_ok?: true)
     end
 
     test "error: repository invalid (PID, but not repo)" do
