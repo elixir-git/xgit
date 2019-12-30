@@ -34,6 +34,20 @@ defmodule Xgit.ObjectType do
   """
   defguard is_object_type(t) when t in @object_types
 
+  @doc ~S"""
+  Parses a byte list and converts it to an object-type atom.
+
+  Returns `:error` if the byte list doesn't match any of the known-valid object types.
+  """
+  @spec from_bytelist(value :: [byte]) :: t | :error
+  def from_bytelist(value)
+
+  def from_bytelist('blob'), do: :blob
+  def from_bytelist('tree'), do: :tree
+  def from_bytelist('commit'), do: :commit
+  def from_bytelist('tag'), do: :tag
+  def from_bytelist(value) when is_list(value), do: :error
+
   defmacro __using__(opts) do
     quote location: :keep, bind_quoted: [opts: opts] do
       alias Xgit.ObjectType

@@ -35,4 +35,23 @@ defmodule Xgit.ObjectTypeTest do
       end
     end
   end
+
+  describe "from_bytelist/1" do
+    test "accepts known object types" do
+      for t <- @valid_object_types do
+        assert t = ObjectType.from_bytelist('#{t}')
+      end
+    end
+
+    test "returns :error for other atoms" do
+      assert :error = ObjectType.from_bytelist('commitx')
+    end
+
+    test "FunctionClauseError if not bytelist" do
+      assert_raise FunctionClauseError,
+                   fn ->
+                     ObjectType.from_bytelist("commit")
+                   end
+    end
+  end
 end
