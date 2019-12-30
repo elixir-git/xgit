@@ -5,7 +5,6 @@
 _30 December 2019_
 
 * **Implement `Xgit.Repository.Plumbing.cat_file_tag/2`.** (#272) This is an API equivalent to [`git cat_file -p`](https://git-scm.com/docs/git-cat-file#Documentation/git-cat-file.txt--p) when the target object is of type `tag`.
-
 * Implement `Xgit.Tag.from_object/1`. (#270, #271)
 * Implement `Xgit.ObjectType.from_bytelist/1`. (#269)
 * Back to 100% code coverage. (#268)
@@ -16,7 +15,6 @@ _30 December 2019_
 _21 December 2019_
 
 * **Implement `Xgit.Repository.Plumbing.delete_symbolic_ref/2`.** (#263) This is an API analogue for `git symbolic-ref --delete (ref_name)`.
-
 * Parse, don't validate. Redefine Storage type to be `{:xgit_repo, pid}` and optimize for the case where the PID has been remembered. (#265)
 * [API BREAKING] Replace `{:error, :invalid_repository}` response with error. (#264)
 * [API BREAKING] Rework `Xgit.Repository.Plumbing.delete_ref/3` to trace (or not) symbolic links. (#262)
