@@ -21,6 +21,7 @@ defmodule Xgit.Tag do
   * `:message`: (bytelist) user-entered tag message (encoding unspecified)
 
   **TO DO:** Support signatures and other extensions.
+  https://github.com/elixir-git/xgit/issues/202
   """
   @type t :: %__MODULE__{
           object: ObjectId.t(),
