@@ -325,5 +325,30 @@ defmodule Xgit.TagTest do
                  """
                })
     end
+
+    test "invalid: has message without separator" do
+      assert {:error, :invalid_tag} =
+               Tag.from_object(%Object{
+                 type: :tag,
+                 content: ~c"""
+                 object be9bfa841874ccc9f2ef7c48d0c76226f89b7189
+                 type commit
+                 tag test-tag
+                 tagger A. U. Thor <author@localhost> 1 +0000
+                 test message (should have blank line before this)
+                 """
+               })
+    end
+
+    test "object is not a tag" do
+      object = %Object{
+        type: :blob,
+        content: 'test content\n',
+        size: 13,
+        id: "d670460b4b4aece5915caf5c68d12f560a9fe3e4"
+      }
+
+      assert {:error, :not_a_tag} = Tag.from_object(object)
+    end
   end
 end
