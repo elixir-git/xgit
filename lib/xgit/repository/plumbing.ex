@@ -29,6 +29,7 @@ defmodule Xgit.Repository.Plumbing do
   alias Xgit.Ref
   alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
+  alias Xgit.Tag
   alias Xgit.Tree
 
   ## --- Objects ---
@@ -495,6 +496,57 @@ defmodule Xgit.Repository.Plumbing do
       message
     else
       message ++ '\n'
+    end
+  end
+
+  ## --- Tag Objects ---
+
+  @typedoc ~S"""
+  Reason codes that can be returned by `cat_file_tag/2`.
+  """
+  @type cat_file_tag_reason ::
+          :invalid_object_id
+          | Storage.get_object_reason()
+          | Tag.from_object_reason()
+
+  @doc ~S"""
+  Retrieves a `tag` object from a repository's object store and renders
+  it as an `Xgit.Tag` struct.
+
+  Analogous to
+  [`git cat-file -p`](https://git-scm.com/docs/git-cat-file#Documentation/git-cat-file.txt--p)
+  when the target object is a `tag` object.
+
+  ## Parameters
+
+  `repository` is the `Xgit.Repository.Storage` (PID) to search for the object.
+
+  `object_id` is a string identifying the object.
+
+  ## Return Value
+
+  `{:ok, tag}` if the object could be found and understood as a tag.
+  `tag` is an instance of `Xgit.Tag` and can be used to retrieve
+  references to the members of that tag.
+
+  `{:error, :invalid_object_id}` if `object_id` can't be parsed as a valid git object ID.
+
+  `{:error, reason}` if otherwise unable. The relevant reason codes may come from:
+
+  * `Xgit.Repository.Storage.get_object/2`
+  * `Xgit.Tag.from_object/1`.
+  """
+  @spec cat_file_tag(repository :: Storage.t(), object_id :: ObjectId.t()) ::
+          {:ok, tag :: Tag.t()} | {:error, reason :: cat_file_tag_reason}
+  def cat_file_tag(repository, object_id) when is_pid(repository) and is_binary(object_id) do
+    repository = Storage.assert_valid(repository)
+
+    with {:object_id_valid?, true} <- {:object_id_valid?, ObjectId.valid?(object_id)},
+         {:ok, object} <- Storage.get_object(repository, object_id) do
+      Tag.from_object(object)
+    else
+      {:error, reason} -> cover {:error, reason}
+      {:object_id_valid?, false} -> cover {:error, :invalid_object_id}
     end
   end
 
