@@ -16,6 +16,8 @@ defmodule Xgit.ObjectType do
   `is_object_type/1` guard.
   """
 
+  import Xgit.Util.ForceCoverage
+
   @object_types [:blob, :tree, :commit, :tag]
 
   @typedoc ~S"""
@@ -42,11 +44,11 @@ defmodule Xgit.ObjectType do
   @spec from_bytelist(value :: [byte]) :: t | :error
   def from_bytelist(value)
 
-  def from_bytelist('blob'), do: :blob
-  def from_bytelist('tree'), do: :tree
-  def from_bytelist('commit'), do: :commit
-  def from_bytelist('tag'), do: :tag
-  def from_bytelist(value) when is_list(value), do: :error
+  def from_bytelist('blob'), do: cover(:blob)
+  def from_bytelist('tree'), do: cover(:tree)
+  def from_bytelist('commit'), do: cover(:commit)
+  def from_bytelist('tag'), do: cover(:tag)
+  def from_bytelist(value) when is_list(value), do: cover(:error)
 
   defmacro __using__(opts) do
     quote location: :keep, bind_quoted: [opts: opts] do
