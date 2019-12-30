@@ -1,5 +1,16 @@
 # Changelog for v0.x Series
 
+## v0.7.1
+
+_30 December 2019_
+
+* **Implement `Xgit.Repository.Plumbing.cat_file_tag/2`.** (#272) This is an API equivalent to [`git cat_file -p`](https://git-scm.com/docs/git-cat-file#Documentation/git-cat-file.txt--p) when the target object is of type `tag`.
+
+* Implement `Xgit.Tag.from_object/1`. (#270, #271)
+* Implement `Xgit.ObjectType.from_bytelist/1`. (#269)
+* Back to 100% code coverage. (#268)
+* Define `Xgit.Tag`, which describes a `tag` object in memory. (#267)
+
 ## v0.7.0
 
 _21 December 2019_
