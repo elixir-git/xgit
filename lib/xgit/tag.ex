@@ -94,7 +94,7 @@ defmodule Xgit.Tag do
     with {:object, {'object', object_id_str, data}} <- {:object, next_header(data)},
          {:object_id, {object_id, []}} <- {:object_id, ObjectId.from_hex_charlist(object_id_str)},
          {:type_str, {'type', type_str, data}} <- {:type_str, next_header(data)},
-         {:type, type} <- {:type, ObjectType.from_bytelist(type_str)},
+         {:type, type} when is_object_type(type) <- {:type, ObjectType.from_bytelist(type_str)},
          {:name, {'tag', [_ | _] = name, data}} <- {:name, next_header(data)},
          {:tagger_id, tagger, data} <- optional_tagger(data),
          message when is_list(message) <- drop_if_lf(data) do
