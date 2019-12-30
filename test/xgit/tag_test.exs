@@ -248,6 +248,19 @@ defmodule Xgit.TagTest do
                })
     end
 
+    test "invalid: invalid type" do
+      assert {:error, :invalid_tag} =
+               Tag.from_object(%Object{
+                 type: :tag,
+                 content: ~c"""
+                 object be9bfa841874ccc9f2ef7c48d0c76226f89b7189
+                 type bogus
+                 tag test-tag
+                 tagger A. U. Thor <author@localhost> 1 +0000
+                 """
+               })
+    end
+
     test "invalid: no tag header 1" do
       assert {:error, :invalid_tag} =
                Tag.from_object(%Object{
