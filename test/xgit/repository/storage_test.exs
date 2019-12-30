@@ -11,6 +11,7 @@ defmodule Xgit.Repository.StorageTest do
 
       assert {:xgit_repo, repo} = Storage.assert_valid(repo)
       assert {:xgit_repo, repo} = Storage.assert_valid({:xgit_repo, repo})
+      assert Storage.valid?({:xgit_repo, repo})
     end
 
     test "raises InvalidRepositoryError when invalid PID" do
