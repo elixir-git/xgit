@@ -1,11 +1,12 @@
 defmodule Xgit.Repository.WorkingTree.DirCacheTest do
-  use Xgit.GitInitTestCase, async: true
+  use ExUnit.Case, async: true
 
   alias Xgit.DirCache
   alias Xgit.Repository.InMemory
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
+  alias Xgit.Test.OnDiskRepoTestCase
 
   describe "dir_cache/1" do
     test "happy path: no index file" do
@@ -19,7 +20,9 @@ defmodule Xgit.Repository.WorkingTree.DirCacheTest do
       assert DirCache.valid?(dir_cache)
     end
 
-    test "happy path: can read from command-line git (empty index)", %{ref: ref} do
+    test "happy path: can read from command-line git (empty index)" do
+      %{xgit_path: ref, xgit_repo: repo} = OnDiskRepoTestCase.repo!()
+
       {_output, 0} =
         System.cmd(
           "git",
@@ -45,14 +48,15 @@ defmodule Xgit.Repository.WorkingTree.DirCacheTest do
           cd: ref
         )
 
-      {:ok, repo} = OnDisk.start_link(work_dir: ref)
       working_tree = Storage.default_working_tree(repo)
 
       assert {:ok, %DirCache{entry_count: 0} = dir_cache} = WorkingTree.dir_cache(working_tree)
       assert DirCache.valid?(dir_cache)
     end
 
-    test "happy path: can read from command-line git (two small files)", %{ref: ref} do
+    test "happy path: can read from command-line git (two small files)" do
+      %{xgit_path: ref, xgit_repo: repo} = OnDiskRepoTestCase.repo!()
+
       {_output, 0} =
         System.cmd(
           "git",
@@ -81,7 +85,6 @@ defmodule Xgit.Repository.WorkingTree.DirCacheTest do
           cd: ref
         )
 
-      {:ok, repo} = OnDisk.start_link(work_dir: ref)
       working_tree = Storage.default_working_tree(repo)
 
       assert {:ok, %DirCache{} = dir_cache} = WorkingTree.dir_cache(working_tree)
@@ -133,11 +136,14 @@ defmodule Xgit.Repository.WorkingTree.DirCacheTest do
              }
     end
 
-    test "error: file doesn't start with DIRC signature", %{xgit: xgit} do
+    test "error: file doesn't start with DIRC signature" do
+      %{xgit_path: xgit} = OnDiskRepoTestCase.repo!()
       assert {:error, :invalid_format} = parse_iodata_as_index_file(xgit, 'DIRX')
     end
 
-    test "error: unsupported version", %{xgit: xgit} do
+    test "error: unsupported version" do
+      %{xgit_path: xgit} = OnDiskRepoTestCase.repo!()
+
       assert {:error, :unsupported_version} =
                parse_iodata_as_index_file(xgit, [
                  'DIRC',
@@ -168,12 +174,13 @@ defmodule Xgit.Repository.WorkingTree.DirCacheTest do
                ])
     end
 
-    test "error: 'index' is a directory", %{xgit: xgit} do
+    test "error: 'index' is a directory" do
+      %{xgit_path: xgit, xgit_repo: repo} = OnDiskRepoTestCase.repo!()
+
       index_path = Path.join([xgit, ".git", "index"])
       File.mkdir_p!(index_path)
       # ^ WRONG! Should be a file, not a directory.
 
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
       working_tree = Storage.default_working_tree(repo)
 
       assert {:error, :eisdir} = WorkingTree.dir_cache(working_tree)
