@@ -130,4 +130,44 @@ defmodule Xgit.Tag do
   defp drop_if_lf([10 | data]), do: cover(data)
   defp drop_if_lf([]), do: cover([])
   defp drop_if_lf(_), do: cover(:error)
+
+  @doc ~S"""
+  Renders this tag structure into a corresponding `Xgit.Object`.
+
+  If the tag structure is not valid, will raise `ArgumentError`.
+  """
+  @spec to_object(commit :: t) :: Object.t()
+  def to_object(commit)
+
+  def to_object(
+        %__MODULE__{
+          object: object_id,
+          type: object_type,
+          name: tag_name,
+          tagger: %PersonIdent{} = tagger,
+          message: message
+        } = tag
+      ) do
+    unless valid?(tag) do
+      raise ArgumentError, "Xgit.Tag.to_object/1: tag is not valid"
+    end
+
+    rendered_tag =
+      'object #{object_id}\n' ++
+        'type #{object_type}\n' ++
+        'tag #{tag_name}\n' ++
+        'tagger #{PersonIdent.to_external_string(tagger)}\n' ++
+        '\n' ++
+        message
+
+    # TO DO: Support signatures and other extensions.
+    # https://github.com/elixir-git/xgit/issues/202
+
+    cover %Object{
+      type: :tag,
+      content: rendered_tag,
+      size: Enum.count(rendered_tag),
+      id: ObjectId.calculate_id(rendered_tag, :tag)
+    }
+  end
 end

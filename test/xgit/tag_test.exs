@@ -3,7 +3,18 @@ defmodule Xgit.TagTest do
 
   alias Xgit.Object
   alias Xgit.PersonIdent
+  alias Xgit.Repository.Storage
   alias Xgit.Tag
+  alias Xgit.Test.OnDiskRepoTestCase
+
+  import FolderDiff
+
+  @valid_pi %PersonIdent{
+    name: "A. U. Thor",
+    email: "author@example.com",
+    when: 1_142_878_501_000,
+    tz_offset: 150
+  }
 
   @invalid_pi %PersonIdent{
     name: :bogus,
@@ -362,6 +373,90 @@ defmodule Xgit.TagTest do
       }
 
       assert {:error, :not_a_tag} = Tag.from_object(object)
+    end
+  end
+
+  describe "to_object/1" do
+    test "happy path: typical tag" do
+      assert_same_output(
+        fn git_dir, commit_id, env ->
+          System.cmd("git", ["tag", "-a", "test_tag", commit_id, "-m", "x"], cd: git_dir, env: env)
+        end,
+        fn commit_id ->
+          %Tag{
+            object: commit_id,
+            type: :commit,
+            name: 'test_tag',
+            tagger: @valid_pi,
+            message: 'x\n'
+          }
+        end
+      )
+    end
+
+    test "raises FunctionClauseError if tagger is empty" do
+      assert_raise FunctionClauseError, fn ->
+        Tag.to_object(%Tag{
+          object: "be9bfa841874ccc9f2ef7c48d0c76226f89b7189",
+          type: :commit,
+          name: 'test_tag',
+          tagger: nil,
+          message: 'x\n'
+        })
+      end
+    end
+
+    test "raises ArgumentError if tag is invalid" do
+      assert_raise ArgumentError, "Xgit.Tag.to_object/1: tag is not valid", fn ->
+        Tag.to_object(%Tag{
+          object: "be9bfa841874ccc9f2ef7c48d0c76226f89b7189",
+          type: :commit,
+          name: '',
+          tagger: @valid_pi,
+          message: 'x\n'
+        })
+      end
+    end
+
+    defp assert_same_output(write_tag_fn, xgit_fn, opts \\ []) do
+      tagger_date = Keyword.get(opts, :tagger_date, "1142878501 +0230")
+      tagger_name = Keyword.get(opts, :tagger_name, "A. U. Thor")
+      tagger_email = Keyword.get(opts, :tagger_email, "author@example.com")
+
+      %{xgit_path: ref, parent_id: ref_commit_id} =
+        OnDiskRepoTestCase.setup_with_valid_parent_commit!()
+
+      %{xgit_path: xgit, xgit_repo: repo, parent_id: xgit_commit_id} =
+        OnDiskRepoTestCase.setup_with_valid_parent_commit!()
+
+      env = [
+        {"GIT_AUTHOR_DATE", tagger_date},
+        {"GIT_COMMITTER_DATE", tagger_date},
+        {"GIT_AUTHOR_EMAIL", tagger_email},
+        {"GIT_COMMITTER_EMAIL", tagger_email},
+        {"GIT_AUTHOR_NAME", tagger_name},
+        {"GIT_COMMITTER_NAME", tagger_name}
+      ]
+
+      write_tag_fn.(ref, ref_commit_id, env)
+
+      xgit_tag_object =
+        xgit_commit_id
+        |> xgit_fn.()
+        |> Tag.to_object()
+
+      assert Object.valid?(xgit_tag_object)
+      assert :ok = Object.check(xgit_tag_object)
+
+      # assert xgit_tag_object.id == ref_tag_id
+      # TO DO: How to verify when c/l git doesn't give us that ID?
+
+      :ok = Storage.put_loose_object(repo, xgit_tag_object)
+
+      assert_folders_are_equal(
+        Path.join([ref, ".git", "objects"]),
+        Path.join([xgit, ".git", "objects"])
+      )
     end
   end
 end
