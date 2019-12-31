@@ -2,10 +2,8 @@ defmodule Xgit.CommitTest do
   use ExUnit.Case, async: true
 
   alias Xgit.Commit
-  alias Xgit.GitInitTestCase
   alias Xgit.Object
   alias Xgit.PersonIdent
-  alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Storage
   alias Xgit.Test.OnDiskRepoTestCase
 
@@ -1044,7 +1042,8 @@ defmodule Xgit.CommitTest do
         {"GIT_COMMITTER_NAME", committer_name}
       ]
 
-      {:ok, ref: ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
+      %{xgit_path: ref} = OnDiskRepoTestCase.repo!()
+      %{xgit_path: xgit, xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       ref_parents = write_tree_fn.(ref)
 
@@ -1061,9 +1060,6 @@ defmodule Xgit.CommitTest do
         )
 
       ref_commit_id = String.trim(output)
-
-      :ok = OnDisk.create(xgit)
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       parents = write_tree_fn.(xgit)
       assert parents == ref_parents
