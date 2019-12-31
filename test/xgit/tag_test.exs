@@ -3,7 +3,18 @@ defmodule Xgit.TagTest do
 
   alias Xgit.Object
   alias Xgit.PersonIdent
+  alias Xgit.Repository.Storage
   alias Xgit.Tag
+  alias Xgit.Test.OnDiskRepoTestCase
+
+  import FolderDiff
+
+  @valid_pi %PersonIdent{
+    name: "A. U. Thor",
+    email: "author@example.com",
+    when: 1_142_878_501_000,
+    tz_offset: 150
+  }
 
   @invalid_pi %PersonIdent{
     name: :bogus,
@@ -362,6 +373,281 @@ defmodule Xgit.TagTest do
       }
 
       assert {:error, :not_a_tag} = Tag.from_object(object)
+    end
+  end
+
+  describe "to_object/1" do
+    test "empty tree" do
+      assert_same_output(
+        fn git_dir, commit_id, env ->
+          System.cmd("git", ["tag", "-a", "test_tag", commit_id, "-m", "x"], cd: git_dir, env: env)
+        end,
+        fn commit_id ->
+          %Tag{
+            object: commit_id,
+            type: :commit,
+            name: 'test_tag',
+            tagger: @valid_pi,
+            message: 'x\n'
+          }
+        end
+      )
+    end
+
+    # test "tree with two entries" do
+    #   assert_same_output(
+    #     fn git_dir ->
+    #       {_output, 0} =
+    #         System.cmd(
+    #           "git",
+    #           [
+    #             "update-index",
+    #             "--add",
+    #             "--cacheinfo",
+    #             "100644",
+    #             "7919e8900c3af541535472aebd56d44222b7b3a3",
+    #             "hello.txt"
+    #           ],
+    #           cd: git_dir
+    #         )
+
+    #       {_output, 0} =
+    #         System.cmd(
+    #           "git",
+    #           [
+    #             "update-index",
+    #             "--add",
+    #             "--cacheinfo",
+    #             "100755",
+    #             "4a43a489f107e7ece679950f53567c648038449a",
+    #             "xyzzy.sh"
+    #           ],
+    #           cd: git_dir
+    #         )
+
+    #       []
+    #     end,
+    #     fn tree_id, [] ->
+    #       %Commit{
+    #         tree: tree_id,
+    #         author: @valid_pi,
+    #         committer: @valid_pi,
+    #         message: 'x\n'
+    #       }
+    #     end
+    #   )
+    # end
+
+    # test "tree with two entries and one parent" do
+    #   assert_same_output(
+    #     fn git_dir ->
+    #       {empty_tree_id_str, 0} =
+    #         System.cmd(
+    #           "git",
+    #           [
+    #             "write-tree"
+    #           ],
+    #           cd: git_dir
+    #         )
+
+    #       empty_tree_id = String.trim(empty_tree_id_str)
+
+    #       env = [
+    #         {"GIT_AUTHOR_DATE", "1142878449 +0230"},
+    #         {"GIT_COMMITTER_DATE", "1142878449 +0230"},
+    #         {"GIT_AUTHOR_EMAIL", "author@example.com"},
+    #         {"GIT_COMMITTER_EMAIL", "author@example.com"},
+    #         {"GIT_AUTHOR_NAME", "A. U. Thor"},
+    #         {"GIT_COMMITTER_NAME", "A. U. Thor"}
+    #       ]
+
+    #       {empty_commit_id_str, 0} =
+    #         System.cmd(
+    #           "git",
+    #           [
+    #             "commit-tree",
+    #             "-m",
+    #             "empty",
+    #             empty_tree_id
+    #           ],
+    #           cd: git_dir,
+    #           env: env
+    #         )
+
+    #       empty_commit_id = String.trim(empty_commit_id_str)
+
+    #       {_output, 0} =
+    #         System.cmd(
+    #           "git",
+    #           [
+    #             "update-index",
+    #             "--add",
+    #             "--cacheinfo",
+    #             "100644",
+    #             "7919e8900c3af541535472aebd56d44222b7b3a3",
+    #             "hello.txt"
+    #           ],
+    #           cd: git_dir
+    #         )
+
+    #       {_output, 0} =
+    #         System.cmd(
+    #           "git",
+    #           [
+    #             "update-index",
+    #             "--add",
+    #             "--cacheinfo",
+    #             "100755",
+    #             "4a43a489f107e7ece679950f53567c648038449a",
+    #             "xyzzy.sh"
+    #           ],
+    #           cd: git_dir
+    #         )
+
+    #       [empty_commit_id]
+    #     end,
+    #     fn tree_id, parents ->
+    #       %Commit{
+    #         tree: tree_id,
+    #         parents: parents,
+    #         author: @valid_pi,
+    #         committer: @valid_pi,
+    #         message: 'x\n'
+    #       }
+    #     end
+    #   )
+    # end
+
+    # test "deduplicates and warns on duplicate parent" do
+    #   assert_same_output(
+    #     fn git_dir ->
+    #       {empty_tree_id_str, 0} =
+    #         System.cmd(
+    #           "git",
+    #           [
+    #             "write-tree"
+    #           ],
+    #           cd: git_dir
+    #         )
+
+    #       empty_tree_id = String.trim(empty_tree_id_str)
+
+    #       env = [
+    #         {"GIT_AUTHOR_DATE", "1142878449 +0230"},
+    #         {"GIT_COMMITTER_DATE", "1142878449 +0230"},
+    #         {"GIT_AUTHOR_EMAIL", "author@example.com"},
+    #         {"GIT_COMMITTER_EMAIL", "author@example.com"},
+    #         {"GIT_AUTHOR_NAME", "A. U. Thor"},
+    #         {"GIT_COMMITTER_NAME", "A. U. Thor"}
+    #       ]
+
+    #       {empty_commit_id_str, 0} =
+    #         System.cmd(
+    #           "git",
+    #           [
+    #             "commit-tree",
+    #             "-m",
+    #             "empty",
+    #             empty_tree_id
+    #           ],
+    #           cd: git_dir,
+    #           env: env
+    #         )
+
+    #       empty_commit_id = String.trim(empty_commit_id_str)
+
+    #       {_output, 0} =
+    #         System.cmd(
+    #           "git",
+    #           [
+    #             "update-index",
+    #             "--add",
+    #             "--cacheinfo",
+    #             "100644",
+    #             "7919e8900c3af541535472aebd56d44222b7b3a3",
+    #             "hello.txt"
+    #           ],
+    #           cd: git_dir
+    #         )
+
+    #       {_output, 0} =
+    #         System.cmd(
+    #           "git",
+    #           [
+    #             "update-index",
+    #             "--add",
+    #             "--cacheinfo",
+    #             "100755",
+    #             "4a43a489f107e7ece679950f53567c648038449a",
+    #             "xyzzy.sh"
+    #           ],
+    #           cd: git_dir
+    #         )
+
+    #       [empty_commit_id, empty_commit_id]
+    #     end,
+    #     fn tree_id, parents ->
+    #       %Commit{
+    #         tree: tree_id,
+    #         parents: parents,
+    #         author: @valid_pi,
+    #         committer: @valid_pi,
+    #         message: 'x\n'
+    #       }
+    #     end
+    #   )
+    # end
+
+    # test "raises ArgumentError if commit is invalid" do
+    #   assert_raise ArgumentError, "Xgit.Commit.to_object/1: commit is not valid", fn ->
+    #     Commit.to_object(%Commit{
+    #       tree: "be9bfa841874ccc9f2ef7c48d0c76226f89b7189",
+    #       author: @invalid_pi,
+    #       committer: pi("<> 0 +0000"),
+    #       message: 'x'
+    #     })
+    #   end
+    # end
+
+    defp assert_same_output(write_tag_fn, xgit_fn, opts \\ []) do
+      tagger_date = Keyword.get(opts, :tagger_date, "1142878501 +0230")
+      tagger_name = Keyword.get(opts, :tagger_name, "A. U. Thor")
+      tagger_email = Keyword.get(opts, :tagger_email, "author@example.com")
+
+      %{xgit_path: ref, parent_id: ref_commit_id} =
+        OnDiskRepoTestCase.setup_with_valid_parent_commit!()
+
+      %{xgit_path: xgit, xgit_repo: repo, parent_id: xgit_commit_id} =
+        OnDiskRepoTestCase.setup_with_valid_parent_commit!()
+
+      env = [
+        {"GIT_AUTHOR_DATE", tagger_date},
+        {"GIT_COMMITTER_DATE", tagger_date},
+        {"GIT_AUTHOR_EMAIL", tagger_email},
+        {"GIT_COMMITTER_EMAIL", tagger_email},
+        {"GIT_AUTHOR_NAME", tagger_name},
+        {"GIT_COMMITTER_NAME", tagger_name}
+      ]
+
+      write_tag_fn.(ref, ref_commit_id, env)
+
+      xgit_tag_object =
+        xgit_commit_id
+        |> xgit_fn.()
+        |> Tag.to_object()
+
+      assert Object.valid?(xgit_tag_object)
+      assert :ok = Object.check(xgit_tag_object)
+
+      # assert xgit_tag_object.id == ref_tag_id
+      # TO DO: How to verify when c/l git doesn't give us that ID?
+
+      :ok = Storage.put_loose_object(repo, xgit_tag_object)
+
+      assert_folders_are_equal(
+        Path.join([ref, ".git", "objects"]),
+        Path.join([xgit, ".git", "objects"])
+      )
     end
   end
 end
