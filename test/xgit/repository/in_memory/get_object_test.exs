@@ -1,5 +1,5 @@
 defmodule Xgit.Repository.InMemory.GetObjectTest do
-  use Xgit.GitInitTestCase, async: true
+  use ExUnit.Case, async: true
 
   alias Xgit.Repository.InMemory
   alias Xgit.Repository.Storage
