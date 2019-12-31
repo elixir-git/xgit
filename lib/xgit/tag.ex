@@ -143,7 +143,8 @@ defmodule Xgit.Tag do
         %__MODULE__{
           object: object_id,
           type: object_type,
-          name: tag_name
+          name: tag_name,
+          message: message
         } = tag
       ) do
     unless valid?(tag) do
@@ -156,18 +157,13 @@ defmodule Xgit.Tag do
         %PersonIdent{} = tagger -> cover 'tagger #{PersonIdent.to_external_string(tagger)}\n'
       end
 
-    rendered_message_with_separator =
-      case tag.message do
-        nil -> cover ''
-        message -> cover '\n#{message}'
-      end
-
     rendered_tag =
       'object #{object_id}\n' ++
         'type #{object_type}\n' ++
         'tag #{tag_name}\n' ++
         rendered_tagger ++
-        rendered_message_with_separator
+        '\n' ++
+        message
 
     # TO DO: Support signatures and other extensions.
     # https://github.com/elixir-git/xgit/issues/202
