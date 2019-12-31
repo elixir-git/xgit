@@ -1,14 +1,17 @@
 defmodule Xgit.DirCache.FromIoDeviceTest do
-  use Xgit.GitInitTestCase, async: true
+  use ExUnit.Case, async: true
 
   alias Xgit.DirCache
+  alias Xgit.Test.OnDiskRepoTestCase
   alias Xgit.Test.TempDirTestCase
   alias Xgit.Util.TrailingHashDevice
 
   import ExUnit.CaptureLog
 
   describe "from_iodevice/1" do
-    test "happy path: can read from command-line git (empty index)", %{ref: ref} do
+    test "happy path: can read from command-line git (empty index)" do
+      %{xgit_path: ref} = OnDiskRepoTestCase.repo!()
+
       {_output, 0} =
         System.cmd(
           "git",
@@ -47,7 +50,9 @@ defmodule Xgit.DirCache.FromIoDeviceTest do
              }
     end
 
-    test "happy path: can read from command-line git (two small files)", %{ref: ref} do
+    test "happy path: can read from command-line git (two small files)" do
+      %{xgit_path: ref} = OnDiskRepoTestCase.repo!()
+
       {_output, 0} =
         System.cmd(
           "git",
