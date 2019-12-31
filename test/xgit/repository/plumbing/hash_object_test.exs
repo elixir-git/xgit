@@ -2,9 +2,8 @@ defmodule Xgit.Repository.Plumbing.HashObjectTest do
   use ExUnit.Case, async: true
 
   alias Xgit.FileContentSource
-  alias Xgit.GitInitTestCase
-  alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Plumbing
+  alias Xgit.Test.OnDiskRepoTestCase
 
   import FolderDiff
 
@@ -38,19 +37,14 @@ defmodule Xgit.Repository.Plumbing.HashObjectTest do
     end
 
     test "happy path: write to repo matches command-line git (small file)" do
-      {:ok, ref: ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
-      # Only invoking GitInitTestCase manually here because other tests in this
-      # module don't need it. Setting up a repo that we don't use in the other
-      # tests would be wasteful.
+      %{xgit_path: ref} = OnDiskRepoTestCase.repo!()
+      %{xgit_path: xgit, xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       Temp.track!()
       path = Temp.path!()
       File.write!(path, "test content\n")
 
       {_output, 0} = System.cmd("git", ["hash-object", "-w", path], cd: ref)
-
-      assert :ok = OnDisk.create(xgit)
-      assert {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       assert {:ok, "d670460b4b4aece5915caf5c68d12f560a9fe3e4"} =
                Plumbing.hash_object("test content\n", repo: repo, write?: true)
@@ -63,19 +57,14 @@ defmodule Xgit.Repository.Plumbing.HashObjectTest do
     end
 
     test "happy path: repo, but don't write, matches command-line git (small file)" do
-      {:ok, ref: ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
-      # Only invoking GitInitTestCase manually here because other tests in this
-      # module don't need it. Setting up a repo that we don't use in the other
-      # tests would be wasteful.
+      %{xgit_path: ref} = OnDiskRepoTestCase.repo!()
+      %{xgit_path: xgit, xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       Temp.track!()
       path = Temp.path!()
       File.write!(path, "test content\n")
 
       {_output, 0} = System.cmd("git", ["hash-object", path], cd: ref)
-
-      assert :ok = OnDisk.create(xgit)
-      assert {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       assert {:ok, "d670460b4b4aece5915caf5c68d12f560a9fe3e4"} =
                Plumbing.hash_object("test content\n", repo: repo, write?: false)
@@ -140,17 +129,11 @@ defmodule Xgit.Repository.Plumbing.HashObjectTest do
     end
 
     test "error: can't write to disk" do
-      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
-      # Only invoking GitInitTestCase manually here because other tests in this
-      # module don't need it. Setting up a repo that we don't use in the other
-      # tests would be wasteful.
+      %{xgit_path: xgit, xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       Temp.track!()
       path = Temp.path!()
       File.write!(path, "test content\n")
-
-      assert :ok = OnDisk.create(xgit)
-      assert {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       [xgit, ".git", "objects", "d6", "70460b4b4aece5915caf5c68d12f560a9fe3e4"]
       |> Path.join()
