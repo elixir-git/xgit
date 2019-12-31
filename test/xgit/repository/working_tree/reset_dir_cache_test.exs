@@ -1,16 +1,18 @@
 defmodule Xgit.Repository.WorkingTree.ResetDirCacheTest do
-  use Xgit.GitInitTestCase, async: true
+  use ExUnit.Case, async: true
 
   alias Xgit.DirCache
-  alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
+  alias Xgit.Test.OnDiskRepoTestCase
 
   import FolderDiff
 
   describe "reset_dir_cache/1" do
-    test "happy path: can generate correct empty index file",
-         %{ref: ref, xgit: xgit} do
+    test "happy path: can generate correct empty index file" do
+      %{xgit_path: ref} = OnDiskRepoTestCase.repo!()
+      %{xgit_path: xgit, xgit_repo: repo} = OnDiskRepoTestCase.repo!()
+
       # An initialized git repo doesn't have an index file at all.
       # Adding and removing a file generates an empty index file.
 
@@ -39,8 +41,6 @@ defmodule Xgit.Repository.WorkingTree.ResetDirCacheTest do
           cd: ref
         )
 
-      assert :ok = OnDisk.create(xgit)
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
       working_tree = Storage.default_working_tree(repo)
 
       assert :ok = WorkingTree.reset_dir_cache(working_tree)
@@ -48,8 +48,10 @@ defmodule Xgit.Repository.WorkingTree.ResetDirCacheTest do
       assert_folders_are_equal(ref, xgit)
     end
 
-    test "can reset an index file when entries existed",
-         %{ref: ref, xgit: xgit} do
+    test "can reset an index file when entries existed" do
+      %{xgit_path: ref} = OnDiskRepoTestCase.repo!()
+      %{xgit_path: xgit, xgit_repo: repo} = OnDiskRepoTestCase.repo!()
+
       {_output, 0} =
         System.cmd(
           "git",
@@ -78,8 +80,6 @@ defmodule Xgit.Repository.WorkingTree.ResetDirCacheTest do
           cd: ref
         )
 
-      assert :ok = OnDisk.create(xgit)
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
       working_tree = Storage.default_working_tree(repo)
 
       assert :ok =
@@ -157,14 +157,15 @@ defmodule Xgit.Repository.WorkingTree.ResetDirCacheTest do
       assert_folders_are_equal(ref, xgit)
     end
 
-    test "error: can't replace malformed index file", %{xgit: xgit} do
+    test "error: can't replace malformed index file" do
+      %{xgit_path: xgit, xgit_repo: repo} = OnDiskRepoTestCase.repo!()
+
       git_dir = Path.join(xgit, '.git')
       File.mkdir_p!(git_dir)
 
       index = Path.join(git_dir, 'index')
       File.mkdir_p!(index)
 
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
       working_tree = Storage.default_working_tree(repo)
 
       assert {:error, :eisdir} = WorkingTree.reset_dir_cache(working_tree)
