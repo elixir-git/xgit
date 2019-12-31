@@ -3,9 +3,8 @@ defmodule Xgit.DirCacheTest do
 
   alias Xgit.DirCache
   alias Xgit.DirCache.Entry
-  alias Xgit.GitInitTestCase
-  alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Storage
+  alias Xgit.Test.OnDiskRepoTestCase
 
   import FolderDiff
 
@@ -641,7 +640,8 @@ defmodule Xgit.DirCacheTest do
     end
 
     defp assert_same_output(git_ref_fn, dir_cache, prefix \\ []) do
-      {:ok, ref: ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
+      %{xgit_path: ref} = OnDiskRepoTestCase.repo!()
+      %{xgit_path: xgit, xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       git_ref_fn.(ref)
 
@@ -655,9 +655,6 @@ defmodule Xgit.DirCacheTest do
       content_id = String.trim(output)
 
       assert {:ok, tree_objects, root_tree_object} = DirCache.to_tree_objects(dir_cache, prefix)
-
-      :ok = OnDisk.create(xgit)
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       Enum.each(tree_objects, fn tree_object ->
         :ok = Storage.put_loose_object(repo, tree_object)
