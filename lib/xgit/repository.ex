@@ -8,10 +8,11 @@ defmodule Xgit.Repository do
 
   The functions implemented in this module correspond to the "plumbing" commands
   implemented by command-line git.
-
-  (As of this writing, no plumbing-level commands have been implemented yet.)
   """
+  alias Xgit.ObjectId
+  alias Xgit.Ref
   alias Xgit.Repository.Storage
+  alias Xgit.Tag
 
   @typedoc ~S"""
   The process ID for an `Xgit.Repository` process.
@@ -26,4 +27,128 @@ defmodule Xgit.Repository do
   """
   @spec valid?(repository :: term) :: boolean
   defdelegate valid?(repository), to: Storage
+
+  ## -- Tags --
+
+  @doc ~S"""
+  Create a tag object.
+
+  Analogous to the _create_ form of [`git tag`](https://git-scm.com/docs/git-tag).
+
+  ## Parameters
+
+  `repository` is the `Xgit.Repository.Storage` (PID) to search for the object.
+
+  `tag_name` (String.t) is the name to give to the new tag.
+
+  `object` (ObjectId.t) is the object ID to be pointed to by this tag (typically a `commit` object).
+
+  ## Options
+
+  `annotated?`: (boolean) true to create an annotated tag (default: `false` unless `message` is specified)
+
+  `force?`: (boolean) true to replace an existing tag (default: `false`)
+
+  `message`: (bytelist) message to associate with the tag.
+  * Must be non-empty if `:annotated?` is `true`.
+  * Implies `annotated?: true`.
+
+  ## Return Value
+
+  `:ok` if created successfully.
+
+  `{:error, reason}` if unable.
+
+  TO DO: Specify reason codes.
+
+  TO DO: Support GPG signatures
+  """
+  @spec tag(repository :: t, tag_name :: String.t(), object :: ObjectId.t(),
+          annotated?: boolean,
+          force?: boolean,
+          message: [byte]
+        ) :: :ok
+  def tag(repository, tag_name, object, options \\ [])
+      when is_pid(repository) and is_binary(tag_name) and is_binary(object) and is_list(options) do
+    repository = Storage.assert_valid(repository)
+
+    unless Tag.valid_name?(String.to_charlist(tag_name)) do
+      raise ArgumentError,
+            "Xgit.Repository.tag/4: tag_name #{tag_name} is invalid"
+    end
+
+    unless ObjectId.valid?(object) do
+      raise ArgumentError,
+            "Xgit.Repository.tag/4: object #{inspect(object)} is invalid"
+    end
+
+    {annotated?, message} = annotated_and_message_from_tag_options(options)
+
+    force? = Keyword.get(options, :force?, false)
+
+    unless is_boolean(force?) do
+      raise ArgumentError,
+            "Xgit.Repository.tag/4: force? #{inspect(force?)} is invalid"
+    end
+
+    if annotated? do
+      create_annotated_tag(repository, tag_name, object, force?, message)
+    else
+      create_lightweight_tag(repository, tag_name, object, force?)
+    end
+  end
+
+  defp annotated_and_message_from_tag_options(options) do
+    message =
+      case Keyword.get(options, :message) do
+        nil ->
+          nil
+
+        [_ | _] = message ->
+          message
+
+        invalid ->
+          raise ArgumentError,
+                "Xgit.Repository.tag/4: message #{inspect(invalid)} is invalid"
+      end
+
+    annotated? =
+      case Keyword.get(options, :annotated?, is_list(message)) do
+        nil ->
+          false
+
+        false ->
+          false
+
+        true ->
+          true
+
+        invalid ->
+          raise ArgumentError,
+                "Xgit.Repository.tag/4: annotated? #{inspect(invalid)} is invalid"
+      end
+
+    if is_list(message) and not annotated? do
+      raise ArgumentError,
+            "Xgit.Repository.tag/4: annotated?: false can not be specified when message is present"
+    end
+
+    {annotated?, message}
+  end
+
+  defp create_annotated_tag(_repository, _tag_name, _object, _force?, _message) do
+    raise "not yet"
+  end
+
+  defp create_lightweight_tag(repository, tag_name, object, force?) do
+    opts =
+      if force? do
+        [follow_link?: false]
+      else
+        [follow_link?: false, old_target: :new]
+      end
+
+    ref = %Ref{name: "refs/tags/#{tag_name}", target: object}
+    Storage.put_ref(repository, ref, opts)
+  end
 end
