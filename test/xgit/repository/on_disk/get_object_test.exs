@@ -1,13 +1,16 @@
 defmodule Xgit.Repository.OnDisk.GetObjectTest do
-  use Xgit.GitInitTestCase, async: true
+  use ExUnit.Case, async: true
 
   alias Xgit.ContentSource
   alias Xgit.Object
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Storage
+  alias Xgit.Test.OnDiskRepoTestCase
 
   describe "get_object/2" do
-    test "happy path: can read from command-line git (small file)", %{ref: ref} do
+    test "happy path: can read from command-line git (small file)" do
+      %{xgit_path: ref} = OnDiskRepoTestCase.repo!()
+
       Temp.track!()
       path = Temp.path!()
       File.write!(path, "test content\n")
@@ -30,7 +33,9 @@ defmodule Xgit.Repository.OnDisk.GetObjectTest do
       assert ContentSource.length(test_content) == 13
     end
 
-    test "happy path: can read from command-line git (large file)", %{ref: ref} do
+    test "happy path: can read from command-line git (large file)" do
+      %{xgit_path: ref} = OnDiskRepoTestCase.repo!()
+
       Temp.track!()
       path = Temp.path!()
 
@@ -61,23 +66,28 @@ defmodule Xgit.Repository.OnDisk.GetObjectTest do
       assert test_content_str == content
     end
 
-    test "error: no such file", %{ref: ref} do
-      assert {:ok, repo} = OnDisk.start_link(work_dir: ref)
+    test "error: no such file" do
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       assert {:error, :not_found} =
                Storage.get_object(repo, "5cb5d77be2d92c7368038dac67e648a69e0a654d")
     end
 
-    test "error: invalid object (not ZIP compressed)", %{xgit: xgit} do
+    test "error: invalid object (not ZIP compressed)" do
+      %{xgit_path: xgit} = OnDiskRepoTestCase.repo!()
       assert_zip_data_is_invalid(xgit, "blob ")
     end
 
-    test "error: invalid object (ZIP compressed, but incomplete)", %{xgit: xgit} do
+    test "error: invalid object (ZIP compressed, but incomplete)" do
+      %{xgit_path: xgit} = OnDiskRepoTestCase.repo!()
+
       # "blob "
       assert_zip_data_is_invalid(xgit, <<120, 1, 75, 202, 201, 79, 82, 0, 0, 5, 208, 1, 192>>)
     end
 
-    test "error: invalid object (ZIP compressed object type without length)", %{xgit: xgit} do
+    test "error: invalid object (ZIP compressed object type without length)" do
+      %{xgit_path: xgit} = OnDiskRepoTestCase.repo!()
+
       # "blob"
       assert_zip_data_is_invalid(
         xgit,
@@ -85,7 +95,9 @@ defmodule Xgit.Repository.OnDisk.GetObjectTest do
       )
     end
 
-    test "error: invalid object (ZIP compressed, but invalid object type)", %{xgit: xgit} do
+    test "error: invalid object (ZIP compressed, but invalid object type)" do
+      %{xgit_path: xgit} = OnDiskRepoTestCase.repo!()
+
       # "blog 13\0"
       assert_zip_data_is_invalid(
         xgit,
@@ -93,7 +105,9 @@ defmodule Xgit.Repository.OnDisk.GetObjectTest do
       )
     end
 
-    test "error: invalid object (ZIP compressed, but invalid object type 2)", %{xgit: xgit} do
+    test "error: invalid object (ZIP compressed, but invalid object type 2)" do
+      %{xgit_path: xgit} = OnDiskRepoTestCase.repo!()
+
       # "blobx 1234\0"
       assert_zip_data_is_invalid(
         xgit,
@@ -101,7 +115,9 @@ defmodule Xgit.Repository.OnDisk.GetObjectTest do
       )
     end
 
-    test "error: invalid object (ZIP compressed, but invalid length)", %{xgit: xgit} do
+    test "error: invalid object (ZIP compressed, but invalid length)" do
+      %{xgit_path: xgit} = OnDiskRepoTestCase.repo!()
+
       # "blob 13 \0" (extra space)
       assert_zip_data_is_invalid(
         xgit,
@@ -109,7 +125,9 @@ defmodule Xgit.Repository.OnDisk.GetObjectTest do
       )
     end
 
-    test "error: invalid object (ZIP compressed, but invalid length 2)", %{xgit: xgit} do
+    test "error: invalid object (ZIP compressed, but invalid length 2)" do
+      %{xgit_path: xgit} = OnDiskRepoTestCase.repo!()
+
       # "blob 12x34\0"
       assert_zip_data_is_invalid(
         xgit,
@@ -117,7 +135,9 @@ defmodule Xgit.Repository.OnDisk.GetObjectTest do
       )
     end
 
-    test "error: invalid object (ZIP compressed, but no length)", %{xgit: xgit} do
+    test "error: invalid object (ZIP compressed, but no length)" do
+      %{xgit_path: xgit} = OnDiskRepoTestCase.repo!()
+
       # "blob \0" (space, but no length)
       assert_zip_data_is_invalid(xgit, <<120, 1, 75, 202, 201, 79, 82, 96, 0, 0, 7, 144, 1, 192>>)
     end
