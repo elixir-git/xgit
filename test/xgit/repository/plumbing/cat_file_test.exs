@@ -1,22 +1,21 @@
 defmodule Xgit.Repository.Plumbing.CatFileTest do
-  use Xgit.GitInitTestCase, async: true
+  use ExUnit.Case, async: true
 
   alias Xgit.ContentSource
   alias Xgit.Repository.InvalidRepositoryError
-  alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Plumbing
   alias Xgit.Test.OnDiskRepoTestCase
 
   describe "run/2" do
-    test "happy path: can read from command-line git (small file)", %{ref: ref} do
+    test "happy path: can read from command-line git (small file)" do
+      %{xgit_path: ref, xgit_repo: repo} = OnDiskRepoTestCase.repo!()
+
       Temp.track!()
       path = Temp.path!()
       File.write!(path, "test content\n")
 
       {output, 0} = System.cmd("git", ["hash-object", "-w", path], cd: ref)
       test_content_id = String.trim(output)
-
-      assert {:ok, repo} = OnDisk.start_link(work_dir: ref)
 
       assert {:ok, %{type: :blob, size: 13, content: test_content} = object} =
                Plumbing.cat_file(repo, test_content_id)
