@@ -553,7 +553,7 @@ defmodule Xgit.Repository.Plumbing do
   ## --- Working Tree ---
 
   @typedoc ~S"""
-  Reason codes that can be returned by `ls_files_stage_/1`.
+  Reason codes that can be returned by `ls_files_stage/1`.
   """
   @type ls_files_stage_reason :: DirCache.from_iodevice_reason()
 
