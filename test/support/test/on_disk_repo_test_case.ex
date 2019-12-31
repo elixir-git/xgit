@@ -33,10 +33,65 @@ defmodule Xgit.Test.OnDiskRepoTestCase do
   end
 
   defp git_init_repo(%{tmp_dir: xgit_path} = context) do
-    {_output, 0} = System.cmd("git", ["init"], cd: xgit_path)
+    git_init_and_standardize(xgit_path)
+
     {:ok, xgit_repo} = OnDisk.start_link(work_dir: xgit_path)
 
     Map.merge(context, %{xgit_path: xgit_path, xgit_repo: xgit_repo})
+  end
+
+  defp git_init_and_standardize(git_dir) do
+    git_dir
+    |> git_init()
+    |> remove_sample_hooks()
+    |> rewrite_config()
+    |> rewrite_info_exclude()
+  end
+
+  defp git_init(git_dir) do
+    {_, 0} = System.cmd("git", ["init", git_dir])
+    git_dir
+  end
+
+  defp remove_sample_hooks(git_dir) do
+    hooks_dir = Path.join(git_dir, ".git/hooks")
+
+    hooks_dir
+    |> File.ls!()
+    |> Enum.filter(&String.ends_with?(&1, ".sample"))
+    |> Enum.each(&File.rm!(Path.join(hooks_dir, &1)))
+
+    git_dir
+  end
+
+  defp rewrite_config(git_dir) do
+    git_dir
+    |> Path.join(".git/config")
+    |> File.write!(~s"""
+    [core]
+    \trepositoryformatversion = 0
+    \tfilemode = true
+    \tbare = false
+    \tlogallrefupdates = true
+    """)
+
+    git_dir
+  end
+
+  defp rewrite_info_exclude(git_dir) do
+    git_dir
+    |> Path.join(".git/info/exclude")
+    |> File.write!(~s"""
+    # git ls-files --others --exclude-from=.git/info/exclude
+    # Lines that start with '#' are comments.
+    # For a project mostly in C, the following would be a good set of
+    # exclude patterns (uncomment them if you want to use them):
+    # *.[oa]
+    # *~
+    .DS_Store
+    """)
+
+    git_dir
   end
 
   @doc ~S"""

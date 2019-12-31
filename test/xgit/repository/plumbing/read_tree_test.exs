@@ -1,9 +1,8 @@
 defmodule Xgit.Repository.Plumbing.ReadTreeTest do
-  use Xgit.GitInitTestCase, async: true
+  use ExUnit.Case, async: true
 
   alias Xgit.DirCache
   alias Xgit.DirCache.Entry
-  alias Xgit.GitInitTestCase
   alias Xgit.Repository.InMemory
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Plumbing
@@ -90,7 +89,7 @@ defmodule Xgit.Repository.Plumbing.ReadTreeTest do
     end
 
     test "happy path: :empty" do
-      {:ok, ref: ref, xgit: _xgit} = GitInitTestCase.setup_git_repo()
+      %{xgit_path: ref, xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       {_output, 0} =
         System.cmd(
@@ -107,8 +106,6 @@ defmodule Xgit.Repository.Plumbing.ReadTreeTest do
         )
 
       {_output, 0} = System.cmd("git", ["write-tree", "--missing-ok"], cd: ref)
-
-      {:ok, repo} = OnDisk.start_link(work_dir: ref)
 
       assert :ok = Plumbing.read_tree(repo, :empty)
 
@@ -425,7 +422,9 @@ defmodule Xgit.Repository.Plumbing.ReadTreeTest do
                    end
     end
 
-    test "error: can't replace malformed index file", %{xgit: xgit} do
+    test "error: can't replace malformed index file" do
+      %{xgit_path: xgit, xgit_repo: repo} = OnDiskRepoTestCase.repo!()
+
       File.mkdir_p!(xgit)
 
       {_output, 0} = System.cmd("git", ["init"], cd: xgit)
@@ -462,8 +461,6 @@ defmodule Xgit.Repository.Plumbing.ReadTreeTest do
       File.rm_rf!(index_path)
       File.mkdir_p!(index_path)
 
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
-
       assert {:error, :eisdir} = Plumbing.read_tree(repo, tree_object_id, missing_ok?: true)
     end
 
@@ -473,7 +470,7 @@ defmodule Xgit.Repository.Plumbing.ReadTreeTest do
     end
 
     defp write_git_tree_and_read_back(git_ref_fn, opts) do
-      {:ok, ref: ref, xgit: _xgit} = GitInitTestCase.setup_git_repo()
+      %{xgit_path: ref} = OnDiskRepoTestCase.repo!()
 
       git_ref_fn.(ref)
 

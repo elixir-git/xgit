@@ -1,5 +1,5 @@
 defmodule Xgit.Repository.Plumbing.LsFilesStageTest do
-  use Xgit.GitInitTestCase, async: true
+  use ExUnit.Case, async: true
 
   alias Xgit.DirCache.Entry, as: DirCacheEntry
   alias Xgit.Repository.InMemory
@@ -8,6 +8,7 @@ defmodule Xgit.Repository.Plumbing.LsFilesStageTest do
   alias Xgit.Repository.Plumbing
   alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
+  alias Xgit.Test.OnDiskRepoTestCase
   alias Xgit.Test.TempDirTestCase
 
   describe "ls_files_stage/1" do
@@ -22,7 +23,9 @@ defmodule Xgit.Repository.Plumbing.LsFilesStageTest do
       assert {:ok, []} = Plumbing.ls_files_stage(repo)
     end
 
-    test "happy path: can read from command-line git (empty index)", %{ref: ref} do
+    test "happy path: can read from command-line git (empty index)" do
+      %{xgit_path: ref, xgit_repo: repo} = OnDiskRepoTestCase.repo!()
+
       {_output, 0} =
         System.cmd(
           "git",
@@ -48,11 +51,12 @@ defmodule Xgit.Repository.Plumbing.LsFilesStageTest do
           cd: ref
         )
 
-      {:ok, repo} = OnDisk.start_link(work_dir: ref)
       assert {:ok, []} = Plumbing.ls_files_stage(repo)
     end
 
-    test "happy path: can read from command-line git (two small files)", %{ref: ref} do
+    test "happy path: can read from command-line git (two small files)" do
+      %{xgit_path: ref, xgit_repo: repo} = OnDiskRepoTestCase.repo!()
+
       {_output, 0} =
         System.cmd(
           "git",
@@ -80,8 +84,6 @@ defmodule Xgit.Repository.Plumbing.LsFilesStageTest do
           ],
           cd: ref
         )
-
-      {:ok, repo} = OnDisk.start_link(work_dir: ref)
 
       assert {:ok, entries} = Plumbing.ls_files_stage(repo)
 
@@ -146,7 +148,9 @@ defmodule Xgit.Repository.Plumbing.LsFilesStageTest do
       assert {:error, :bare} = Plumbing.ls_files_stage(repo)
     end
 
-    test "error: invalid index file", %{xgit: xgit} do
+    test "error: invalid index file" do
+      %{tmp_dir: xgit} = TempDirTestCase.tmp_dir!()
+
       git_dir = Path.join(xgit, ".git")
       File.mkdir_p!(git_dir)
 

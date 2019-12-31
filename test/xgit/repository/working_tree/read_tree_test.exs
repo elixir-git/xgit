@@ -1,13 +1,12 @@
 defmodule Xgit.Repository.WorkingTree.ReadTreeTest do
-  use Xgit.GitInitTestCase, async: true
+  use ExUnit.Case, async: true
 
   alias Xgit.DirCache
   alias Xgit.DirCache.Entry
-  alias Xgit.GitInitTestCase
-  alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Plumbing
   alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
+  alias Xgit.Test.OnDiskRepoTestCase
 
   describe "read_tree/3" do
     test "happy path: empty dir cache" do
@@ -355,12 +354,7 @@ defmodule Xgit.Repository.WorkingTree.ReadTreeTest do
     end
 
     test "missing_ok? error" do
-      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
-
-      :ok = OnDisk.create(xgit)
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
-
-      :ok
+      %{xgit_path: xgit, xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       Plumbing.update_index_cache_info(
         repo,
@@ -376,10 +370,7 @@ defmodule Xgit.Repository.WorkingTree.ReadTreeTest do
     end
 
     test "error: :missing_ok? invalid" do
-      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
-
-      :ok = OnDisk.create(xgit)
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       working_tree = Storage.default_working_tree(repo)
 
@@ -394,7 +385,9 @@ defmodule Xgit.Repository.WorkingTree.ReadTreeTest do
                    end
     end
 
-    test "error: can't replace malformed index file", %{xgit: xgit} do
+    test "error: can't replace malformed index file" do
+      %{xgit_path: xgit, xgit_repo: repo} = OnDiskRepoTestCase.repo!()
+
       File.mkdir_p!(xgit)
 
       {_output, 0} = System.cmd("git", ["init"], cd: xgit)
@@ -431,7 +424,6 @@ defmodule Xgit.Repository.WorkingTree.ReadTreeTest do
       File.rm_rf!(index_path)
       File.mkdir_p!(index_path)
 
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
       working_tree = Storage.default_working_tree(repo)
 
       assert {:error, :eisdir} =
@@ -439,7 +431,7 @@ defmodule Xgit.Repository.WorkingTree.ReadTreeTest do
     end
 
     defp write_git_tree_and_read_back(git_ref_fn, opts) do
-      {:ok, ref: ref, xgit: _xgit} = GitInitTestCase.setup_git_repo()
+      %{xgit_path: ref, xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       git_ref_fn.(ref)
 
@@ -450,8 +442,6 @@ defmodule Xgit.Repository.WorkingTree.ReadTreeTest do
       # Otherwise, the subsequent call to `WorkingTree.dir_cache/1` could mask
       # any failure in `WorkingTree.read_tree/3`.
       {_output, 0} = System.cmd("git", ["read-tree", "--empty"], cd: ref)
-
-      {:ok, repo} = OnDisk.start_link(work_dir: ref)
 
       working_tree = Storage.default_working_tree(repo)
 

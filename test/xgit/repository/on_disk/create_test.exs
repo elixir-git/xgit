@@ -1,12 +1,18 @@
 defmodule Xgit.Repository.OnDisk.CreateTest do
-  use Xgit.GitInitTestCase, async: true
+  use ExUnit.Case, async: true
 
   alias Xgit.Repository.OnDisk
+  alias Xgit.Test.OnDiskRepoTestCase
 
   import FolderDiff
 
   describe "create/1" do
-    test "happy path matches command-line git", %{ref: ref, xgit: xgit} do
+    test "happy path matches command-line git" do
+      %{xgit_path: ref} = OnDiskRepoTestCase.repo!()
+      %{xgit_path: xgit_root} = OnDiskRepoTestCase.repo!()
+
+      xgit = Path.join(xgit_root, "repo")
+
       assert :ok = OnDisk.create(xgit)
       assert_folders_are_equal(ref, xgit)
     end
@@ -17,7 +23,10 @@ defmodule Xgit.Repository.OnDisk.CreateTest do
       end
     end
 
-    test "error: work dir exists already", %{xgit: xgit} do
+    test "error: work dir exists already" do
+      %{xgit_path: xgit_root} = OnDiskRepoTestCase.repo!()
+      xgit = Path.join(xgit_root, "repo")
+
       File.mkdir_p!(xgit)
       assert {:error, :work_dir_must_not_exist} = OnDisk.create(xgit)
     end

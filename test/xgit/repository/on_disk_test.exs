@@ -1,18 +1,24 @@
 defmodule Xgit.Repository.OnDiskTest do
-  use Xgit.GitInitTestCase, async: true
+  use ExUnit.Case, async: true
 
   alias Xgit.Repository
   alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
+  alias Xgit.Test.OnDiskRepoTestCase
+  alias Xgit.Test.TempDirTestCase
 
   import ExUnit.CaptureLog
 
   describe "start_link/1" do
-    test "happy path: starts and is valid and has a working directory attached", %{xgit: xgit} do
-      assert :ok = OnDisk.create(xgit)
+    test "happy path: starts and is valid and has a working directory attached" do
+      %{tmp_dir: xgit_root} = TempDirTestCase.tmp_dir!()
 
+      xgit = Path.join(xgit_root, "tmp")
+
+      assert :ok = OnDisk.create(xgit)
       assert {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+
       assert is_pid(repo)
       assert Repository.valid?(repo)
       assert Storage.valid?(repo)
@@ -23,9 +29,8 @@ defmodule Xgit.Repository.OnDiskTest do
       assert WorkingTree.valid?(working_tree)
     end
 
-    test "handles unknown message", %{xgit: xgit} do
-      assert :ok = OnDisk.create(xgit)
-      assert {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+    test "handles unknown message" do
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       assert capture_log(fn ->
                assert {:error, :unknown_message} = GenServer.call(repo, :random_unknown_message)
@@ -37,14 +42,18 @@ defmodule Xgit.Repository.OnDiskTest do
       assert {:error, :missing_arguments} = OnDisk.start_link([])
     end
 
-    test "error: work_dir doesn't exist", %{xgit: xgit} do
+    test "error: work_dir doesn't exist" do
+      %{xgit_path: xgit} = OnDiskRepoTestCase.repo!()
+
       Process.flag(:trap_exit, true)
 
       assert {:error, :work_dir_doesnt_exist} =
                OnDisk.start_link(work_dir: Path.join(xgit, "random"))
     end
 
-    test "error: git_dir doesn't exist", %{xgit: xgit} do
+    test "error: git_dir doesn't exist" do
+      %{xgit_path: xgit} = OnDiskRepoTestCase.repo!()
+
       Process.flag(:trap_exit, true)
 
       temp_dir = Path.join(xgit, "blah")
