@@ -394,6 +394,18 @@ defmodule Xgit.TagTest do
       )
     end
 
+    test "raises FunctionClauseError if tagger is empty" do
+      assert_raise FunctionClauseError, fn ->
+        Tag.to_object(%Tag{
+          object: "be9bfa841874ccc9f2ef7c48d0c76226f89b7189",
+          type: :commit,
+          name: 'test_tag',
+          tagger: nil,
+          message: 'x\n'
+        })
+      end
+    end
+
     test "raises ArgumentError if tag is invalid" do
       assert_raise ArgumentError, "Xgit.Tag.to_object/1: tag is not valid", fn ->
         Tag.to_object(%Tag{

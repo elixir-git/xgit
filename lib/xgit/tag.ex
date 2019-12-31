@@ -144,6 +144,7 @@ defmodule Xgit.Tag do
           object: object_id,
           type: object_type,
           name: tag_name,
+          tagger: %PersonIdent{} = tagger,
           message: message
         } = tag
       ) do
@@ -151,17 +152,11 @@ defmodule Xgit.Tag do
       raise ArgumentError, "Xgit.Tag.to_object/1: tag is not valid"
     end
 
-    rendered_tagger =
-      case tag.tagger do
-        nil -> cover ''
-        %PersonIdent{} = tagger -> cover 'tagger #{PersonIdent.to_external_string(tagger)}\n'
-      end
-
     rendered_tag =
       'object #{object_id}\n' ++
         'type #{object_type}\n' ++
         'tag #{tag_name}\n' ++
-        rendered_tagger ++
+        'tagger #{PersonIdent.to_external_string(tagger)}\n' ++
         '\n' ++
         message
 
