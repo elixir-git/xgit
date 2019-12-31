@@ -152,14 +152,14 @@ defmodule Xgit.Tag do
 
     rendered_tagger =
       case tag.tagger do
-        nil -> ''
-        %PersonIdent{} = tagger -> 'tagger #{PersonIdent.to_external_string(tagger)}\n'
+        nil -> cover ''
+        %PersonIdent{} = tagger -> cover 'tagger #{PersonIdent.to_external_string(tagger)}\n'
       end
 
     rendered_message_with_separator =
       case tag.message do
-        nil -> ''
-        message -> '\n#{message}'
+        nil -> cover ''
+        message -> cover '\n#{message}'
       end
 
     rendered_tag =
@@ -172,7 +172,7 @@ defmodule Xgit.Tag do
     # TO DO: Support signatures and other extensions.
     # https://github.com/elixir-git/xgit/issues/202
 
-    %Object{
+    cover %Object{
       type: :tag,
       content: rendered_tag,
       size: Enum.count(rendered_tag),
