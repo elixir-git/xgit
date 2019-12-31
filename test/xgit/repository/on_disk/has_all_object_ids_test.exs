@@ -1,17 +1,16 @@
 defmodule Xgit.Repository.OnDisk.HasAllObjectIdsTest do
-  use Xgit.GitInitTestCase, async: true
+  use ExUnit.Case, async: true
 
   alias Xgit.Object
-  alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Storage
+  alias Xgit.Test.OnDiskRepoTestCase
 
   describe "has_all_object_ids?/2" do
     @test_content 'test content\n'
     @test_content_id "d670460b4b4aece5915caf5c68d12f560a9fe3e4"
 
-    setup %{xgit: xgit} do
-      assert :ok = OnDisk.create(xgit)
-      assert {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+    setup do
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       object = %Object{type: :blob, content: @test_content, size: 13, id: @test_content_id}
       assert :ok = Storage.put_loose_object(repo, object)
