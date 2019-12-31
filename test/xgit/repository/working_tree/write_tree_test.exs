@@ -1,12 +1,11 @@
 defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
-  use Xgit.GitInitTestCase, async: true
+  use ExUnit.Case, async: true
 
   alias Xgit.DirCache.Entry
-  alias Xgit.GitInitTestCase
-  alias Xgit.Repository.OnDisk
   alias Xgit.Repository.Plumbing
   alias Xgit.Repository.Storage
   alias Xgit.Repository.WorkingTree
+  alias Xgit.Test.OnDiskRepoTestCase
 
   import FolderDiff
 
@@ -67,10 +66,7 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
     end
 
     test "can ignore existing tree objects" do
-      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
-
-      :ok = OnDisk.create(xgit)
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       working_tree = Storage.default_working_tree(repo)
 
@@ -642,12 +638,7 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
     end
 
     test "missing_ok? error" do
-      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
-
-      :ok = OnDisk.create(xgit)
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
-
-      :ok
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       working_tree = Storage.default_working_tree(repo)
 
@@ -682,10 +673,7 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
     end
 
     test "prefix doesn't exist" do
-      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
-
-      :ok = OnDisk.create(xgit)
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       working_tree = Storage.default_working_tree(repo)
 
@@ -829,14 +817,10 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
     end
 
     test "error: invalid dir cache" do
-      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
-
-      :ok = OnDisk.create(xgit)
+      %{xgit_path: xgit, xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       index_path = Path.join([xgit, ".git", "index"])
       File.write!(index_path, "not a valid index file")
-
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       working_tree = Storage.default_working_tree(repo)
 
@@ -844,10 +828,7 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
     end
 
     test "error: :missing_ok? invalid" do
-      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
-
-      :ok = OnDisk.create(xgit)
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       working_tree = Storage.default_working_tree(repo)
 
@@ -879,10 +860,7 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
     }
 
     test "error: incomplete merge" do
-      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
-
-      :ok = OnDisk.create(xgit)
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       working_tree = Storage.default_working_tree(repo)
 
@@ -897,10 +875,7 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
     end
 
     test "error: can't write tree object" do
-      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
-
-      :ok = OnDisk.create(xgit)
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+      %{xgit_path: xgit, xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       working_tree = Storage.default_working_tree(repo)
       :ok = WorkingTree.update_dir_cache(working_tree, [@valid_entry], [])
@@ -913,10 +888,7 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
     end
 
     test "error: :prefix invalid" do
-      {:ok, ref: _ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
-
-      :ok = OnDisk.create(xgit)
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       working_tree = Storage.default_working_tree(repo)
 
@@ -928,7 +900,8 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
     end
 
     defp assert_same_output(git_ref_fn, xgit_fn, opts \\ []) do
-      {:ok, ref: ref, xgit: xgit} = GitInitTestCase.setup_git_repo()
+      %{xgit_path: ref} = OnDiskRepoTestCase.repo!()
+      %{xgit_path: xgit, xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 
       missing_ok? = Keyword.get(opts, :missing_ok?, false)
       prefix = Keyword.get(opts, :prefix, [])
@@ -942,9 +915,6 @@ defmodule Xgit.Repository.WorkingTree.WriteTreeTest do
 
       {output, 0} = System.cmd("git", git_opts, cd: ref)
       git_ref_object_id = String.trim(output)
-
-      :ok = OnDisk.create(xgit)
-      {:ok, repo} = OnDisk.start_link(work_dir: xgit)
 
       xgit_fn.(repo)
 
