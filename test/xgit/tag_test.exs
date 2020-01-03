@@ -121,6 +121,82 @@ defmodule Xgit.TagTest do
     end
   end
 
+  describe "valid_name?/1" do
+    test "must be a charlist" do
+      assert Tag.valid_name?('master')
+      refute Tag.valid_name?("master")
+    end
+
+    test "can include slash / for hierarchical (directory) grouping" do
+      assert Tag.valid_name?('master')
+      assert Tag.valid_name?('group/subgroup')
+    end
+
+    test "no slash-separated component can begin with a dot . or end with the sequence .lock." do
+      refute Tag.valid_name?('.master')
+      refute Tag.valid_name?('master.lock')
+      assert Tag.valid_name?('master_lock')
+    end
+
+    test "must not be empty" do
+      refute Tag.valid_name?('')
+    end
+
+    test "cannot have two consecutive dots .. anywhere" do
+      assert Tag.valid_name?('mas.ter')
+      refute Tag.valid_name?('mas..ter')
+      refute Tag.valid_name?('../blah')
+      refute Tag.valid_name?('master../blah')
+    end
+
+    test "cannot have ASCII control characters" do
+      # (i.e. bytes whose values are lower than \040, or \177 DEL), space, tilde ~, caret ^,
+      # or colon : anywhere.
+      refute Tag.valid_name?('mas\u001fter')
+      refute Tag.valid_name?('mas\u007fter')
+      refute Tag.valid_name?('mas ter')
+      refute Tag.valid_name?('~master')
+      refute Tag.valid_name?('^master')
+      refute Tag.valid_name?('mas:ter')
+    end
+
+    test "cannot have question-mark ?, asterisk *, or open bracket [ anywhere" do
+      refute Tag.valid_name?('mas?ater')
+      refute Tag.valid_name?('master?')
+      refute Tag.valid_name?('master/*')
+      refute Tag.valid_name?('master*/foo')
+      refute Tag.valid_name?('master/[foo')
+      refute Tag.valid_name?('mast[er/foo')
+    end
+
+    test "cannot begin or end with a slash / or contain multiple consecutive slashes" do
+      refute Tag.valid_name?('/foo')
+      refute Tag.valid_name?('masads/master/')
+      refute Tag.valid_name?('foo//master')
+    end
+
+    test "cannot end with a dot ." do
+      refute Tag.valid_name?('master.')
+    end
+
+    test "cannot contain a sequence @{" do
+      assert Tag.valid_name?('@master')
+      assert Tag.valid_name?('{master')
+      refute Tag.valid_name?('@{master')
+    end
+
+    test "can be the single character @" do
+      # A *ref* can not have this name, but a tag may.
+
+      assert Tag.valid_name?('blah/@/master')
+      assert Tag.valid_name?('@')
+    end
+
+    test "cannot contain a \\" do
+      refute Tag.valid_name?('blah\\master')
+    end
+  end
+
   describe "from_object/1" do
     test "valid: has message" do
       assert {:ok,
