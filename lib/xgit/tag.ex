@@ -67,7 +67,7 @@ defmodule Xgit.Tag do
   """
   @spec valid_name?(name :: any) :: boolean
   def valid_name?(name) when is_list(name), do: Ref.valid_name?("refs/tags/#{name}")
-  def valid_name?(_name), do: false
+  def valid_name?(_name), do: cover(false)
 
   @typedoc ~S"""
   Error response codes returned by `from_object/1`.
