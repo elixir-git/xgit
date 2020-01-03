@@ -7,6 +7,7 @@ defmodule Xgit.Tag do
   alias Xgit.ObjectId
   alias Xgit.ObjectType
   alias Xgit.PersonIdent
+  alias Xgit.Ref
 
   use Xgit.ObjectType
 
@@ -60,6 +61,13 @@ defmodule Xgit.Tag do
   end
 
   def valid?(_), do: cover(false)
+
+  @doc ~S"""
+  Return `true` if the value provided is valid as a tag name.
+  """
+  @spec valid_name?(name :: any) :: boolean
+  def valid_name?(name) when is_list(name), do: Ref.valid_name?("refs/tags/#{name}")
+  def valid_name?(_name), do: false
 
   @typedoc ~S"""
   Error response codes returned by `from_object/1`.
