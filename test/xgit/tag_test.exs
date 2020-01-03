@@ -122,6 +122,11 @@ defmodule Xgit.TagTest do
   end
 
   describe "valid_name?/1" do
+    test "must be a charlist" do
+      assert Tag.valid_name?('master')
+      refute Tag.valid_name?("master")
+    end
+
     test "can include slash / for hierarchical (directory) grouping" do
       assert Tag.valid_name?('master')
       assert Tag.valid_name?('group/subgroup')
