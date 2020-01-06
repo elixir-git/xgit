@@ -82,14 +82,9 @@ defmodule Xgit.Repository do
             "Xgit.Repository.tag/4: object #{inspect(object)} is invalid"
     end
 
-    {annotated?, message} = annotated_and_message_from_tag_options(options)
-
-    force? = Keyword.get(options, :force?, false)
-
-    unless is_boolean(force?) do
-      raise ArgumentError,
-            "Xgit.Repository.tag/4: force? #{inspect(force?)} is invalid"
-    end
+    force? = force_from_tag_options(options)
+    message = message_from_tag_options(options)
+    annotated? = annotated_from_tag_options(options, message)
 
     if annotated? do
       create_annotated_tag(repository, tag_name, object, force?, message)
@@ -98,42 +93,54 @@ defmodule Xgit.Repository do
     end
   end
 
-  defp annotated_and_message_from_tag_options(options) do
-    message =
-      case Keyword.get(options, :message) do
-        nil ->
-          nil
+  defp force_from_tag_options(options) do
+    case Keyword.get(options, :force?, false) do
+      false ->
+        false
 
-        [_ | _] = message ->
-          message
+      true ->
+        true
 
-        invalid ->
-          raise ArgumentError,
-                "Xgit.Repository.tag/4: message #{inspect(invalid)} is invalid"
-      end
-
-    annotated? =
-      case Keyword.get(options, :annotated?, is_list(message)) do
-        nil ->
-          false
-
-        false ->
-          false
-
-        true ->
-          true
-
-        invalid ->
-          raise ArgumentError,
-                "Xgit.Repository.tag/4: annotated? #{inspect(invalid)} is invalid"
-      end
-
-    if is_list(message) and not annotated? do
-      raise ArgumentError,
-            "Xgit.Repository.tag/4: annotated?: false can not be specified when message is present"
+      invalid ->
+        raise ArgumentError,
+              "Xgit.Repository.tag/4: force? #{inspect(invalid)} is invalid"
     end
+  end
 
-    {annotated?, message}
+  defp message_from_tag_options(options) do
+    case Keyword.get(options, :message) do
+      nil ->
+        nil
+
+      [_ | _] = message ->
+        message
+
+      invalid ->
+        raise ArgumentError,
+              "Xgit.Repository.tag/4: message #{inspect(invalid)} is invalid"
+    end
+  end
+
+  defp annotated_from_tag_options(options, message) do
+    case Keyword.get(options, :annotated?, is_list(message)) do
+      nil ->
+        is_list(message)
+
+      false ->
+        if is_list(message) do
+          raise ArgumentError,
+                "Xgit.Repository.tag/4: annotated?: false can not be specified when message is present"
+        else
+          false
+        end
+
+      true ->
+        true
+
+      invalid ->
+        raise ArgumentError,
+              "Xgit.Repository.tag/4: annotated? #{inspect(invalid)} is invalid"
+    end
   end
 
   defp create_annotated_tag(_repository, _tag_name, _object, _force?, _message) do

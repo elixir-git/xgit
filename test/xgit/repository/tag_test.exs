@@ -24,8 +24,7 @@ defmodule Xgit.Repository.TagTest do
     @env OnDiskRepoTestCase.sample_commit_env()
 
     test "happy path: lightweight tag" do
-      %{xgit_path: ref_path, parent_id: commit_id} =
-        setup_with_valid_parent_commit!()
+      %{xgit_path: ref_path, parent_id: commit_id} = setup_with_valid_parent_commit!()
 
       assert {_, 0} =
                System.cmd("git", ["tag", "sample-tag", commit_id],
@@ -42,8 +41,7 @@ defmodule Xgit.Repository.TagTest do
     end
 
     test "happy path: lightweight tag as default when no message" do
-      %{xgit_path: ref_path, parent_id: commit_id} =
-        setup_with_valid_parent_commit!()
+      %{xgit_path: ref_path, parent_id: commit_id} = setup_with_valid_parent_commit!()
 
       assert {_, 0} =
                System.cmd("git", ["tag", "sample-tag", commit_id],
