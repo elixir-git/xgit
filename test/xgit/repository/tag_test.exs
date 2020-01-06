@@ -3,6 +3,7 @@ defmodule Xgit.Repository.TagTest do
 
   # alias Xgit.PersonIdent
   alias Xgit.Repository
+  alias Xgit.Repository.InMemory
   alias Xgit.Repository.InvalidRepositoryError
   # alias Xgit.Repository.Plumbing
   # alias Xgit.Repository.Storage
@@ -67,6 +68,97 @@ defmodule Xgit.Repository.TagTest do
                    annotated?: false
                  )
       end
+    end
+
+    test "error: tag name empty" do
+      {:ok, repo} = InMemory.start_link()
+
+      assert_raise ArgumentError,
+                   ~S(Xgit.Repository.tag/4: tag_name "" is invalid),
+                   fn ->
+                     Repository.tag(repo, "", "9d252945c1d3c553a30361214db02892d1ea4876")
+                   end
+    end
+
+    test "error: tag name invalid" do
+      {:ok, repo} = InMemory.start_link()
+
+      assert_raise ArgumentError,
+                   ~S(Xgit.Repository.tag/4: tag_name "abc.lock" is invalid),
+                   fn ->
+                     Repository.tag(repo, "abc.lock", "9d252945c1d3c553a30361214db02892d1ea4876")
+                   end
+    end
+
+    test "error: object ID invalid" do
+      {:ok, repo} = InMemory.start_link()
+
+      assert_raise ArgumentError,
+                   ~S(Xgit.Repository.tag/4: object "9d252945c1d3c553a30361214db02892d1ea487" is invalid),
+                   fn ->
+                     Repository.tag(repo, "abc", "9d252945c1d3c553a30361214db02892d1ea487")
+                     # This object name is 39 hex digits, not 40.
+                   end
+    end
+
+    test "error: force? option value is invalid" do
+      {:ok, repo} = InMemory.start_link()
+
+      assert_raise ArgumentError,
+                   ~S(Xgit.Repository.tag/4: force? "yes" is invalid),
+                   fn ->
+                     Repository.tag(repo, "abc", "9d252945c1d3c553a30361214db02892d1ea4876",
+                       force?: "yes"
+                     )
+                   end
+    end
+
+    test "error: message value is empty" do
+      {:ok, repo} = InMemory.start_link()
+
+      assert_raise ArgumentError,
+                   ~S(Xgit.Repository.tag/4: message must be non-empty if present),
+                   fn ->
+                     Repository.tag(repo, "abc", "9d252945c1d3c553a30361214db02892d1ea4876",
+                       message: ''
+                     )
+                   end
+    end
+
+    test "error: message value is empty (string)" do
+      {:ok, repo} = InMemory.start_link()
+
+      assert_raise ArgumentError,
+                   ~S(Xgit.Repository.tag/4: message must be non-empty if present),
+                   fn ->
+                     Repository.tag(repo, "abc", "9d252945c1d3c553a30361214db02892d1ea4876",
+                       message: ""
+                     )
+                   end
+    end
+
+    test "error: message value is empty (charlist)" do
+      {:ok, repo} = InMemory.start_link()
+
+      assert_raise ArgumentError,
+                   ~S(Xgit.Repository.tag/4: message must be non-empty if present),
+                   fn ->
+                     Repository.tag(repo, "abc", "9d252945c1d3c553a30361214db02892d1ea4876",
+                       message: ''
+                     )
+                   end
+    end
+
+    test "error: message value is invalid" do
+      {:ok, repo} = InMemory.start_link()
+
+      assert_raise ArgumentError,
+                   ~S(Xgit.Repository.tag/4: message :message is invalid),
+                   fn ->
+                     Repository.tag(repo, "abc", "9d252945c1d3c553a30361214db02892d1ea4876",
+                       message: :message
+                     )
+                   end
     end
   end
 end

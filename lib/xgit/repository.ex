@@ -74,7 +74,7 @@ defmodule Xgit.Repository do
 
     unless Tag.valid_name?(String.to_charlist(tag_name)) do
       raise ArgumentError,
-            "Xgit.Repository.tag/4: tag_name #{tag_name} is invalid"
+            ~s(Xgit.Repository.tag/4: tag_name "#{tag_name}" is invalid)
     end
 
     unless ObjectId.valid?(object) do
@@ -112,8 +112,19 @@ defmodule Xgit.Repository do
       nil ->
         nil
 
+      "" ->
+        raise ArgumentError,
+              "Xgit.Repository.tag/4: message must be non-empty if present"
+
+      message when is_binary(message) ->
+        String.to_charlist(message)
+
       [_ | _] = message ->
         message
+
+      [] ->
+        raise ArgumentError,
+              "Xgit.Repository.tag/4: message must be non-empty if present"
 
       invalid ->
         raise ArgumentError,
