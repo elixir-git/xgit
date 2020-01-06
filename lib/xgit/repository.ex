@@ -9,6 +9,8 @@ defmodule Xgit.Repository do
   The functions implemented in this module correspond to the "plumbing" commands
   implemented by command-line git.
   """
+  import Xgit.Util.ForceCoverage
+
   alias Xgit.ObjectId
   alias Xgit.Ref
   alias Xgit.Repository.Storage
@@ -96,10 +98,10 @@ defmodule Xgit.Repository do
   defp force_from_tag_options(options) do
     case Keyword.get(options, :force?, false) do
       false ->
-        false
+        cover false
 
       true ->
-        true
+        cover true
 
       invalid ->
         raise ArgumentError,
@@ -110,7 +112,7 @@ defmodule Xgit.Repository do
   defp message_from_tag_options(options) do
     case Keyword.get(options, :message) do
       nil ->
-        nil
+        cover nil
 
       "" ->
         raise ArgumentError,
@@ -120,7 +122,7 @@ defmodule Xgit.Repository do
         String.to_charlist(message)
 
       [_ | _] = message ->
-        message
+        cover message
 
       [] ->
         raise ArgumentError,
@@ -138,15 +140,15 @@ defmodule Xgit.Repository do
         is_list(message)
 
       false ->
-        if is_list(message) do
+        if message == nil do
+          cover false
+        else
           raise ArgumentError,
                 "Xgit.Repository.tag/4: annotated?: false can not be specified when message is present"
-        else
-          false
         end
 
       true ->
-        true
+        cover true
 
       invalid ->
         raise ArgumentError,
@@ -161,9 +163,9 @@ defmodule Xgit.Repository do
   defp create_lightweight_tag(repository, tag_name, object, force?) do
     opts =
       if force? do
-        [follow_link?: false]
+        cover follow_link?: false
       else
-        [follow_link?: false, old_target: :new]
+        cover follow_link?: false, old_target: :new
       end
 
     ref = %Ref{name: "refs/tags/#{tag_name}", target: object}
