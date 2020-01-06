@@ -135,10 +135,7 @@ defmodule Xgit.Repository do
   end
 
   defp annotated_from_tag_options(options, message) do
-    case Keyword.get(options, :annotated?, is_list(message)) do
-      nil ->
-        is_list(message)
-
+    case Keyword.get(options, :annotated?, message != nil) do
       false ->
         if message == nil do
           cover false
@@ -148,7 +145,12 @@ defmodule Xgit.Repository do
         end
 
       true ->
-        cover true
+        if message == nil do
+          raise ArgumentError,
+                "Xgit.Repository.tag/4: annotated?: true can not be specified without message"
+        else
+          cover true
+        end
 
       invalid ->
         raise ArgumentError,
