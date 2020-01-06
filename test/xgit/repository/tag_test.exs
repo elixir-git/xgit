@@ -109,6 +109,58 @@ defmodule Xgit.Repository.TagTest do
       assert_folders_are_equal(ref_path, xgit_path)
     end
 
+    test "happy path: will rewrite existing lightweight tag with force?: true" do
+      %{xgit_path: ref_path, parent_id: commit_id} = setup_with_valid_parent_commit!()
+
+      assert {_, 0} =
+               System.cmd("git", ["tag", "sample-tag", commit_id],
+                 cd: ref_path,
+                 env: @env
+               )
+
+      assert {_, 0} =
+               System.cmd("git", ["commit", "--allow-empty", "--message", "another commit"],
+                 cd: ref_path,
+                 env: @env
+               )
+
+      assert {commit2_id_str, 0} =
+               System.cmd("git", ["log", "-1", "--pretty=format:%H"], cd: ref_path)
+
+      commit2_id = String.trim(commit2_id_str)
+
+      assert {_, 0} =
+               System.cmd("git", ["tag", "-f", "sample-tag", commit2_id],
+                 cd: ref_path,
+                 env: @env
+               )
+
+      %{xgit_path: xgit_path, xgit_repo: xgit_repo, parent_id: commit_id} =
+        setup_with_valid_parent_commit!()
+
+      assert {_, 0} =
+               System.cmd("git", ["tag", "sample-tag", commit_id],
+                 cd: xgit_path,
+                 env: @env
+               )
+
+      assert {_, 0} =
+               System.cmd("git", ["commit", "--allow-empty", "--message", "another commit"],
+                 cd: xgit_path,
+                 env: @env
+               )
+
+      assert {commit2_id_str, 0} =
+               System.cmd("git", ["log", "-1", "--pretty=format:%H"], cd: xgit_path)
+
+      commit2_id = String.trim(commit2_id_str)
+
+      assert :ok =
+               Repository.tag(xgit_repo, "sample-tag", commit2_id, annotated?: false, force?: true)
+
+      assert_folders_are_equal(ref_path, xgit_path)
+    end
+
     test "error: invalid repo" do
       {:ok, not_repo} = GenServer.start_link(NotValid, nil)
 
