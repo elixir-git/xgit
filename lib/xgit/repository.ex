@@ -51,8 +51,8 @@ defmodule Xgit.Repository do
 
   `force?`: (boolean) true to replace an existing tag (default: `false`)
 
-  `message`: (bytelist) message to associate with the tag.
-  * Must be non-empty if `:annotated?` is `true`.
+  `message`: (String.t or bytelist) message to associate with the tag.
+  * Must be present and non-empty if `:annotated?` is `true`.
   * Implies `annotated?: true`.
 
   ## Return Value
@@ -68,7 +68,7 @@ defmodule Xgit.Repository do
   @spec tag(repository :: t, tag_name :: String.t(), object :: ObjectId.t(),
           annotated?: boolean,
           force?: boolean,
-          message: [byte]
+          message: [byte] | String.t()
         ) :: :ok
   def tag(repository, tag_name, object, options \\ [])
       when is_pid(repository) and is_binary(tag_name) and is_binary(object) and is_list(options) do
