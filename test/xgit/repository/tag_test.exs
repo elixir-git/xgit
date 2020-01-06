@@ -9,9 +9,7 @@ defmodule Xgit.Repository.TagTest do
   alias Xgit.Test.OnDiskRepoTestCase
 
   import FolderDiff
-
-  import Xgit.Test.OnDiskRepoTestCase,
-    only: [setup_with_valid_parent_commit!: 1]
+  import Xgit.Test.OnDiskRepoTestCase, only: [setup_with_valid_parent_commit!: 0]
 
   describe "tag/4" do
     # @valid_pi %PersonIdent{
