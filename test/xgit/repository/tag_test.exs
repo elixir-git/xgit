@@ -160,5 +160,42 @@ defmodule Xgit.Repository.TagTest do
                      )
                    end
     end
+
+    test "error: annotated? and message mismatch 1" do
+      {:ok, repo} = InMemory.start_link()
+
+      assert_raise ArgumentError,
+                   ~S(Xgit.Repository.tag/4: annotated?: false can not be specified when message is present),
+                   fn ->
+                     Repository.tag(repo, "abc", "9d252945c1d3c553a30361214db02892d1ea4876",
+                       message: "message",
+                       annotated?: false
+                     )
+                   end
+    end
+
+    test "error: annotated? and message mismatch 2" do
+      {:ok, repo} = InMemory.start_link()
+
+      assert_raise ArgumentError,
+                   ~S(Xgit.Repository.tag/4: annotated?: true can not be specified without message),
+                   fn ->
+                     Repository.tag(repo, "abc", "9d252945c1d3c553a30361214db02892d1ea4876",
+                       annotated?: true
+                     )
+                   end
+    end
+
+    test "error: annotated value is invalid" do
+      {:ok, repo} = InMemory.start_link()
+
+      assert_raise ArgumentError,
+                   ~S(Xgit.Repository.tag/4: annotated? "yes" is invalid),
+                   fn ->
+                     Repository.tag(repo, "abc", "9d252945c1d3c553a30361214db02892d1ea4876",
+                       annotated?: "yes"
+                     )
+                   end
+    end
   end
 end
