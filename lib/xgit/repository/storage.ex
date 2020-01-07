@@ -313,7 +313,6 @@ defmodule Xgit.Repository.Storage do
           :invalid_ref
           | :cant_create_file
           | :target_not_found
-          | :target_not_commit
           | :old_target_not_matched
 
   @doc ~S"""
@@ -344,8 +343,6 @@ defmodule Xgit.Repository.Storage do
   `{:error, :cant_create_file}` if unable to create the storage for the reference.
 
   `{:error, :target_not_found}` if the target object does not exist in the repository.
-
-  `{:error, :target_not_commit}` if the target object is not of type `commit`.
 
   `{:error, :old_target_not_matched}` if `old_target` was specified and the target ref points
   to a different object ID.
@@ -395,9 +392,6 @@ defmodule Xgit.Repository.Storage do
 
   Should return `{:error, :target_not_found}` if the target object does not
   exist in the repository.
-
-  Should return `{:error, :target_not_commit}` if the target object is not
-  of type `commit`.
 
   Should return `{:error, :old_target_not_matched}` if `old_target` was specified and the
   target ref points to a different object ID.

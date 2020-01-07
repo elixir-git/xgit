@@ -848,7 +848,7 @@ defmodule Xgit.Repository.Plumbing do
   @typedoc ~S"""
   Reason codes that can be returned by `update_ref/4`.
   """
-  @type update_ref_reason :: Storage.put_ref_reason()
+  @type update_ref_reason :: Storage.put_ref_reason() | :target_not_commit
 
   @doc ~S"""
   Update the object name stored in a ref.
@@ -878,6 +878,8 @@ defmodule Xgit.Repository.Plumbing do
 
   `:ok` if written successfully.
 
+  `{:error, :target_not_commit}` if the target object is not of type `commit`.
+
   Reason codes may also come from the following functions:
 
   * `Xgit.Repository.Storage.put_ref/3`
@@ -894,7 +896,7 @@ defmodule Xgit.Repository.Plumbing do
     if new_value == ObjectId.zero() do
       Storage.delete_ref(repository, name, repo_opts)
     else
-      Storage.put_ref(repository, %Ref{name: name, target: new_value}, repo_opts)
+      put_ref(repository, name, new_value, repo_opts)
     end
   end
 
@@ -919,6 +921,17 @@ defmodule Xgit.Repository.Plumbing do
     else
       raise ArgumentError,
             "Xgit.Repository.Plumbing.update_ref/4: old_target #{inspect(old_target)} is invalid"
+    end
+  end
+
+  defp put_ref(repository, name, new_value, repo_opts) do
+    with {:object, {:ok, %Object{type: type}}} <-
+           {:object, Storage.get_object(repository, new_value)},
+         {:type, :commit} <- {:type, type} do
+      Storage.put_ref(repository, %Ref{name: name, target: new_value}, repo_opts)
+    else
+      {:object, {:error, :not_found}} -> cover {:error, :target_not_found}
+      {:type, _} -> cover {:error, :target_not_commit}
     end
   end
 

@@ -79,7 +79,7 @@ defmodule Xgit.Repository.Test.RefTest do
         object = %Object{type: :blob, content: @test_content, size: 13, id: @test_content_id}
         :ok = Storage.put_loose_object(repo, object)
 
-        assert {:error, :target_not_commit} =
+        assert :ok =
                  Storage.put_ref(repo, %Ref{
                    name: "refs/heads/master",
                    target: @test_content_id
