@@ -106,12 +106,12 @@ defmodule Xgit.Repository.InMemory do
   defp verify_target(_state, "ref: " <> _), do: cover(:ok)
 
   defp verify_target(state, target) do
-    with {:object, %Object{} = object} <- {:object, get_object_imp(state, target)},
-         {:type, %{type: :commit}} <- {:type, object} do
-      :ok
+    object = get_object_imp(state, target)
+
+    if object == nil do
+      cover {:error, :target_not_found}
     else
-      {:object, nil} -> cover {:error, :target_not_found}
-      {:type, _} -> cover {:error, :target_not_commit}
+      cover :ok
     end
   end
 
