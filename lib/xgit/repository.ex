@@ -194,7 +194,7 @@ defmodule Xgit.Repository do
            type: target_type,
            name: String.to_charlist(tag_name),
            tagger: tagger,
-           message: message
+           message: ensure_trailing_newline(message)
          },
          %Object{id: tag_id} = tag_object <- Tag.to_object(tag),
          :ok <- Storage.put_loose_object(repository, tag_object) do
@@ -202,6 +202,14 @@ defmodule Xgit.Repository do
       Storage.put_ref(repository, ref, opts_for_force(force?))
     else
       {:error, reason} -> cover {:error, reason}
+    end
+  end
+
+  defp ensure_trailing_newline(message) do
+    if List.last(message) == 10 do
+      message
+    else
+      message ++ '\n'
     end
   end
 
