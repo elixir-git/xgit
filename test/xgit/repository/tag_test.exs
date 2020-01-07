@@ -1,24 +1,22 @@
 defmodule Xgit.Repository.TagTest do
   use ExUnit.Case, async: true
 
-  # alias Xgit.PersonIdent
+  alias Xgit.PersonIdent
   alias Xgit.Repository
   alias Xgit.Repository.InMemory
   alias Xgit.Repository.InvalidRepositoryError
-  # alias Xgit.Repository.Plumbing
-  # alias Xgit.Repository.Storage
   alias Xgit.Test.OnDiskRepoTestCase
 
   import FolderDiff
   import Xgit.Test.OnDiskRepoTestCase, only: [setup_with_valid_parent_commit!: 0]
 
   describe "tag/4" do
-    # @valid_pi %PersonIdent{
-    #   name: "A. U. Thor",
-    #   email: "author@example.com",
-    #   when: 1_142_878_449_000,
-    #   tz_offset: 150
-    # }
+    @valid_pi %PersonIdent{
+      name: "A. U. Thor",
+      email: "author@example.com",
+      when: 1_142_878_449_000,
+      tz_offset: 150
+    }
 
     @env OnDiskRepoTestCase.sample_commit_env()
 
@@ -157,6 +155,28 @@ defmodule Xgit.Repository.TagTest do
 
       assert :ok =
                Repository.tag(xgit_repo, "sample-tag", commit2_id, annotated?: false, force?: true)
+
+      assert_folders_are_equal(ref_path, xgit_path)
+    end
+
+    test "happy path: annotated tag" do
+      %{xgit_path: ref_path, parent_id: commit_id} = setup_with_valid_parent_commit!()
+
+      assert {_, 0} =
+               System.cmd("git", ["tag", "-a", "-m", "annotation", "sample-tag", commit_id],
+                 cd: ref_path,
+                 env: @env
+               )
+
+      %{xgit_path: xgit_path, xgit_repo: xgit_repo, parent_id: commit_id} =
+        setup_with_valid_parent_commit!()
+
+      assert :ok =
+               Repository.tag(xgit_repo, "sample-tag", commit_id,
+                 annotated?: true,
+                 message: "annotation",
+                 tagger: @valid_pi
+               )
 
       assert_folders_are_equal(ref_path, xgit_path)
     end

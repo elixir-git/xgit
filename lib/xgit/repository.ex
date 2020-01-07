@@ -11,7 +11,9 @@ defmodule Xgit.Repository do
   """
   import Xgit.Util.ForceCoverage
 
+  alias Xgit.Object
   alias Xgit.ObjectId
+  alias Xgit.PersonIdent
   alias Xgit.Ref
   alias Xgit.Repository.Storage
   alias Xgit.Tag
@@ -55,6 +57,8 @@ defmodule Xgit.Repository do
   * Must be present and non-empty if `:annotated?` is `true`.
   * Implies `annotated?: true`.
 
+  `tagger`: (`Xgit.PersonIdent`, required if annotated) tagger name, email, timestamp
+
   ## Return Value
 
   `:ok` if created successfully.
@@ -68,7 +72,8 @@ defmodule Xgit.Repository do
   @spec tag(repository :: t, tag_name :: String.t(), object :: ObjectId.t(),
           annotated?: boolean,
           force?: boolean,
-          message: [byte] | String.t()
+          message: [byte] | String.t(),
+          tagger: PersonIdent.t()
         ) :: :ok
   def tag(repository, tag_name, object, options \\ [])
       when is_pid(repository) and is_binary(tag_name) and is_binary(object) and is_list(options) do
@@ -89,7 +94,14 @@ defmodule Xgit.Repository do
     annotated? = annotated_from_tag_options(options, message)
 
     if annotated? do
-      create_annotated_tag(repository, tag_name, object, force?, message)
+      create_annotated_tag(
+        repository,
+        tag_name,
+        object,
+        force?,
+        message,
+        tagger_from_tag_options(options)
+      )
     else
       create_lightweight_tag(repository, tag_name, object, force?)
     end
@@ -158,19 +170,46 @@ defmodule Xgit.Repository do
     end
   end
 
-  defp create_annotated_tag(_repository, _tag_name, _object, _force?, _message) do
-    raise "not yet"
+  defp tagger_from_tag_options(options) do
+    tagger = Keyword.get(options, :tagger)
+
+    cond do
+      tagger == nil ->
+        raise ArgumentError,
+              "Xgit.Repository.tag/4: tagger must be specified for an annotated tag"
+
+      PersonIdent.valid?(tagger) ->
+        tagger
+
+      true ->
+        raise ArgumentError,
+              "Xgit.Repository.tag/4: tagger #{inspect(tagger)} is invalid"
+    end
+  end
+
+  defp create_annotated_tag(repository, tag_name, object, force?, message, tagger) do
+    with {:ok, %Object{type: target_type}} <- Storage.get_object(repository, object),
+         tag <- %Tag{
+           object: object,
+           type: target_type,
+           name: String.to_charlist(tag_name),
+           tagger: tagger,
+           message: message
+         },
+         %Object{id: tag_id} = tag_object <- Tag.to_object(tag),
+         :ok <- Storage.put_loose_object(repository, tag_object) do
+      ref = %Ref{name: "refs/tags/#{tag_name}", target: tag_id}
+      Storage.put_ref(repository, ref, opts_for_force(force?))
+    else
+      {:error, reason} -> cover {:error, reason}
+    end
   end
 
   defp create_lightweight_tag(repository, tag_name, object, force?) do
-    opts =
-      if force? do
-        cover follow_link?: false
-      else
-        cover follow_link?: false, old_target: :new
-      end
-
     ref = %Ref{name: "refs/tags/#{tag_name}", target: object}
-    Storage.put_ref(repository, ref, opts)
+    Storage.put_ref(repository, ref, opts_for_force(force?))
   end
+
+  defp opts_for_force(true), do: cover(follow_link?: false)
+  defp opts_for_force(false), do: cover(follow_link?: false, old_target: :new)
 end
