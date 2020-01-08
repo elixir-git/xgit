@@ -6,8 +6,10 @@ defmodule Xgit.Repository do
   that implements `Xgit.Repository.Storage`. The resulting PID can be used when
   calling functions in this module and `Xgit.Repository.Plumbing`.
 
-  The functions implemented in this module correspond to the "plumbing" commands
+  The functions implemented in this module correspond to the "porcelain" commands
   implemented by command-line git.
+
+  (As of this writing, relatively few of the porcelain commands are implemented.)
   """
   import Xgit.Util.ForceCoverage
 
@@ -34,6 +36,11 @@ defmodule Xgit.Repository do
 
   ## -- Tags --
 
+  @typedoc ~S"""
+  Reason codes that can be returned by `tag/4`.
+  """
+  @type tag_reason :: Storage.put_ref_reason()
+
   @doc ~S"""
   Create a tag object.
 
@@ -43,9 +50,10 @@ defmodule Xgit.Repository do
 
   `repository` is the `Xgit.Repository.Storage` (PID) to search for the object.
 
-  `tag_name` (String.t) is the name to give to the new tag.
+  `tag_name` (`String`) is the name to give to the new tag.
 
-  `object` (ObjectId.t) is the object ID to be pointed to by this tag (typically a `commit` object).
+  `object` (`Xgit.ObjectId`) is the object ID to be pointed to by this tag
+  (typically a `commit` object).
 
   ## Options
 
@@ -53,7 +61,7 @@ defmodule Xgit.Repository do
 
   `force?`: (boolean) true to replace an existing tag (default: `false`)
 
-  `message`: (String.t or bytelist) message to associate with the tag.
+  `message`: (`String` or bytelist) message to associate with the tag.
   * Must be present and non-empty if `:annotated?` is `true`.
   * Implies `annotated?: true`.
 
@@ -63,18 +71,16 @@ defmodule Xgit.Repository do
 
   `:ok` if created successfully.
 
-  `{:error, reason}` if unable.
+  `{:error, reason}` if unable. Reason codes may come from `Xgit.Repository.Storage.put_ref/3`.
 
-  TO DO: Specify reason codes.
-
-  TO DO: Support GPG signatures
+  TO DO: Support GPG signatures. https://github.com/elixir-git/xgit/issues/202
   """
   @spec tag(repository :: t, tag_name :: String.t(), object :: ObjectId.t(),
           annotated?: boolean,
           force?: boolean,
           message: [byte] | String.t(),
           tagger: PersonIdent.t()
-        ) :: :ok
+        ) :: :ok | {:error, reason :: tag_reason}
   def tag(repository, tag_name, object, options \\ [])
       when is_pid(repository) and is_binary(tag_name) and is_binary(object) and is_list(options) do
     repository = Storage.assert_valid(repository)
