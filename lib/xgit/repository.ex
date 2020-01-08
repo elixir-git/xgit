@@ -208,7 +208,6 @@ defmodule Xgit.Repository do
       ref = %Ref{name: "refs/tags/#{tag_name}", target: tag_id}
       Storage.put_ref(repository, ref, opts_for_force(force?))
     else
-      {:ok, %Ref{}} -> cover {:error, :old_target_not_matched}
       {:error, reason} -> cover {:error, reason}
     end
   end

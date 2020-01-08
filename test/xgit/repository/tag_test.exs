@@ -181,6 +181,52 @@ defmodule Xgit.Repository.TagTest do
       assert_folders_are_equal(ref_path, xgit_path)
     end
 
+    test "happy path: annotated tag (charlist)" do
+      %{xgit_path: ref_path, parent_id: commit_id} = setup_with_valid_parent_commit!()
+
+      assert {_, 0} =
+               System.cmd("git", ["tag", "-a", "-m", "annotation", "sample-tag", commit_id],
+                 cd: ref_path,
+                 env: @env
+               )
+
+      %{xgit_path: xgit_path, xgit_repo: xgit_repo, parent_id: commit_id} =
+        setup_with_valid_parent_commit!()
+
+      assert :ok =
+               Repository.tag(xgit_repo, "sample-tag", commit_id,
+                 annotated?: true,
+                 message: 'annotation',
+                 tagger: @valid_pi
+               )
+
+      assert_folders_are_equal(ref_path, xgit_path)
+    end
+
+    test "happy path: message gets newline appended" do
+      %{xgit_path: xgit_path1, xgit_repo: xgit_repo1, parent_id: commit_id1} =
+        setup_with_valid_parent_commit!()
+
+      assert :ok =
+               Repository.tag(xgit_repo1, "sample-tag", commit_id1,
+                 annotated?: true,
+                 message: 'annotation\n',
+                 tagger: @valid_pi
+               )
+
+      %{xgit_path: xgit_path2, xgit_repo: xgit_repo2, parent_id: commit_id2} =
+        setup_with_valid_parent_commit!()
+
+      assert :ok =
+               Repository.tag(xgit_repo2, "sample-tag", commit_id2,
+                 annotated?: true,
+                 message: 'annotation',
+                 tagger: @valid_pi
+               )
+
+      assert_folders_are_equal(xgit_path1, xgit_path2)
+    end
+
     test "happy path: annotated tag is default with message" do
       %{xgit_path: ref_path, parent_id: commit_id} = setup_with_valid_parent_commit!()
 
@@ -454,6 +500,29 @@ defmodule Xgit.Repository.TagTest do
                    fn ->
                      Repository.tag(repo, "abc", "9d252945c1d3c553a30361214db02892d1ea4876",
                        annotated?: "yes"
+                     )
+                   end
+    end
+
+    test "error: annotated tag without tagger" do
+      %{xgit_repo: xgit_repo, parent_id: commit_id} = setup_with_valid_parent_commit!()
+
+      assert_raise ArgumentError,
+                   "Xgit.Repository.tag/4: tagger must be specified for an annotated tag",
+                   fn ->
+                     Repository.tag(xgit_repo, "sample-tag", commit_id, message: "annotation")
+                   end
+    end
+
+    test "error: annotated tag with invalid tagger" do
+      %{xgit_repo: xgit_repo, parent_id: commit_id} = setup_with_valid_parent_commit!()
+
+      assert_raise ArgumentError,
+                   ~S(Xgit.Repository.tag/4: tagger "Fred, yesterday" is invalid),
+                   fn ->
+                     Repository.tag(xgit_repo, "sample-tag", commit_id,
+                       message: "annotation",
+                       tagger: "Fred, yesterday"
                      )
                    end
     end
