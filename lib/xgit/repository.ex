@@ -188,7 +188,8 @@ defmodule Xgit.Repository do
   end
 
   defp create_annotated_tag(repository, tag_name, object, force?, message, tagger) do
-    with {:ok, %Object{type: target_type}} <- Storage.get_object(repository, object),
+    with :ok <- check_existing_ref(repository, tag_name, force?),
+         {:ok, %Object{type: target_type}} <- Storage.get_object(repository, object),
          tag <- %Tag{
            object: object,
            type: target_type,
@@ -201,7 +202,17 @@ defmodule Xgit.Repository do
       ref = %Ref{name: "refs/tags/#{tag_name}", target: tag_id}
       Storage.put_ref(repository, ref, opts_for_force(force?))
     else
+      {:ok, %Ref{}} -> cover {:error, :old_target_not_matched}
       {:error, reason} -> cover {:error, reason}
+    end
+  end
+
+  defp check_existing_ref(_repository, _tag_name, true), do: cover(:ok)
+
+  defp check_existing_ref(repository, tag_name, false) do
+    case Storage.get_ref(repository, "refs/tags/#{tag_name}") do
+      {:ok, %Ref{}} -> cover {:error, :old_target_not_matched}
+      {:error, :not_found} -> cover :ok
     end
   end
 

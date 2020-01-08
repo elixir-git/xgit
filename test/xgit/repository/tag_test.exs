@@ -8,7 +8,7 @@ defmodule Xgit.Repository.TagTest do
   alias Xgit.Test.OnDiskRepoTestCase
 
   import FolderDiff
-  import Xgit.Test.OnDiskRepoTestCase, only: [setup_with_valid_parent_commit!: 0]
+  import Xgit.Test.OnDiskRepoTestCase
 
   describe "tag/4" do
     @valid_pi %PersonIdent{
@@ -54,7 +54,7 @@ defmodule Xgit.Repository.TagTest do
       assert_folders_are_equal(ref_path, xgit_path)
     end
 
-    test "happy path: won't rewrite existing lightweight tag" do
+    test "error: won't rewrite existing lightweight tag" do
       %{xgit_path: ref_path, parent_id: commit_id} = setup_with_valid_parent_commit!()
 
       assert {_, 0} =
@@ -175,6 +175,141 @@ defmodule Xgit.Repository.TagTest do
                Repository.tag(xgit_repo, "sample-tag", commit_id,
                  annotated?: true,
                  message: "annotation",
+                 tagger: @valid_pi
+               )
+
+      assert_folders_are_equal(ref_path, xgit_path)
+    end
+
+    test "happy path: annotated tag is default with message" do
+      %{xgit_path: ref_path, parent_id: commit_id} = setup_with_valid_parent_commit!()
+
+      assert {_, 0} =
+               System.cmd("git", ["tag", "-m", "annotation", "sample-tag", commit_id],
+                 cd: ref_path,
+                 env: @env
+               )
+
+      %{xgit_path: xgit_path, xgit_repo: xgit_repo, parent_id: commit_id} =
+        setup_with_valid_parent_commit!()
+
+      assert :ok =
+               Repository.tag(xgit_repo, "sample-tag", commit_id,
+                 message: "annotation",
+                 tagger: @valid_pi
+               )
+
+      assert_folders_are_equal(ref_path, xgit_path)
+    end
+
+    test "error: won't rewrite existing annotated tag" do
+      %{xgit_path: ref_path, parent_id: commit_id} = setup_with_valid_parent_commit!()
+
+      assert {_, 0} =
+               System.cmd("git", ["tag", "-m", "initial", "sample-tag", commit_id],
+                 cd: ref_path,
+                 env: @env
+               )
+
+      assert {_, 0} =
+               System.cmd("git", ["commit", "--allow-empty", "--message", "another commit"],
+                 cd: ref_path,
+                 env: @env
+               )
+
+      assert {commit2_id_str, 0} =
+               System.cmd("git", ["log", "-1", "--pretty=format:%H"], cd: ref_path)
+
+      commit2_id = String.trim(commit2_id_str)
+
+      assert {_, 128} =
+               System.cmd("git", ["tag", "-m", "update", "sample-tag", commit2_id],
+                 cd: ref_path,
+                 env: @env,
+                 stderr_to_stdout: true
+               )
+
+      %{xgit_path: xgit_path, xgit_repo: xgit_repo, parent_id: commit_id} =
+        setup_with_valid_parent_commit!()
+
+      assert {_, 0} =
+               System.cmd("git", ["tag", "-m", "initial", "sample-tag", commit_id],
+                 cd: xgit_path,
+                 env: @env
+               )
+
+      assert {_, 0} =
+               System.cmd("git", ["commit", "--allow-empty", "--message", "another commit"],
+                 cd: xgit_path,
+                 env: @env
+               )
+
+      assert {commit2_id_str, 0} =
+               System.cmd("git", ["log", "-1", "--pretty=format:%H"], cd: xgit_path)
+
+      commit2_id = String.trim(commit2_id_str)
+
+      assert {:error, :old_target_not_matched} =
+               Repository.tag(xgit_repo, "sample-tag", commit2_id,
+                 annotated?: true,
+                 message: "update",
+                 tagger: @valid_pi
+               )
+
+      assert_folders_are_equal(ref_path, xgit_path)
+    end
+
+    test "happy path: will rewrite existing annotated tag with force?: true" do
+      %{xgit_path: ref_path, parent_id: commit_id} = setup_with_valid_parent_commit!()
+
+      assert {_, 0} =
+               System.cmd("git", ["tag", "-m", "initial", "sample-tag", commit_id],
+                 cd: ref_path,
+                 env: @env
+               )
+
+      assert {_, 0} =
+               System.cmd("git", ["commit", "--allow-empty", "--message", "another commit"],
+                 cd: ref_path,
+                 env: @env
+               )
+
+      assert {commit2_id_str, 0} =
+               System.cmd("git", ["log", "-1", "--pretty=format:%H"], cd: ref_path)
+
+      commit2_id = String.trim(commit2_id_str)
+
+      assert {_, 0} =
+               System.cmd("git", ["tag", "-f", "-m", "update", "sample-tag", commit2_id],
+                 cd: ref_path,
+                 env: @env
+               )
+
+      %{xgit_path: xgit_path, xgit_repo: xgit_repo, parent_id: commit_id} =
+        setup_with_valid_parent_commit!()
+
+      assert {_, 0} =
+               System.cmd("git", ["tag", "-m", "initial", "sample-tag", commit_id],
+                 cd: xgit_path,
+                 env: @env
+               )
+
+      assert {_, 0} =
+               System.cmd("git", ["commit", "--allow-empty", "--message", "another commit"],
+                 cd: xgit_path,
+                 env: @env
+               )
+
+      assert {commit2_id_str, 0} =
+               System.cmd("git", ["log", "-1", "--pretty=format:%H"], cd: xgit_path)
+
+      commit2_id = String.trim(commit2_id_str)
+
+      assert :ok =
+               Repository.tag(xgit_repo, "sample-tag", commit2_id,
+                 annotated?: true,
+                 force?: true,
+                 message: "update",
                  tagger: @valid_pi
                )
 
