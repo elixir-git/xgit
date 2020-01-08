@@ -185,7 +185,7 @@ defmodule Xgit.Repository do
               "Xgit.Repository.tag/4: tagger must be specified for an annotated tag"
 
       PersonIdent.valid?(tagger) ->
-        tagger
+        cover tagger
 
       true ->
         raise ArgumentError,
@@ -223,9 +223,9 @@ defmodule Xgit.Repository do
 
   defp ensure_trailing_newline(message) do
     if List.last(message) == 10 do
-      message
+      cover(message)
     else
-      message ++ '\n'
+      cover(message ++ '\n')
     end
   end
 
