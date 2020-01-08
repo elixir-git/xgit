@@ -4,7 +4,7 @@
 
 _07 January 2020_
 
-* **Implement `Xgit.Repository.tag/4`**. This is an API equivalent to the creation case of [`git tag`](https://git-scm.com/docs/git-tag).
+* **Implement `Xgit.Repository.tag/4`**. This is an API equivalent to the creation case of [`git tag`](https://git-scm.com/docs/git-tag). (#278)
 * Transfer responsibility for enforcing tag target type to `Xgit.Repository.Plumbing`. (#279)
 * Implement `Xgit.Tag.valid_name?/1`. (#277)
 * Implement `Xgit.Tag.to_object/1`. (#276)
