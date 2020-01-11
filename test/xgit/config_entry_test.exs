@@ -43,6 +43,17 @@ defmodule Xgit.ConfigEntryTest do
       end
     end
 
+    test "not a struct" do
+      refute ConfigEntry.valid?(%{
+               section: "test",
+               subsection: "xgit",
+               name: "random",
+               value: "whatever"
+             })
+
+      refute ConfigEntry.valid?("[test] random=whatever")
+    end
+
     test "invalid section" do
       for section <- @invalid_sections do
         entry = %{@valid_entry | section: section}
