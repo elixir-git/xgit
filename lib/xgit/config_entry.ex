@@ -20,7 +20,7 @@ defmodule Xgit.ConfigEntry do
   * `section`: (`String`) section name for the entry
   * `subsection`: (`String` or `nil`) subsection name
   * `name`: (`String`) key name
-  * `value`: (`String`, `nil`, or `:remove`) value
+  * `value`: (`String`, `nil`, or `:remove_all`) value
     * `nil` if the name is present without an `=`
     * `:remove_all` can be used as an instruction in some APIs to remove any corresponding entries
   """
@@ -28,7 +28,7 @@ defmodule Xgit.ConfigEntry do
           section: String.t(),
           subsection: String.t() | nil,
           name: String.t(),
-          value: String.t() | nil
+          value: String.t() | :remove_all | nil
         }
 
   @enforce_keys [:section, :subsection, :name, :value]
@@ -57,7 +57,6 @@ defmodule Xgit.ConfigEntry do
     String.match?(section, ~r/^[-A-Za-z0-9.]+$/)
   end
 
-  def valid_section?(nil), do: cover(true)
   def valid_section?(_), do: cover(false)
 
   @doc ~S"""

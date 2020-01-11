@@ -3,8 +3,8 @@ defmodule Xgit.ConfigEntryTest do
 
   alias Xgit.ConfigEntry
 
-  @valid_sections ["test", "Test", "test-24", "test-2.3", nil]
-  @invalid_sections ["", 'test', "", "test 24", "test:24", "test/more-test", 42, :test]
+  @valid_sections ["test", "Test", "test-24", "test-2.3"]
+  @invalid_sections ["", 'test', "", "test 24", "test:24", "test/more-test", 42, :test, nil]
 
   @valid_subsections ["xgit", "", "xgit and more xgit", "test:24", "test/more-test", nil]
   @invalid_subsections ["xg\nit", "xg\0it", 'xgit', 42, :test]
@@ -12,7 +12,7 @@ defmodule Xgit.ConfigEntryTest do
   @valid_names ["random", "Random", "random9", "random-9"]
   @invalid_names ["", "9random", "random.24", "random:24", 42, nil, :test]
 
-  @valid_values ["whatever", "", nil]
+  @valid_values ["whatever", "", :remove_all, nil]
   @invalid_values ["what\0ever", 'whatever', 42, true, false, :test]
 
   @valid_entry %ConfigEntry{
