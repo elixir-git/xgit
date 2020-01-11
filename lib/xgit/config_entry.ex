@@ -38,7 +38,7 @@ defmodule Xgit.ConfigEntry do
   Returns `true` if passed a valid config entry.
   """
   @spec valid?(value :: any) :: boolean
-  def valid?(%__MODULE{} = entry) do
+  def valid?(%__MODULE__{} = entry) do
     valid_section?(entry.section) &&
       valid_subsection?(entry.subsection) &&
       valid_name?(entry.name) &&
