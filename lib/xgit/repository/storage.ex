@@ -96,6 +96,8 @@ defmodule Xgit.Repository.Storage do
     end
   end
 
+  ## --- Working Tree ---
+
   @doc ~S"""
   Get the default working tree if one has been attached.
 
@@ -138,6 +140,8 @@ defmodule Xgit.Repository.Storage do
     |> assert_valid()
     |> set_default_working_tree(working_tree)
   end
+
+  ## --- Objects ---
 
   @doc ~S"""
   Returns `true` if all objects in the list are present in the object dictionary.
@@ -261,6 +265,8 @@ defmodule Xgit.Repository.Storage do
   """
   @callback handle_put_loose_object(state :: any, object :: Object.t()) ::
               {:ok, state :: any} | {:error, reason :: put_loose_object_reason, state :: any}
+
+  ## --- References ---
 
   @typedoc ~S"""
   Error codes that can be returned by `list_refs/1`.
@@ -562,6 +568,216 @@ defmodule Xgit.Repository.Storage do
 
   # TO DO: Add a `pack_refs` function. https://github.com/elixir-git/xgit/issues/223
 
+  ## --- Config ---
+
+  @typedoc ~S"""
+  Error codes that can be returned by `get_config_entries/2`.
+  """
+  @type get_config_entries_reason :: File.posix()
+
+  @doc ~S"""
+  Return any configuration entries that match the requested search.
+
+  The entries are not necessarily sorted; the order in which they are returned is up to
+  the underlying storage mechanism.
+
+  ## Options
+
+  * `section:` (`String`) if provided, only returns entries in the named section
+  * `subsection:` (`String`) if provided, only returns entries in the named subsection
+  * `name:` (`String`) if provided, only returns entries with the given variable name
+
+  If no options are provided, returns all entries.
+
+  ## Return Values
+
+  `{:ok, [entries]}` where `entries` is a list of `Xgit.ConfigEntry` structs that match the
+  search parameters.
+
+  `{:error, TBD}` if unable.
+  """
+  @spec get_config_entries(repository :: t,
+          section: String.t(),
+          subsection: String.t(),
+          name: String.t()
+        ) ::
+          {:ok, entries :: [Xgit.ConfigEntry.t()]} | {:error, reason :: get_config_entries_reason}
+  def get_config_entries(repository, opts \\ []) when is_pid(repository) and is_list(opts) do
+    GenServer.call(repository, {:get_config_entries, opts})
+  end
+
+  @doc ~S"""
+  Return any configuration entries that match the requested search.
+
+  Called when `get_config_entries/2` is called.
+
+  The entries need not be sorted.
+
+  ## Options
+
+  * `section:` (`String`) if provided, only returns entries in the named section
+  * `subsection:` (`String`) if provided, only returns entries in the named subsection
+  * `name:` (`String`) if provided, only returns entries with the given variable name
+
+  If no options are provided, returns all entries.
+
+  ## Return Value
+
+  Should return `{:ok, entries, state}` where `entries` is a list of `Xgit.ConfigEntry`
+  structs that match the search parameters.
+
+  Should return `{:error, reason, state}` if unable to respond.
+  """
+  @callback handle_get_config_entries(state :: any,
+              section: String.t(),
+              subsection: String.t(),
+              name: String.t()
+            ) ::
+              {:ok, entries :: [Xgit.ConfigEntry.t()], state :: any}
+              | {:error, reason :: get_config_entries_reason, state :: any}
+
+  @typedoc ~S"""
+  Error codes that can be returned by `add_config_entries/3`.
+  """
+  @type add_config_entries_reason :: File.posix()
+
+  @doc ~S"""
+  Add one or more new entries to an existing config.
+
+  The entries need not be sorted. However, if multiple values are provided
+  for the same variable (section, subsection, name tuple), they will be added
+  in the order provided here.
+
+  ## Parameters
+
+  `entries` (list of `Xgit.ConfigEntry`) entries to be added
+
+  ## Options
+
+  `add?`: if `true`, adds these entries to any that may already exist
+  `replace_all?`: if `true`, removes all existing entries that match any keys provided
+
+  See also the `:remove_all` option for the `value` member of `Xgit.ConfigEntry`.
+
+  ## Return Values
+
+  `:ok` if successful.
+
+  `{:error, TBD}` if unable.
+  """
+  @spec add_config_entries(repository :: t, entries :: [Xgit.ConfigEntry.t()],
+          add?: boolean,
+          replace_all?: boolean
+        ) ::
+          :ok | {:error, reason :: add_config_entries_reason}
+  def add_config_entries(repository, entries, opts \\ [])
+      when is_pid(repository) and is_list(entries) and is_list(opts) do
+    if Enum.all?(entries, &ConfigEntry.valid?/1) do
+      GenServer.call(repository, {:add_config_entries, entries, opts})
+    else
+      raise ArgumentError,
+            "Xgit.Repository.Storage.add_config_entries/3: one or more entries are invalid"
+    end
+  end
+
+  @doc ~S"""
+  Add one or more new entries to an existing config.
+
+  Called when `add_config_entries/3` is called.
+
+  The entries need not be sorted. However, if multiple values are provided
+  for the same variable (section, subsection, name tuple), they will be added
+  in the order provided here.
+
+  ## Parameters
+
+  `entries` (list of `Xgit.ConfigEntry`) entries to be added
+
+  ## Options
+
+  `add?`: if `true`, adds these entries to any that may already exist
+  `replace_all?`: if `true`, removes all existing entries that match any keys provided
+
+  See also the `:remove_all` option for the `value` member of `Xgit.ConfigEntry`.
+
+  ## Return Value
+
+  Should return `{:ok, state}` if successful.
+
+  Should return `{:error, reason, state}` if unable to complete the update.
+  """
+  @callback handle_add_config_entries(
+              state :: any,
+              entries :: [Xgit.ConfigEntry.t()],
+              add?: boolean,
+              replace_all?: boolean
+            ) ::
+              {:ok, state :: any}
+              | {:error, reason :: add_config_entries_reason, state :: any}
+
+  @typedoc ~S"""
+  Error codes that can be returned by `remove_config_entries/2`.
+  """
+  @type remove_config_entries_reason :: File.posix()
+
+  @doc ~S"""
+  Remove any configuration entries that match the requested search.
+
+  ## Options
+
+  * `section:` (`String`) if provided, only removes entries in the named section
+  * `subsection:` (`String`) if provided, only removes entries in the named subsection
+  * `name:` (`String`) if provided, only removes entries with the given variable name
+
+  **WARNING:** If no options are provided, removes all entries.
+
+  ## Return Values
+
+  `:ok` if successful. (This _could_ mean no matching items were found to remove.
+
+  `{:error, TBD}` if unable.
+  """
+  @spec remove_config_entries(repository :: t,
+          section: String.t(),
+          subsection: String.t(),
+          name: String.t()
+        ) ::
+          {:ok, entries :: [Xgit.ConfigEntry.t()]}
+          | {:error, reason :: remove_config_entries_reason}
+  def remove_config_entries(repository, opts \\ []) when is_pid(repository) and is_list(opts) do
+    GenServer.call(repository, {:remove_config_entries, opts})
+  end
+
+  @doc ~S"""
+  Remove any configuration entries that match the requested search.
+
+  Called when `remove_config_entries/2` is called.
+
+  ## Options
+
+  * `section:` (`String`) if provided, only removes entries in the named section
+  * `subsection:` (`String`) if provided, only removes entries in the named subsection
+  * `name:` (`String`) if provided, only removes entries with the given variable name
+
+  If no options are provided, removes all entries.
+
+  ## Return Value
+
+  Should return `{:ok, state}` if successful. (This _could_ mean no matching items were
+  found to remove.)
+
+  Should return `{:error, reason, state}` if unable to find or remove items.
+  """
+  @callback handle_remove_config_entries(state :: any,
+              section: String.t(),
+              subsection: String.t(),
+              name: String.t()
+            ) ::
+              {:ok, state :: any}
+              | {:error, reason :: remove_config_entries_reason, state :: any}
+
+  ## --- Callbacks ---
+
   @impl true
   def handle_call(:valid_repository?, _from, state), do: {:reply, :valid_repository, state}
 
@@ -599,6 +815,15 @@ defmodule Xgit.Repository.Storage do
 
   def handle_call({:get_ref, name, opts}, _from, state),
     do: delegate_call_to(state, :handle_get_ref, [name, opts])
+
+  def handle_call({:get_config_entries, opts}, _from, state),
+    do: delegate_call_to(state, :handle_get_config_entries, [opts])
+
+  def handle_call({:add_config_entries, entries, opts}, _from, state),
+    do: delegate_call_to(state, :handle_add_config_entries, [entries, opts])
+
+  def handle_call({:remove_config_entries, opts}, _from, state),
+    do: delegate_call_to(state, :handle_remove_config_entries, [opts])
 
   def handle_call(message, _from, state) do
     Logger.warn("Repository received unrecognized call #{inspect(message)}")
