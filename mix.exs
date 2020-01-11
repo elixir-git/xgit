@@ -64,6 +64,7 @@ defmodule Xgit.MixProject do
         ],
         "Core Data Model": [
           "Xgit.Commit",
+          "Xgit.ConfigEntry",
           "Xgit.ContentSource",
           "Xgit.DirCache",
           "Xgit.DirCache.Entry",
