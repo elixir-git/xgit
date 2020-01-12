@@ -40,6 +40,8 @@ defmodule Xgit.Repository.InMemory do
     )
   end
 
+  ## --- Objects ---
+
   @impl true
   def handle_has_all_object_ids?(%{loose_objects: objects} = state, object_ids) do
     has_all_objects? = Enum.all?(object_ids, fn object_id -> Map.has_key?(objects, object_id) end)
@@ -79,6 +81,8 @@ defmodule Xgit.Repository.InMemory do
 
   defp maybe_read_object_content(%Object{content: content} = object),
     do: %{object | content: content |> ContentSource.stream() |> Enum.concat()}
+
+  ## --- References ---
 
   @impl true
   def handle_list_refs(%{refs: refs} = state) do
@@ -168,4 +172,21 @@ defmodule Xgit.Repository.InMemory do
   end
 
   defp get_ref_imp(%{refs: refs} = _state, name, _follow_link), do: Map.get(refs, name)
+
+  ## --- Config ---
+
+  @impl true
+  def handle_get_config_entries(state, _opts) do
+    {:error, :unimplemented, state}
+  end
+
+  @impl true
+  def handle_add_config_entries(state, _entries, _opts) do
+    {:error, :unimplemented, state}
+  end
+
+  @impl true
+  def handle_remove_config_entries(state, _opts) do
+    {:error, :unimplemented, state}
+  end
 end

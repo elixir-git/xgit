@@ -226,6 +226,8 @@ defmodule Xgit.Repository.OnDisk do
     end
   end
 
+  ## --- Objects ---
+
   @impl true
   def handle_has_all_object_ids?(%{git_dir: git_dir} = state, object_ids) do
     has_all_object_ids? =
@@ -402,6 +404,8 @@ defmodule Xgit.Repository.OnDisk do
   defp deflate_and_write_bytes(file, z, bytes, flush \\ :none),
     do: IO.binwrite(file, :zlib.deflate(z, bytes, flush))
 
+  ## --- References ---
+
   @impl true
   def handle_list_refs(%{git_dir: git_dir} = state) do
     refs_dir = Path.join(git_dir, "refs")
@@ -560,5 +564,22 @@ defmodule Xgit.Repository.OnDisk do
       {:valid_ref?, false} -> cover :invalid_ref
       reason when is_atom(reason) -> cover reason
     end
+  end
+
+  ## --- Config ---
+
+  @impl true
+  def handle_get_config_entries(state, _opts) do
+    {:error, :unimplemented, state}
+  end
+
+  @impl true
+  def handle_add_config_entries(state, _entries, _opts) do
+    {:error, :unimplemented, state}
+  end
+
+  @impl true
+  def handle_remove_config_entries(state, _opts) do
+    {:error, :unimplemented, state}
   end
 end

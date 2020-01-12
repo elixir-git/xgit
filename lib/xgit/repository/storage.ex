@@ -23,6 +23,7 @@ defmodule Xgit.Repository.Storage do
 
   import Xgit.Util.ForceCoverage
 
+  alias Xgit.ConfigEntry
   alias Xgit.Object
   alias Xgit.ObjectId
   alias Xgit.Ref
