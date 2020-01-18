@@ -4,7 +4,7 @@ defmodule Xgit.Repository.OnDisk.ConfigTest do
   # alias Xgit.ConfigEntry
   # alias Xgit.Repository.Plumbing
   # alias Xgit.Repository.Storage
-  # alias Xgit.Test.OnDiskRepoTestCase
+  alias Xgit.Test.OnDiskRepoTestCase
 
   # import FolderDiff
 

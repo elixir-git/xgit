@@ -13,13 +13,46 @@ defmodule Xgit.Repository.Test.ConfigTest do
   # An empty repo has the same data structures as an on-disk repo created
   # via `git init` in a previously-empty directory.
 
+  # IMPORTANT: We assume that the repo is initialized with a minimal configuration
+  # that corresponds to the following:
+
+  # [core]
+  #     repositoryformatversion = 0
+  #     filemode = true
+  #     bare = false
+  #     logallrefupdates = true
+
+  # The official definition for this is located in on_disk_repo_test_case.ex,
+  # private function rewrite_config/1.
+
   import Xgit.Util.SharedTestCase
 
   define_shared_tests do
-    # alias Xgit.ConfigEntry
-    # alias Xgit.Object
-    # alias Xgit.Repository.Plumbing
-    # alias Xgit.Repository.Storage
+    alias Xgit.ConfigEntry
+    alias Xgit.Repository.Storage
+
+    describe "get_config_entries/2" do
+      test "default case returns expected initial case", %{repo: repo} do
+        assert {:ok, [_ | _] = config_entries} = Storage.get_config_entries(repo)
+
+        assert [
+                 %ConfigEntry{section: "core", subsection: nil, name: "bare", value: "false"},
+                 %ConfigEntry{section: "core", subsection: nil, name: "filemode", value: "true"},
+                 %ConfigEntry{
+                   section: "core",
+                   subsection: nil,
+                   name: "localrefupdates",
+                   value: "true"
+                 },
+                 %ConfigEntry{
+                   section: "core",
+                   subsection: nil,
+                   name: "repositoryformatversion",
+                   value: "0"
+                 }
+               ] = Enum.sort(config_entries)
+      end
+    end
 
     # describe "get_ref/2 (shared)" do
     #   test "default repo contains HEAD reference", %{repo: repo} do
