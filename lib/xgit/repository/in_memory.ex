@@ -10,9 +10,27 @@ defmodule Xgit.Repository.InMemory do
 
   import Xgit.Util.ForceCoverage
 
+  alias Xgit.ConfigEntry
   alias Xgit.ContentSource
   alias Xgit.Object
   alias Xgit.Ref
+
+  @config_entries [
+    %ConfigEntry{section: "core", subsection: nil, name: "bare", value: "false"},
+    %ConfigEntry{section: "core", subsection: nil, name: "filemode", value: "true"},
+    %ConfigEntry{
+      section: "core",
+      subsection: nil,
+      name: "localrefupdates",
+      value: "true"
+    },
+    %ConfigEntry{
+      section: "core",
+      subsection: nil,
+      name: "repositoryformatversion",
+      value: "0"
+    }
+  ]
 
   @doc ~S"""
   Start an in-memory git repository.
@@ -34,6 +52,7 @@ defmodule Xgit.Repository.InMemory do
     cover(
       {:ok,
        %{
+         config: @config_entries,
          loose_objects: %{},
          refs: %{"HEAD" => %Ref{name: "HEAD", target: "ref: refs/heads/master"}}
        }}
@@ -167,7 +186,7 @@ defmodule Xgit.Repository.InMemory do
         get_ref_imp(state, link_target, true)
 
       x ->
-        x
+        cover x
     end
   end
 
@@ -176,17 +195,18 @@ defmodule Xgit.Repository.InMemory do
   ## --- Config ---
 
   @impl true
-  def handle_get_config_entries(state, _opts) do
-    {:error, :unimplemented, state}
+  def handle_get_config_entries(%{config: config} = state, [] = _opts) do
+    # Optimized case for "all" entries.
+    cover {:ok, config, state}
   end
 
   @impl true
   def handle_add_config_entries(state, _entries, _opts) do
-    {:error, :unimplemented, state}
+    cover {:error, :unimplemented, state}
   end
 
   @impl true
   def handle_remove_config_entries(state, _opts) do
-    {:error, :unimplemented, state}
+    cover {:error, :unimplemented, state}
   end
 end
