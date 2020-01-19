@@ -130,6 +130,30 @@ defmodule Xgit.Util.ObservedFileTest do
       refute_received :empty_fn
     end
 
+    test "file existed, still does (created before racy git window)", %{path: path} do
+      test_pid = self()
+
+      File.write!(path, "mumble")
+
+      Process.sleep(3000)
+
+      assert %ObservedFile{
+               path: ^path,
+               exists?: true,
+               last_modified_time: lmt,
+               parsed_state: {:parsed_file, path, "mumble", ^test_pid}
+             } = of = ObservedFile.initial_state_for_path(path, &spy_parse_fn/1, &spy_empty_fn/0)
+
+      assert_received {:parse_fn, ^path}
+      refute_received {:parse_fn, ^path}
+      refute_received :empty_fn
+
+      assert ObservedFile.maybe_dirty?(of) == false
+
+      refute_received {:parse_fn, ^path}
+      refute_received :empty_fn
+    end
+
     test "file existed, still does (but beyond racy git window)", %{path: path} do
       test_pid = self()
 
@@ -149,7 +173,7 @@ defmodule Xgit.Util.ObservedFileTest do
       # ugh, but can't think of how to avoid this
       Process.sleep(3000)
 
-      assert ObservedFile.maybe_dirty?(of) == false
+      assert ObservedFile.maybe_dirty?(of) == true
 
       refute_received {:parse_fn, ^path}
       refute_received :empty_fn
@@ -175,6 +199,33 @@ defmodule Xgit.Util.ObservedFileTest do
       Process.sleep(3000)
 
       File.write!(path, "other mumble")
+
+      assert ObservedFile.maybe_dirty?(of) == true
+
+      refute_received {:parse_fn, ^path}
+      refute_received :empty_fn
+    end
+
+    test "file existed, updated immediately, but checked beyond racy git window", %{path: path} do
+      test_pid = self()
+
+      File.write!(path, "mumble")
+
+      assert %ObservedFile{
+               path: ^path,
+               exists?: true,
+               last_modified_time: lmt,
+               parsed_state: {:parsed_file, path, "mumble", ^test_pid}
+             } = of = ObservedFile.initial_state_for_path(path, &spy_parse_fn/1, &spy_empty_fn/0)
+
+      assert_received {:parse_fn, ^path}
+      refute_received {:parse_fn, ^path}
+      refute_received :empty_fn
+
+      File.write!(path, "quick mumble")
+
+      # ugh, but can't think of how to avoid this
+      Process.sleep(3000)
 
       assert ObservedFile.maybe_dirty?(of) == true
 
@@ -312,6 +363,7 @@ defmodule Xgit.Util.ObservedFileTest do
                path: ^path,
                exists?: true,
                last_modified_time: lmt,
+               last_checked_time: lct,
                parsed_state: {:parsed_file, path, "mumble", ^test_pid}
              } = of = ObservedFile.initial_state_for_path(path, &spy_parse_fn/1, &spy_empty_fn/0)
 
@@ -322,8 +374,17 @@ defmodule Xgit.Util.ObservedFileTest do
       # ugh, but can't think of how to avoid this
       Process.sleep(3000)
 
-      assert ^of = ObservedFile.update_state_if_maybe_dirty(of, &spy_parse_fn/1, &spy_empty_fn/0)
+      assert %ObservedFile{
+               path: ^path,
+               exists?: true,
+               last_modified_time: ^lmt,
+               last_checked_time: lct2,
+               parsed_state: {:parsed_file, path, "mumble", ^test_pid}
+             } = ObservedFile.update_state_if_maybe_dirty(of, &spy_parse_fn/1, &spy_empty_fn/0)
 
+      assert lct2 > lct
+
+      assert_received {:parse_fn, ^path}
       refute_received {:parse_fn, ^path}
       refute_received :empty_fn
     end
@@ -357,6 +418,41 @@ defmodule Xgit.Util.ObservedFileTest do
              } = ObservedFile.update_state_if_maybe_dirty(of, &spy_parse_fn/1, &spy_empty_fn/0)
 
       assert lmt2 > lmt
+
+      assert_received {:parse_fn, ^path}
+      refute_received {:parse_fn, ^path}
+      refute_received :empty_fn
+    end
+
+    test "file existed, updated immediately, but checked beyond racy git window", %{path: path} do
+      test_pid = self()
+
+      File.write!(path, "mumble")
+
+      assert %ObservedFile{
+               path: ^path,
+               exists?: true,
+               last_modified_time: lmt,
+               parsed_state: {:parsed_file, path, "mumble", ^test_pid}
+             } = of = ObservedFile.initial_state_for_path(path, &spy_parse_fn/1, &spy_empty_fn/0)
+
+      assert_received {:parse_fn, ^path}
+      refute_received {:parse_fn, ^path}
+      refute_received :empty_fn
+
+      File.write!(path, "quick mumble")
+
+      # ugh, but can't think of how to avoid this
+      Process.sleep(3000)
+
+      assert %ObservedFile{
+               path: ^path,
+               exists?: true,
+               last_modified_time: lmt2,
+               parsed_state: {:parsed_file, path, "quick mumble", ^test_pid}
+             } = ObservedFile.update_state_if_maybe_dirty(of, &spy_parse_fn/1, &spy_empty_fn/0)
+
+      assert lmt2 >= lmt
 
       assert_received {:parse_fn, ^path}
       refute_received {:parse_fn, ^path}

@@ -16,12 +16,15 @@ defmodule Xgit.Util.ObservedFile do
   * `exists?`: `true` if the file existed last time we checked
   * `last_modified_time`: POSIX file time for the file last time we checked
       (`nil` if file did not exist then)
+  * `last_checked_time`: POSIX time stamp when file status was checked
+      (used to help avoid the "racy git problem")
   * `parsed_state`: result from either `parse_fn` or `empty_fn`
   """
   @type t :: %__MODULE__{
           path: Path.t(),
           exists?: boolean,
           last_modified_time: integer | nil,
+          last_checked_time: integer | nil,
           parsed_state: any
         }
 
@@ -42,6 +45,7 @@ defmodule Xgit.Util.ObservedFile do
     :path,
     :exists?,
     :last_modified_time,
+    :last_checked_time,
     :parsed_state
   ]
 
@@ -66,6 +70,7 @@ defmodule Xgit.Util.ObservedFile do
       path: path,
       exists?: true,
       last_modified_time: mtime,
+      last_checked_time: System.os_time(:second),
       parsed_state: parse_fn.(path)
     }
   end
@@ -89,8 +94,9 @@ defmodule Xgit.Util.ObservedFile do
 
   * The modified time has changed since the previous observation.
   * The file exists when it did not previously exist (or vice versa).
-  * The modified time is so recent as to be indistinguishable from "now."
-    (This is often referred to as the "racy git problem.")
+  * The modified time is so recent as to be indistinguishable from
+    the time at which the initial snapshot was recorded. (This is often
+    referred to as the "racy git problem.")
 
   This function does not update the cached state of the file.
   """
@@ -99,15 +105,19 @@ defmodule Xgit.Util.ObservedFile do
     do: maybe_dirty_for_file_stat?(observed_file, File.stat(path, time: :posix))
 
   defp maybe_dirty_for_file_stat?(
-         %__MODULE__{exists?: true, last_modified_time: last_modified_time},
+         %__MODULE__{
+           exists?: true,
+           last_modified_time: last_modified_time,
+           last_checked_time: last_checked_time
+         },
          {:ok, %File.Stat{type: :regular, mtime: last_modified_time}}
        )
        when is_integer(last_modified_time) do
     # File still exists and modified time is same as before. Are we in racy git state?
     # Certain file systems round to the nearest few seconds, so last mod time has
-    # to be at least 3 seconds ago for us to start believing file content.
+    # to be at least 3 seconds before we checked status for us to start believing file content.
 
-    last_modified_time >= System.os_time(:second) - 2
+    last_modified_time >= last_checked_time - 2
   end
 
   defp maybe_dirty_for_file_stat?(
