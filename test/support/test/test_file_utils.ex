@@ -8,6 +8,6 @@ defmodule Xgit.Test.TestFileUtils do
   Anyone calling this function has to pinky-swear that they will not modify
   the file within the next three seconds.
   """
-  @spec touch_back!(path :: Path.t) :: :ok
+  @spec touch_back!(path :: Path.t()) :: :ok
   def touch_back!(path), do: File.touch!(path, System.os_time(:second) - 3)
 end
