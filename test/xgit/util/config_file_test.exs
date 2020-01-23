@@ -104,6 +104,62 @@ defmodule Xgit.Util.ConfigFileTest do
                }
              ]
     end
+
+    test "ignores whitespace" do
+      assert entries_from_config_file!(~s"""
+             \t[core]
+             repositoryformatversion=0
+              filemode= true
+                bare=   false
+             \t logallrefupdates\t=\ttrue
+             \twhatever = abc
+             """) == [
+               %ConfigEntry{
+                 name: "repositoryformatversion",
+                 section: "core",
+                 subsection: nil,
+                 value: "0"
+               },
+               %ConfigEntry{
+                 name: "filemode",
+                 section: "core",
+                 subsection: nil,
+                 value: "true"
+               },
+               %ConfigEntry{
+                 name: "bare",
+                 section: "core",
+                 subsection: nil,
+                 value: "false"
+               },
+               %ConfigEntry{
+                 name: "logallrefupdates",
+                 section: "core",
+                 subsection: nil,
+                 value: "true"
+               },
+               %ConfigEntry{
+                 name: "whatever",
+                 section: "core",
+                 subsection: nil,
+                 value: "abc"
+               }
+             ]
+    end
+
+    test "accepts missing value" do
+      assert entries_from_config_file!(~s"""
+             [foo]
+             bar
+             """) == [
+               %ConfigEntry{
+                 name: "bar",
+                 section: "foo",
+                 subsection: nil,
+                 value: nil
+               }
+             ]
+    end
   end
 
   defp entries_from_config_file!(config_file) do
