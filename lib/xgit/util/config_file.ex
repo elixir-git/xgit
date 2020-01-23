@@ -163,7 +163,7 @@ defmodule Xgit.Util.ConfigFile do
         _ -> raise "Illegal section header #{line}"
       end
 
-    {to_string(section), nil, remainder}
+    {section |> to_string() |> String.downcase(), nil, remainder}
   end
 
   defp read_optional_section_header(remainder, section, subsection),

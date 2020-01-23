@@ -147,6 +147,70 @@ defmodule Xgit.Util.ConfigFileTest do
              ]
     end
 
+    test "section names are not case-sensitive" do
+      assert entries_from_config_file!(~s"""
+             [coRe]
+             \trepositoryformatversion = 0
+             """) == [
+               %ConfigEntry{
+                 name: "repositoryformatversion",
+                 section: "core",
+                 subsection: nil,
+                 value: "0"
+               }
+             ]
+    end
+
+    test "only alphanumeric characters, -, and . are allowed in section names" do
+      assert entries_from_config_file!(~s"""
+             [core.foo]
+             \trepositoryformatversion = 0
+             """) == [
+               %ConfigEntry{
+                 name: "repositoryformatversion",
+                 section: "core.foo",
+                 subsection: nil,
+                 value: "0"
+               }
+             ]
+
+      assert entries_from_config_file!(~s"""
+             [core-foo]
+             \trepositoryformatversion = 0
+             """) == [
+               %ConfigEntry{
+                 name: "repositoryformatversion",
+                 section: "core-foo",
+                 subsection: nil,
+                 value: "0"
+               }
+             ]
+
+      assert entries_from_config_file!(~s"""
+             [core9]
+             \trepositoryformatversion = 0
+             """) == [
+               %ConfigEntry{
+                 name: "repositoryformatversion",
+                 section: "core9",
+                 subsection: nil,
+                 value: "0"
+               }
+             ]
+
+      assert entries_from_config_file!(~s"""
+             [9core]
+             \trepositoryformatversion = 0
+             """) == [
+               %ConfigEntry{
+                 name: "repositoryformatversion",
+                 section: "9core",
+                 subsection: nil,
+                 value: "0"
+               }
+             ]
+    end
+
     test "accepts missing value" do
       assert entries_from_config_file!(~s"""
              [foo]
