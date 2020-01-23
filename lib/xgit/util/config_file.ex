@@ -154,7 +154,7 @@ defmodule Xgit.Util.ConfigFile do
     remainder = Enum.drop_while(remainder, &whitespace?/1)
     {section, remainder} = Enum.split_while(remainder, &section_name_char?/1)
     remainder = Enum.drop_while(remainder, &whitespace?/1)
-    # {subsection, remainder} = read_optional_subsection_header(remainder) - ignore for now
+    {subsection, remainder} = read_optional_subsection_header(remainder)
     remainder = Enum.drop_while(remainder, &whitespace?/1)
 
     remainder =
@@ -163,7 +163,7 @@ defmodule Xgit.Util.ConfigFile do
         _ -> raise "Illegal section header #{line}"
       end
 
-    {section |> to_string() |> String.downcase(), nil, remainder}
+    {section |> to_string() |> String.downcase(), subsection, remainder}
   end
 
   defp read_optional_section_header(remainder, section, subsection),
@@ -175,6 +175,13 @@ defmodule Xgit.Util.ConfigFile do
   defp section_name_char?(?-), do: cover(true)
   defp section_name_char?(?.), do: cover(true)
   defp section_name_char?(_), do: cover(false)
+
+  defp read_optional_subsection_header([?" | _] = remainder) do
+    {subsection, remainder} = read_quoted_string(remainder)
+    {to_string(subsection), remainder}
+  end
+
+  defp read_optional_subsection_header(remainder), do: cover({nil, remainder})
 
   defp read_optional_variable(remainder) do
     {var_name, remainder} = Enum.split_while(remainder, &var_name_char?/1)
@@ -208,6 +215,25 @@ defmodule Xgit.Util.ConfigFile do
       cover {nil, remainder}
     end
   end
+
+  defp read_quoted_string([?" | remainder]) do
+    {quoted_string, remainder} = read_quoted_string([], remainder)
+    {Enum.reverse(quoted_string), remainder}
+  end
+
+  defp read_quoted_string(_acc, [?\\ | [?\n | _remainder]]) do
+    raise "Illegal quoted string: Can not span a new line"
+  end
+
+  defp read_quoted_string(_acc, []) do
+    raise "Illegal quoted string: Missing close quote"
+  end
+
+  defp read_quoted_string(acc, [?\\ | [c | remainder]]),
+    do: read_quoted_string([c | acc], remainder)
+
+  defp read_quoted_string(acc, [?" | remainder]), do: {acc, remainder}
+  defp read_quoted_string(acc, [c | remainder]), do: read_quoted_string([c | acc], remainder)
 
   defp read_possibly_quoted_string(remainder) do
     # TOTALLY NAIVE IMPLEMENTATION: Read non-whitespace chars only.
