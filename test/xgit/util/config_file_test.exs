@@ -294,6 +294,14 @@ defmodule Xgit.Util.ConfigFileTest do
                """)
     end
 
+    test "error: subsection name can not contain new line" do
+      assert {%ArgumentError{message: "Illegal quoted string: Can not span a new line"}, _} =
+               raise_entries_from_config_file!(~S"""
+               [foo "abc\
+               bar"]
+               """)
+    end
+
     test "variable name can contain numbers" do
       assert entries_from_config_file!(~s"""
              [foo "zip"] two5 = 25
