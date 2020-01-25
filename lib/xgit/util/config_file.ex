@@ -145,7 +145,7 @@ defmodule Xgit.Util.ConfigFile do
       [] -> cover :ok
       [?# | _] -> cover :ok
       [?; | _] -> cover :ok
-      _ -> raise "Illegal variable declaration: #{line}"
+      _ -> raise ArgumentError, "Illegal variable declaration: #{line}"
     end
 
     {section, subsection, maybe_config_entry(section, subsection, var_name, value)}
@@ -165,7 +165,7 @@ defmodule Xgit.Util.ConfigFile do
     remainder =
       case remainder do
         [?] | x] -> Enum.drop_while(x, &whitespace?/1)
-        _ -> raise "Illegal section header #{line}"
+        _ -> raise ArgumentError, "Illegal section header #{line}"
       end
 
     {section |> to_string() |> String.downcase(), subsection, remainder}
@@ -226,12 +226,12 @@ defmodule Xgit.Util.ConfigFile do
     {Enum.reverse(quoted_string), remainder}
   end
 
-  defp read_quoted_string(_acc, [?\\ | [?\n | _remainder]]) do
-    raise "Illegal quoted string: Can not span a new line"
+  defp read_quoted_string(_acc, [?\n | _remainder]) do
+    raise ArgumentError, "Illegal quoted string: Can not span a new line"
   end
 
   defp read_quoted_string(_acc, []) do
-    raise "Illegal quoted string: Missing close quote"
+    raise ArgumentError, "Illegal quoted string: Missing close quote"
   end
 
   defp read_quoted_string(acc, [?\\ | [c | remainder]]),

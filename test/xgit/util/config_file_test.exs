@@ -211,6 +211,17 @@ defmodule Xgit.Util.ConfigFileTest do
              ]
     end
 
+    test "error: section name must precede a variable declaration" do
+      assert {%ArgumentError{
+                message:
+                  ~s(Invalid config file: Assigning variable mumble without a section header)
+              },
+              _} =
+               raise_entries_from_config_file!(~s"""
+               mumble = 25
+               """)
+    end
+
     test "accepts missing value" do
       assert entries_from_config_file!(~s"""
              [foo]
@@ -240,7 +251,7 @@ defmodule Xgit.Util.ConfigFileTest do
     end
 
     test "error: incomplete section name" do
-      assert {%RuntimeError{message: "Illegal section header [foo"}, _} =
+      assert {%ArgumentError{message: "Illegal section header [foo"}, _} =
                raise_entries_from_config_file!(~s"""
                [foo
                bar
@@ -276,7 +287,7 @@ defmodule Xgit.Util.ConfigFileTest do
     end
 
     test "error: incomplete subsection name" do
-      assert {%RuntimeError{message: "Illegal quoted string: Missing close quote"}, _} =
+      assert {%ArgumentError{message: "Illegal quoted string: Missing close quote"}, _} =
                raise_entries_from_config_file!(~s"""
                [foo "abc
                bar
@@ -306,7 +317,7 @@ defmodule Xgit.Util.ConfigFileTest do
     end
 
     test "error: variable names may not contain other characters" do
-      assert {%RuntimeError{
+      assert {%ArgumentError{
                 message: ~s(Illegal variable declaration: [foo "zip"] mumble.more = 25)
               },
               _} =
