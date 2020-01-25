@@ -295,6 +295,35 @@ defmodule Xgit.Util.ConfigFileTest do
                %ConfigEntry{name: "n", section: "foo", subsection: "zap", value: "3"}
              ]
     end
+
+    test "unquoted values strip leading whitespace" do
+      assert entries_from_config_file!(~s"""
+             [foo "zip"]
+                bar =    42
+             """) == [
+               %ConfigEntry{name: "bar", section: "foo", subsection: "zip", value: "42"}
+             ]
+    end
+
+    test "unquoted values strip trailing whitespace" do
+      assert entries_from_config_file!("[foo \"zip\"] bar =42   ") == [
+               %ConfigEntry{name: "bar", section: "foo", subsection: "zip", value: "42"}
+             ]
+    end
+
+    test "internal whitespace is preserved verbatim" do
+      assert entries_from_config_file!(~s"""
+             [foo "zip"]
+                bar = 42   and then\tsome
+             """) == [
+               %ConfigEntry{
+                 name: "bar",
+                 section: "foo",
+                 subsection: "zip",
+                 value: "42   and then\tsome"
+               }
+             ]
+    end
   end
 
   defp entries_from_config_file!(config_file) do

@@ -235,10 +235,24 @@ defmodule Xgit.Util.ConfigFile do
   defp read_quoted_string(acc, [?" | remainder]), do: {acc, remainder}
   defp read_quoted_string(acc, [c | remainder]), do: read_quoted_string([c | acc], remainder)
 
-  defp read_possibly_quoted_string(remainder) do
-    # TOTALLY NAIVE IMPLEMENTATION: Read non-whitespace chars only.
+  defp read_possibly_quoted_string(remainder), do: read_possibly_quoted_string([], remainder)
 
-    Enum.split_while(remainder, &(!whitespace?(&1)))
+  defp read_possibly_quoted_string(acc, [c | _] = remainder) when c == ?\s or c == ?\t do
+    {whitespace, remainder} = Enum.split_while(remainder, &whitespace?/1)
+
+    case remainder do
+      [] -> {acc, remainder}
+      [?; | _] -> {acc, []}
+      [?# | _] -> {acc, []}
+      x -> read_possibly_quoted_string(acc ++ whitespace, x)
+    end
+  end
+
+  defp read_possibly_quoted_string(acc, []), do: cover({acc, []})
+
+  defp read_possibly_quoted_string(acc, remainder) do
+    {non_whitespace, remainder} = Enum.split_while(remainder, &(!whitespace?(&1)))
+    read_possibly_quoted_string(acc ++ non_whitespace, remainder)
   end
 
   defp maybe_config_entry(_section, _subsection, nil = _var_name, _value), do: cover(nil)
