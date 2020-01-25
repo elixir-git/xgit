@@ -283,6 +283,38 @@ defmodule Xgit.Util.ConfigFileTest do
                """)
     end
 
+    test "variable name can contain numbers" do
+      assert entries_from_config_file!(~s"""
+             [foo "zip"] two5 = 25
+             """) == [%ConfigEntry{name: "two5", section: "foo", subsection: "zip", value: "25"}]
+    end
+
+    test "variable name can contain hyphen" do
+      assert entries_from_config_file!(~s"""
+             [foo "zip"] two-five = 25
+             """) == [
+               %ConfigEntry{name: "two-five", section: "foo", subsection: "zip", value: "25"}
+             ]
+    end
+
+    test "variable names are case-insensitive" do
+      assert entries_from_config_file!(~s"""
+             [foo "zip"] MumblE = 25
+             """) == [
+               %ConfigEntry{name: "mumble", section: "foo", subsection: "zip", value: "25"}
+             ]
+    end
+
+    test "error: variable names may not contain other characters" do
+      assert {%RuntimeError{
+                message: ~s(Illegal variable declaration: [foo "zip"] mumble.more = 25)
+              },
+              _} =
+               raise_entries_from_config_file!(~s"""
+               [foo "zip"] mumble.more = 25
+               """)
+    end
+
     test "variable name + value can follow section header" do
       assert entries_from_config_file!(~s"""
              [foo "zip"] bar=42
@@ -321,6 +353,43 @@ defmodule Xgit.Util.ConfigFileTest do
                  section: "foo",
                  subsection: "zip",
                  value: "42   and then\tsome"
+               }
+             ]
+    end
+
+    test "comments starting with ; are ignored" do
+      assert entries_from_config_file!(~s"""
+             [foo "zip"]
+                bar = 42
+                ;blah = 45
+             """) == [
+               %ConfigEntry{
+                 name: "bar",
+                 section: "foo",
+                 subsection: "zip",
+                 value: "42"
+               }
+             ]
+    end
+
+    test "comments starting with # are ignored" do
+      assert entries_from_config_file!(~s"""
+             [foo "zip"]
+                bar = 42
+             #[foo "bar"]
+                blah = 45
+             """) == [
+               %ConfigEntry{
+                 name: "bar",
+                 section: "foo",
+                 subsection: "zip",
+                 value: "42"
+               },
+               %ConfigEntry{
+                 name: "blah",
+                 section: "foo",
+                 subsection: "zip",
+                 value: "45"
                }
              ]
     end

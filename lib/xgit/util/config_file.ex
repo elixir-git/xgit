@@ -139,9 +139,14 @@ defmodule Xgit.Util.ConfigFile do
     {section, subsection, remainder} =
       read_optional_section_header(remainder, section, subsection)
 
-    {var_name, value, _remainder} = read_optional_variable(remainder)
+    {var_name, value, remainder} = read_optional_variable(remainder)
 
-    # At this point, it must be whitespace + EOL or a comment.
+    case Enum.drop_while(remainder, &whitespace?/1) do
+      [] -> cover :ok
+      [?# | _] -> cover :ok
+      [?; | _] -> cover :ok
+      _ -> raise "Illegal variable declaration: #{line}"
+    end
 
     {section, subsection, maybe_config_entry(section, subsection, var_name, value)}
   end
@@ -190,7 +195,7 @@ defmodule Xgit.Util.ConfigFile do
       cover {nil, nil, remainder}
     else
       {value, remainder} = read_optional_value(remainder)
-      cover {to_string(var_name), value, remainder}
+      cover {var_name |> to_string() |> String.downcase(), value, remainder}
     end
   end
 
