@@ -6,6 +6,8 @@ defmodule Xgit.Util.ConfigFileTest do
   alias Xgit.Test.TestFileUtils
   alias Xgit.Util.ConfigFile
 
+  import ExUnit.CaptureLog
+
   describe "start_link/1 + get_entries/1" do
     test "error: parent dir does not exist" do
       %{tmp_dir: tmp_dir} = TempDirTestCase.tmp_dir!()
@@ -607,5 +609,19 @@ defmodule Xgit.Util.ConfigFileTest do
     assert {:error, error} = ConfigFile.start_link(config_path)
 
     error
+  end
+
+  test "handles unknown message" do
+    %{tmp_dir: tmp_dir} = TempDirTestCase.tmp_dir!()
+    config_path = Path.join(tmp_dir, "config")
+
+    File.write!(config_path, "")
+    TestFileUtils.touch_back!(config_path)
+
+    assert {:ok, cf} = ConfigFile.start_link(config_path)
+
+    assert capture_log(fn ->
+             assert {:error, :unknown_message} = GenServer.call(cf, :random_unknown_message)
+           end) =~ "ConfigFile received unrecognized call :random_unknown_message"
   end
 end
