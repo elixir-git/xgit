@@ -584,6 +584,38 @@ defmodule Xgit.Util.ConfigFileTest do
                }
              ]
     end
+
+    test "re-reads file when updated" do
+      %{tmp_dir: tmp_dir} = TempDirTestCase.tmp_dir!()
+      config_path = Path.join(tmp_dir, "config")
+
+      File.write!(config_path, ~s([foo "zip"] bar = 42))
+      TestFileUtils.touch_back!(config_path)
+
+      assert {:ok, cf} = ConfigFile.start_link(config_path)
+
+      assert {:ok,
+              [
+                %ConfigEntry{
+                  name: "bar",
+                  section: "foo",
+                  subsection: "zip",
+                  value: "42"
+                }
+              ]} = ConfigFile.get_entries(cf)
+
+      File.write!(config_path, ~s([foo "zip"] bar = 44))
+
+      assert {:ok,
+              [
+                %ConfigEntry{
+                  name: "bar",
+                  section: "foo",
+                  subsection: "zip",
+                  value: "44"
+                }
+              ]} = ConfigFile.get_entries(cf)
+    end
   end
 
   defp entries_from_config_file!(config_file) do
