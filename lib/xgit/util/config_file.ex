@@ -237,7 +237,7 @@ defmodule Xgit.Util.ConfigFile do
   defp read_quoted_string(acc, [?\\ | [c | remainder]]),
     do: read_quoted_string([c | acc], remainder)
 
-  defp read_quoted_string(acc, [?" | remainder]), do: {acc, remainder}
+  defp read_quoted_string(acc, [?" | remainder]), do: cover({acc, remainder})
   defp read_quoted_string(acc, [c | remainder]), do: read_quoted_string([c | acc], remainder)
 
   defp read_possibly_quoted_string(remainder), do: read_possibly_quoted_string([], remainder)
@@ -246,12 +246,15 @@ defmodule Xgit.Util.ConfigFile do
     {whitespace, remainder} = Enum.split_while(remainder, &whitespace?/1)
 
     case remainder do
-      [] -> {acc, remainder}
-      [?; | _] -> {acc, []}
-      [?# | _] -> {acc, []}
+      [] -> cover {acc, remainder}
+      [?; | _] -> cover {acc, []}
+      [?# | _] -> cover {acc, []}
       x -> read_possibly_quoted_string(acc ++ whitespace, x)
     end
   end
+
+  defp read_possibly_quoted_string(acc, [?" | remainder]),
+    do: read_quoted_value_section(acc, remainder)
 
   defp read_possibly_quoted_string(acc, []), do: cover({acc, []})
 
@@ -259,6 +262,32 @@ defmodule Xgit.Util.ConfigFile do
     {non_whitespace, remainder} = Enum.split_while(remainder, &(!whitespace?(&1)))
     read_possibly_quoted_string(acc ++ non_whitespace, remainder)
   end
+
+  defp read_quoted_value_section(acc, [?\\ | [?" | remainder]]),
+    do: read_quoted_value_section(acc ++ [?"], remainder)
+
+  defp read_quoted_value_section(acc, [?\\ | [?\\ | remainder]]),
+    do: read_quoted_value_section(acc ++ [?\\], remainder)
+
+  defp read_quoted_value_section(acc, [?\\ | [?n | remainder]]),
+    do: read_quoted_value_section(acc ++ [?\n], remainder)
+
+  defp read_quoted_value_section(acc, [?\\ | [?t | remainder]]),
+    do: read_quoted_value_section(acc ++ [?\t], remainder)
+
+  defp read_quoted_value_section(acc, [?\\ | [?b | remainder]]),
+    do: read_quoted_value_section(acc ++ [8], remainder)
+
+  defp read_quoted_value_section(_acc, [?\\ | [c | _remainder]]),
+    do: raise(ArgumentError, "Invalid config file: Unknown escape sequence \\#{[c]}")
+
+  defp read_quoted_value_section(acc, [?" | remainder]),
+    do: read_possibly_quoted_string(acc, remainder)
+
+  defp read_quoted_value_section(_acc, []), do: raise(ArgumentError, "Incomplete quoted string")
+
+  defp read_quoted_value_section(acc, [c | remainder]),
+    do: read_quoted_value_section(acc ++ [c], remainder)
 
   defp maybe_config_entry(_section, _subsection, nil = _var_name, _value), do: cover(nil)
 

@@ -376,6 +376,155 @@ defmodule Xgit.Util.ConfigFileTest do
              ]
     end
 
+    test "values may be quoted" do
+      assert entries_from_config_file!(~s"""
+             [foo "zip"]
+                bar = "42"
+             """) == [
+               %ConfigEntry{
+                 name: "bar",
+                 section: "foo",
+                 subsection: "zip",
+                 value: "42"
+               }
+             ]
+    end
+
+    test "error: quoted values may not span lines" do
+      assert {%ArgumentError{
+                message: "Incomplete quoted string"
+              },
+              _} =
+               raise_entries_from_config_file!(~s"""
+               [foo "zip"]
+                  bar = "42
+                  and then 43"
+               """)
+    end
+
+    test "values may be partially quoted" do
+      assert entries_from_config_file!(~s"""
+             [foo "zip"]
+                bar = 41, "42", and then 43
+             """) == [
+               %ConfigEntry{
+                 name: "bar",
+                 section: "foo",
+                 subsection: "zip",
+                 value: "41, 42, and then 43"
+               }
+             ]
+    end
+
+    test "quoted values retain leading whitespace" do
+      assert entries_from_config_file!(~s"""
+             [foo "zip"]
+                bar =    "  42"
+             """) == [
+               %ConfigEntry{
+                 name: "bar",
+                 section: "foo",
+                 subsection: "zip",
+                 value: "  42"
+               }
+             ]
+    end
+
+    test "quoted values retain trailing whitespace" do
+      assert entries_from_config_file!(~s"""
+             [foo "zip"]
+                bar = "42   "   ; random comment
+             """) == [
+               %ConfigEntry{
+                 name: "bar",
+                 section: "foo",
+                 subsection: "zip",
+                 value: "42   "
+               }
+             ]
+    end
+
+    test "quoted values can contain escaped backslash" do
+      assert entries_from_config_file!(~S"""
+             [foo "zip"]
+                bar = "4\\2"
+             """) == [
+               %ConfigEntry{
+                 name: "bar",
+                 section: "foo",
+                 subsection: "zip",
+                 value: "4\\2"
+               }
+             ]
+    end
+
+    test "quoted values can contain escaped quote" do
+      assert entries_from_config_file!(~S"""
+             [foo "zip"]
+                bar = "4\"2"
+             """) == [
+               %ConfigEntry{
+                 name: "bar",
+                 section: "foo",
+                 subsection: "zip",
+                 value: "4\"2"
+               }
+             ]
+    end
+
+    test "quoted values can contain \\n escape (newline)" do
+      assert entries_from_config_file!(~S"""
+             [foo "zip"]
+                bar = "4\n2"
+             """) == [
+               %ConfigEntry{
+                 name: "bar",
+                 section: "foo",
+                 subsection: "zip",
+                 value: "4\n2"
+               }
+             ]
+    end
+
+    test "quoted values can contain \\t escape (newline)" do
+      assert entries_from_config_file!(~S"""
+             [foo "zip"]
+                bar = "4\t2"
+             """) == [
+               %ConfigEntry{
+                 name: "bar",
+                 section: "foo",
+                 subsection: "zip",
+                 value: "4\t2"
+               }
+             ]
+    end
+
+    test "quoted values can contain \\b escape (backspace)" do
+      assert entries_from_config_file!(~S"""
+             [foo "zip"]
+                bar = "4\b2"
+             """) == [
+               %ConfigEntry{
+                 name: "bar",
+                 section: "foo",
+                 subsection: "zip",
+                 value: "4\b2"
+               }
+             ]
+    end
+
+    test "error: quoted values cannot contain any other backslash sequence" do
+      assert {%ArgumentError{
+                message: "Invalid config file: Unknown escape sequence \\x"
+              },
+              _} =
+               raise_entries_from_config_file!(~S"""
+               [foo "zip"]
+                  bar = "4\x02"
+               """)
+    end
+
     test "comments starting with ; are ignored" do
       assert entries_from_config_file!(~s"""
              [foo "zip"]
@@ -391,7 +540,28 @@ defmodule Xgit.Util.ConfigFileTest do
              ]
     end
 
-    test "comments starting with # are ignored" do
+    test "comments starting with # are ignored (1)" do
+      assert entries_from_config_file!(~s"""
+             [foo "zip"]
+                bar = 42
+                blah = 45 # not 46
+             """) == [
+               %ConfigEntry{
+                 name: "bar",
+                 section: "foo",
+                 subsection: "zip",
+                 value: "42"
+               },
+               %ConfigEntry{
+                 name: "blah",
+                 section: "foo",
+                 subsection: "zip",
+                 value: "45"
+               }
+             ]
+    end
+
+    test "comments starting with # are ignored (2)" do
       assert entries_from_config_file!(~s"""
              [foo "zip"]
                 bar = 42
