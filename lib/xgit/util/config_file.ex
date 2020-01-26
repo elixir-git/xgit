@@ -69,8 +69,6 @@ defmodule Xgit.Util.ConfigFile do
 
   `{:ok, [entries]}` where `entries` is a list of `Xgit.ConfigEntry` structs that match the
   search parameters.
-
-  `{:error, TBD}` if unable.
   """
   @spec get_entries(config_file :: t,
           section: String.t(),
@@ -95,11 +93,7 @@ defmodule Xgit.Util.ConfigFile do
 
   ## --- Parsing ---
 
-  @doc false
-  # Public only for testing purposes. Read config file at path and return
-  # a list of ConfigFile.Line structs representing that file.
-  @spec parse_config_at_path(path :: Path.t()) :: [%__MODULE__.Line{}]
-  def parse_config_at_path(path) do
+  defp parse_config_at_path(path) do
     path
     |> File.stream!()
     |> Enum.to_list()
