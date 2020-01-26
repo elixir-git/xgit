@@ -2,11 +2,13 @@ defmodule Xgit.Util.ConfigFileTest do
   use ExUnit.Case, async: true
 
   alias Xgit.ConfigEntry
+  alias Xgit.Test.OnDiskRepoTestCase
   alias Xgit.Test.TempDirTestCase
   alias Xgit.Test.TestFileUtils
   alias Xgit.Util.ConfigFile
 
   import ExUnit.CaptureLog
+  import FolderDiff
 
   describe "start_link/1 + get_entries/1" do
     test "error: parent dir does not exist" do
@@ -818,6 +820,93 @@ defmodule Xgit.Util.ConfigFileTest do
     assert {:error, error} = ConfigFile.start_link(config_path)
 
     error
+  end
+
+  @example_config ~s"""
+  #
+  # This is the config file, and
+  # a '#' or ';' character indicates
+  # a comment
+  #
+
+  ; core variables
+  [core]
+    ; Don't trust file modes
+    filemode = false
+
+  ; Our diff algorithm
+  [diff]
+    external = /usr/local/bin/diff-wrapper
+    renames = true
+
+  ; Proxy settings
+  [core]
+    gitproxy=proxy-command for kernel.org
+    gitproxy=default-proxy ; for all the rest
+
+  ; HTTP
+  [http]
+    sslVerify
+  [http "https://weak.example.com"]
+    sslVerify = false
+    cookieFile = /tmp/cookie.txt
+  """
+
+  describe "add_entries/3" do
+    test "basic case" do
+      assert_configs_are_equal(
+        initial_config: @example_config,
+        git_add_fn: fn path ->
+          assert {"", 0} = System.cmd("git", ["config", "core.filemode", "true"], cd: path)
+        end,
+        xgit_add_fn: fn config_file ->
+          assert :ok =
+                   ConfigFile.add_config_entries(
+                     config_file,
+                     [
+                       %ConfigEntry{
+                         section: "core",
+                         subsection: nil,
+                         name: "filemode",
+                         value: "true"
+                       }
+                     ],
+                     replace_all?: true
+                   )
+        end
+      )
+    end
+  end
+
+  defp assert_configs_are_equal(opts) do
+    initial_config = Keyword.get(opts, :initial_config)
+
+    %{xgit_path: ref_path} =
+      setup_with_config!(initial_config: initial_config, path: "/Users/scouten/Desktop/ref")
+
+    %{xgit_path: xgit_path, config_file_path: xgit_config_file_path} =
+      setup_with_config!(initial_config: initial_config, path: "/Users/scouten/Desktop/xgit")
+
+    git_add_fn = Keyword.get(opts, :git_add_fn)
+    git_add_fn.(ref_path)
+
+    assert {:ok, xgit_config_file} = ConfigFile.start_link(xgit_config_file_path)
+
+    xgit_add_fn = Keyword.get(opts, :xgit_add_fn)
+    xgit_add_fn.(xgit_config_file)
+
+    assert_folders_are_equal(Path.join(ref_path), Path.join(xgit_path))
+  end
+
+  defp setup_with_config!(opts) do
+    path = Keyword.get(opts, :path)
+    %{xgit_path: path} = context = OnDiskRepoTestCase.repo!(path)
+
+    config_file_path = Path.join(path, ".git/config")
+    initial_config = Keyword.get(opts, :initial_config)
+    File.write!(config_file_path, initial_config)
+
+    Map.put(context, :config_file_path, config_file_path)
   end
 
   test "handles unknown message" do
