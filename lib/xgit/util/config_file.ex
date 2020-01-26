@@ -44,8 +44,10 @@ defmodule Xgit.Util.ConfigFile do
   end
 
   @impl true
-  def init(path) when is_binary(path),
-    do: {:ok, ObservedFile.initial_state_for_path(path, &parse_config_at_path/1, &empty_config/0)}
+  def init(path) when is_binary(path) do
+    cover {:ok,
+           ObservedFile.initial_state_for_path(path, &parse_config_at_path/1, &empty_config/0)}
+  end
 
   @typedoc ~S"""
   Error codes that can be returned by `get_entries/2`.
