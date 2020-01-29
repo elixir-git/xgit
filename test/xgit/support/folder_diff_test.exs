@@ -1,6 +1,9 @@
 defmodule FolderDiffTest do
   use ExUnit.Case
 
+  # credo:disable-for-this-file Credo.Check.Readability.RedundantBlankLines
+  # Some quoted strings have multiple blank lines and latest Credo doesn't like that.
+
   import FolderDiff
 
   setup do
