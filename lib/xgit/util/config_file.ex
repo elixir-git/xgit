@@ -364,8 +364,14 @@ defmodule Xgit.Util.ConfigFile do
     end
   end
 
-  defp handle_add_config_entries(%ObservedFile{} = _of, _entries, _opts) do
-    raise "unimplemented"
+  defp handle_add_config_entries(%ObservedFile{} = of, _entries, opts) do
+    %{parsed_state: lines} =
+      of = ObservedFile.update_state_if_maybe_dirty(of, &parse_config_at_path/1, &empty_config/0)
+
+    add? = Keyword.get(opts, :add?, false)
+    replace_all? = Keyword.get(opts, :replace_all?, false)
+
+      raise "unimplemented"
   end
 
   ## --- Callbacks ---
