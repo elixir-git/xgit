@@ -895,7 +895,7 @@ defmodule Xgit.Util.ConfigFileTest do
     xgit_add_fn = Keyword.get(opts, :xgit_add_fn)
     xgit_add_fn.(xgit_config_file)
 
-    assert_folders_are_equal(Path.join(ref_path), Path.join(xgit_path))
+    assert_folders_are_equal(Path.join(ref_path, ".git"), Path.join(xgit_path, ".git"))
   end
 
   defp setup_with_config!(opts) do

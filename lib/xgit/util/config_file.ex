@@ -364,14 +364,116 @@ defmodule Xgit.Util.ConfigFile do
     end
   end
 
-  defp handle_add_config_entries(%ObservedFile{} = of, _entries, opts) do
+  defp handle_add_config_entries(%ObservedFile{} = of, entries, opts) do
     %{parsed_state: lines} =
       of = ObservedFile.update_state_if_maybe_dirty(of, &parse_config_at_path/1, &empty_config/0)
 
     add? = Keyword.get(opts, :add?, false)
     replace_all? = Keyword.get(opts, :replace_all?, false)
 
-    raise "unimplemented"
+    namespaces = namespaces_from_entries(entries)
+
+    config_lines = new_config_lines(lines, [], entries, namespaces, add?, replace_all?)
+    IO.inspect(config_lines, label: "config_lines after rewrite")
+
+    cover {:reply, :ok, of}
+  end
+
+  defp namespaces_from_entries(entries) do
+    entries
+    |> Enum.map(&namespace_from_entry/1)
+    |> MapSet.new()
+  end
+
+  defp namespace_from_entry(%ConfigEntry{
+         section: section,
+         subsection: subsection,
+         name: name
+       }) do
+    {section, subsection, name}
+  end
+
+  defp new_config_lines(
+         remaining_old_lines,
+         new_lines_acc,
+         entries_to_add,
+         namespaces,
+         add?,
+         replace_all?
+       )
+
+  defp new_config_lines(
+         remaining_old_lines,
+         new_lines_acc,
+         [] = _entries_to_add,
+         _namespaces,
+         _add?,
+         _replace_all?
+       ) do
+    new_lines_acc ++ remaining_old_lines
+  end
+
+  defp new_config_lines(
+         remaining_old_lines,
+         new_lines_acc,
+         entries_to_add,
+         namespaces,
+         add?,
+         replace_all?
+       ) do
+    {before_match, match_and_after} =
+      Enum.split_while(remaining_old_lines, &(!matches_any_namespace?(&1, namespaces)))
+
+    existing_lines = new_lines_acc ++ before_match
+    last_existing_line = List.last(new_lines_acc)
+
+    {new_lines, remaining_old_lines, entries_to_add} =
+      new_lines([], match_and_after, entries_to_add, last_existing_line, add?, replace_all?)
+
+    new_config_lines(
+      remaining_old_lines,
+      existing_lines ++ new_lines,
+      entries_to_add,
+      namespaces,
+      add?,
+      replace_all?
+    )
+  end
+
+  defp matches_any_namespace?(%__MODULE__.Line{entry: nil}, _namespaces), do: cover(false)
+
+  defp matches_any_namespace?(
+         %__MODULE__.Line{
+           entry: %ConfigEntry{section: section, subsection: subsection, name: name}
+         },
+         namespaces
+       ) do
+    MapSet.member?(namespaces, {section, subsection, name})
+  end
+
+  defp new_lines(
+         new_lines_acc,
+         match_and_after,
+         entries_to_add,
+         last_existing_line,
+         add?,
+         replace_all?
+       )
+
+  defp new_lines(
+         new_lines_acc,
+         match_and_after,
+         entries_to_add,
+         last_existing_line,
+         _add?,
+         _replace_all?
+       ) do
+    IO.inspect(new_lines_acc, label: "new_lines_acc")
+    IO.inspect(match_and_after, label: "match_and_after")
+    IO.inspect(entries_to_add, label: "entries_to_add")
+    IO.inspect(last_existing_line, label: "last_existing_line")
+
+    raise "argh, my head asplode!"
   end
 
   ## --- Callbacks ---
