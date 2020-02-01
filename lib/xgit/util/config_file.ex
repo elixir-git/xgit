@@ -371,7 +371,7 @@ defmodule Xgit.Util.ConfigFile do
     add? = Keyword.get(opts, :add?, false)
     replace_all? = Keyword.get(opts, :replace_all?, false)
 
-      raise "unimplemented"
+    raise "unimplemented"
   end
 
   ## --- Callbacks ---
