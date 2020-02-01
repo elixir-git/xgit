@@ -1,5 +1,6 @@
 defmodule Xgit.Util.ObservedFile do
   @moduledoc false
+
   # Records the cached parsed state of the file and its modification date
   # so that Xgit can avoid the work of re-parsing that file when we can
   # be sure it is unchanged.

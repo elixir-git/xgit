@@ -1,5 +1,6 @@
 defmodule Xgit.Util.ParseDecimal do
   @moduledoc false
+
   # Internal utility for parsing decimal values from charlist.
 
   import Xgit.Util.ForceCoverage

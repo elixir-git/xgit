@@ -1,5 +1,6 @@
 defmodule FolderDiff do
   @moduledoc false
+
   # Split out as a separate package? Compare two folders. Assert if mismatched.
 
   import ExUnit.Assertions

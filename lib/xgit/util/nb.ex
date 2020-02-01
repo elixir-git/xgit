@@ -46,6 +46,7 @@
 
 defmodule Xgit.Util.NB do
   @moduledoc false
+
   # Internal conversion utilities for network byte order handling.
 
   use Bitwise

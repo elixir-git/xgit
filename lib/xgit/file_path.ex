@@ -525,6 +525,7 @@ defmodule Xgit.FilePath do
   end
 
   defp match_mac_hfs_path?([], [], _ignorable?), do: cover(true)
+
   # defp match_mac_hfs_path?([], [], ignorable?), do: ignorable?
   # TO DO: Understand what jgit was trying to accomplish with ignorable.
   # https://github.com/elixir-git/xgit/issues/34

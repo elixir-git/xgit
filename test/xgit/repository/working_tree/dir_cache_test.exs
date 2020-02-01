@@ -179,6 +179,7 @@ defmodule Xgit.Repository.WorkingTree.DirCacheTest do
 
       index_path = Path.join([xgit, ".git", "index"])
       File.mkdir_p!(index_path)
+
       # ^ WRONG! Should be a file, not a directory.
 
       working_tree = Storage.default_working_tree(repo)
