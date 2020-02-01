@@ -364,7 +364,7 @@ defmodule Xgit.Util.ConfigFile do
     end
   end
 
-  defp handle_add_config_entries(%ObservedFile{} = of, entries, opts) do
+  defp handle_add_config_entries(%ObservedFile{path: path} = of, entries, opts) do
     %{parsed_state: lines} =
       of = ObservedFile.update_state_if_maybe_dirty(of, &parse_config_at_path/1, &empty_config/0)
 
@@ -373,10 +373,15 @@ defmodule Xgit.Util.ConfigFile do
 
     namespaces = namespaces_from_entries(entries)
 
-    config_lines = new_config_lines(lines, [], entries, namespaces, add?, replace_all?)
-    IO.inspect(config_lines, label: "config_lines after rewrite")
+    config_text =
+      lines
+      |> new_config_lines([], entries, namespaces, add?, replace_all?)
+      |> Enum.map(& &1.original)
+      |> Enum.join("\n")
 
-    cover {:reply, :ok, of}
+    result = File.write(path, [config_text, "\n"])
+
+    cover {:reply, result, of}
   end
 
   defp namespaces_from_entries(entries) do
@@ -469,13 +474,13 @@ defmodule Xgit.Util.ConfigFile do
          _add?,
          _replace_all?
        ) do
-    {replacing, remaining_lines} =
+    {_replacing_lines, remaining_lines} =
       Enum.split_with(match_and_after, &matches_namespace?(&1, section, subsection, name))
 
     {matching_entries_to_add, other_entries_to_add} =
       Enum.split_with(entries_to_add, &matches_namespace?(&1, section, subsection, name))
 
-    IO.inspect(replacing, label: "replacing")
+    # IO.inspect(replacing, label: "replacing")
 
     # IO.inspect(remaining_lines, label: "remaining_lines")
 
@@ -483,7 +488,7 @@ defmodule Xgit.Util.ConfigFile do
     # IO.inspect(matching_entries_to_add, label: "matching_entries_to_add")
     # IO.inspect(other_entries_to_add, label: "other_entries_to_add")
 
-    IO.inspect(last_existing_line, label: "last_existing_line")
+    # IO.inspect(last_existing_line, label: "last_existing_line")
 
     new_lines =
       maybe_insert_subsection(last_existing_line, section, subsection) ++
@@ -491,9 +496,9 @@ defmodule Xgit.Util.ConfigFile do
 
     {new_lines, remaining_lines, other_entries_to_add}
 
-    IO.inspect(new_lines, label: "new_lines")
+    # IO.inspect(new_lines, label: "new_lines")
 
-    raise "argh, my head asplode!"
+    # raise "argh, my head asplode!"
   end
 
   defp matches_namespace?(
