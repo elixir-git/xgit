@@ -425,10 +425,10 @@ defmodule Xgit.Util.ConfigFile do
       Enum.split_while(remaining_old_lines, &(!matches_any_namespace?(&1, namespaces)))
 
     existing_lines = new_lines_acc ++ before_match
-    last_existing_line = List.last(new_lines_acc)
+    last_existing_line = List.last(existing_lines)
 
     {new_lines, remaining_old_lines, entries_to_add} =
-      new_lines([], match_and_after, entries_to_add, last_existing_line, add?, replace_all?)
+      new_lines(match_and_after, entries_to_add, last_existing_line, add?, replace_all?)
 
     new_config_lines(
       remaining_old_lines,
@@ -451,29 +451,96 @@ defmodule Xgit.Util.ConfigFile do
     MapSet.member?(namespaces, {section, subsection, name})
   end
 
-  defp new_lines(
-         new_lines_acc,
-         match_and_after,
-         entries_to_add,
-         last_existing_line,
-         add?,
-         replace_all?
-       )
+  defp new_lines(match_and_after, entries_to_add, last_existing_line, add?, replace_all?)
 
   defp new_lines(
-         new_lines_acc,
-         match_and_after,
+         [
+           %__MODULE__.Line{
+             entry: %{
+               section: section,
+               subsection: subsection,
+               name: name
+             }
+           }
+           | _
+         ] = match_and_after,
          entries_to_add,
          last_existing_line,
          _add?,
          _replace_all?
        ) do
-    IO.inspect(new_lines_acc, label: "new_lines_acc")
-    IO.inspect(match_and_after, label: "match_and_after")
-    IO.inspect(entries_to_add, label: "entries_to_add")
+    {replacing, remaining_lines} =
+      Enum.split_with(match_and_after, &matches_namespace?(&1, section, subsection, name))
+
+    {matching_entries_to_add, other_entries_to_add} =
+      Enum.split_with(entries_to_add, &matches_namespace?(&1, section, subsection, name))
+
+    IO.inspect(replacing, label: "replacing")
+
+    # IO.inspect(remaining_lines, label: "remaining_lines")
+
+    # IO.inspect(entries_to_add, label: "entries_to_add")
+    # IO.inspect(matching_entries_to_add, label: "matching_entries_to_add")
+    # IO.inspect(other_entries_to_add, label: "other_entries_to_add")
+
     IO.inspect(last_existing_line, label: "last_existing_line")
 
+    new_lines =
+      maybe_insert_subsection(last_existing_line, section, subsection) ++
+        Enum.map(matching_entries_to_add, &entry_to_line/1)
+
+    {new_lines, remaining_lines, other_entries_to_add}
+
+    IO.inspect(new_lines, label: "new_lines")
+
     raise "argh, my head asplode!"
+  end
+
+  defp matches_namespace?(
+         %__MODULE__.Line{
+           entry: %ConfigEntry{section: section, subsection: subsection, name: name}
+         },
+         section,
+         subsection,
+         name
+       ),
+       do: cover(true)
+
+  defp matches_namespace?(
+         %ConfigEntry{section: section, subsection: subsection, name: name},
+         section,
+         subsection,
+         name
+       ),
+       do: cover(true)
+
+  defp matches_namespace?(_line, _section, _subsection, _name), do: cover(false)
+
+  defp maybe_insert_subsection(
+         %__MODULE__.Line{section: section, subsection: subsection},
+         section,
+         subsection
+       ),
+       do: cover([])
+
+  defp maybe_insert_subsection(_line, section, nil),
+    do: cover([%__MODULE__.Line{original: "[#{section}]", section: section}])
+
+  defp maybe_insert_subsection(_line, _section, _subsection) do
+    raise "subsection unimplemented"
+    # TO DO: Needs quoting and escaping
+  end
+
+  defp entry_to_line(
+         %ConfigEntry{section: section, subsection: subsection, name: name, value: value} = entry
+       ) do
+    cover %__MODULE__.Line{
+      entry: entry,
+      original: "\t#{name} = #{value}",
+      # ^^ TO DO: Needs quoting and escaping
+      section: section,
+      subsection: subsection
+    }
   end
 
   ## --- Callbacks ---
