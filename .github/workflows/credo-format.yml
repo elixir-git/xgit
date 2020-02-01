@@ -6,8 +6,8 @@ jobs:
     name: Code format and Credo
     strategy:
       matrix:
-        otp: [22.1.7]
-        elixir: [1.9.4]
+        otp: [22.2]
+        elixir: [1.10.0]
     env:
       MIX_ENV: test
     steps:
