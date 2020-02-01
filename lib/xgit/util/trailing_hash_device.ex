@@ -1,5 +1,6 @@
 defmodule Xgit.Util.TrailingHashDevice do
   @moduledoc false
+
   # Creates an `iodevice` process that supports git file formats with a trailing
   # SHA-1 hash.
 

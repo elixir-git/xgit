@@ -1,5 +1,6 @@
 defmodule Xgit.Util.ConfigFile do
   @moduledoc false
+
   # This GenServer monitors and potentially updates the contents
   # of an on-disk git config file. It is primarily intended to be
   # used by Xgit.Repository.OnDisk, but may be of use elsewhere.
@@ -21,6 +22,7 @@ defmodule Xgit.Util.ConfigFile do
 
   defmodule Line do
     @moduledoc false
+
     # Wraps the public Xgit.ConfigEntry with some additional infrastructure
     # that lets us reconstruct the exact contents of the file.
 

@@ -1,5 +1,6 @@
 defmodule Xgit.Util.ParseHeader do
   @moduledoc false
+
   # Internal utility for parsing headers from commit and tag objects.
 
   import Xgit.Util.ForceCoverage

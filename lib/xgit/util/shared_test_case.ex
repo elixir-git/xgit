@@ -1,5 +1,6 @@
 defmodule Xgit.Util.SharedTestCase do
   @moduledoc false
+
   # Code to encourage sharing of test cases.
   # Adapted from https://blog.codeminer42.com/how-to-test-shared-behavior-in-elixir-3ea3ebb92b64/.
 

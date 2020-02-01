@@ -1,5 +1,6 @@
 defmodule Xgit.Util.ParseCharlist do
   @moduledoc false
+
   # Internal utility for parsing charlists with ambiguous encodings.
 
   import Xgit.Util.ForceCoverage

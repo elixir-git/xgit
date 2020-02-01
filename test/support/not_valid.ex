@@ -1,5 +1,6 @@
 defmodule NotValid do
   @moduledoc false
+
   # This module can be used to test the invalid case for Repository.valid?
   # and similar. It will not respond properly to such messages.
 

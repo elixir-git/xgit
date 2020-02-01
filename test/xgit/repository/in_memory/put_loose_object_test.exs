@@ -32,6 +32,7 @@ defmodule Xgit.Repository.InMemory.PutLooseObjectTest do
 
       File.write!(path, content)
       content_id = "b9fce9aed947fd9f5a160c18cf2983fe455f8daf"
+
       # ^ lifted from running the corresponding on-disk test.
 
       assert {:ok, repo} = InMemory.start_link()

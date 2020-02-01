@@ -70,6 +70,7 @@ defmodule Xgit.Repository.WorkingTree do
         index_path = Path.join([work_dir, ".git", "index"])
 
         Process.monitor(repository)
+
         # Read index file here or maybe in a :continue handler?
 
         cover {:ok, %{repository: repository, work_dir: work_dir, index_path: index_path}}

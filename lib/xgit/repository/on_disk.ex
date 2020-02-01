@@ -248,6 +248,7 @@ defmodule Xgit.Repository.OnDisk do
 
   defmodule LooseObjectContentSource do
     @moduledoc false
+
     # Implements `Xgit.ContentSource` to read content from a loose object.
 
     import Xgit.Util.ForceCoverage

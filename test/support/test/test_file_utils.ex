@@ -1,5 +1,6 @@
 defmodule Xgit.Test.TestFileUtils do
   @moduledoc false
+
   # (Testing only) Utils to hack on files
 
   @doc ~S"""
