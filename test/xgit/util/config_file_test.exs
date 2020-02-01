@@ -853,7 +853,30 @@ defmodule Xgit.Util.ConfigFileTest do
   """
 
   describe "add_entries/3" do
-    test "basic case" do
+    test "basic case with default options" do
+      assert_configs_are_equal(
+        initial_config: @example_config,
+        git_add_fn: fn path ->
+          assert {"", 0} = System.cmd("git", ["config", "core.filemode", "true"], cd: path)
+        end,
+        xgit_add_fn: fn config_file ->
+          assert :ok =
+                   ConfigFile.add_config_entries(
+                     config_file,
+                     [
+                       %ConfigEntry{
+                         section: "core",
+                         subsection: nil,
+                         name: "filemode",
+                         value: "true"
+                       }
+                     ]
+                   )
+        end
+      )
+    end
+
+    test "replace single-valued variable with redundant replace_all?: true" do
       assert_configs_are_equal(
         initial_config: @example_config,
         git_add_fn: fn path ->
@@ -875,6 +898,141 @@ defmodule Xgit.Util.ConfigFileTest do
                    )
         end
       )
+    end
+
+    test "add to existing multivar with add?: true" do
+      assert_configs_are_equal(
+        initial_config: @example_config,
+        git_add_fn: fn path ->
+          assert {"", 0} =
+                   System.cmd(
+                     "git",
+                     ["config", "--add", "core.gitproxy", ~s("proxy-command" for example.com)],
+                     cd: path
+                   )
+        end,
+        xgit_add_fn: fn config_file ->
+          assert :ok =
+                   ConfigFile.add_config_entries(
+                     config_file,
+                     [
+                       %ConfigEntry{
+                         section: "core",
+                         subsection: nil,
+                         name: "gitproxy",
+                         value: ~s("proxy-command" for example.com)
+                       }
+                     ],
+                     add?: true
+                   )
+        end
+      )
+    end
+
+    test "replace existing multivar with add?: true" do
+      assert_configs_are_equal(
+        initial_config: @example_config,
+        git_add_fn: fn path ->
+          assert {"", 0} =
+                   System.cmd(
+                     "git",
+                     [
+                       "config",
+                       "--replace-all",
+                       "core.gitproxy",
+                       ~s("proxy-command" for example.com)
+                     ],
+                     cd: path
+                   )
+        end,
+        xgit_add_fn: fn config_file ->
+          assert :ok =
+                   ConfigFile.add_config_entries(
+                     config_file,
+                     [
+                       %ConfigEntry{
+                         section: "core",
+                         subsection: nil,
+                         name: "gitproxy",
+                         value: ~s("proxy-command" for example.com)
+                       }
+                     ],
+                     replace_all?: true
+                   )
+        end
+      )
+    end
+
+    test "error: can't replace existing multivar without add? or replace_all?" do
+      %{config_file_path: config_file_path} = setup_with_config!(initial_config: @example_config)
+
+      assert {:ok, cf} = ConfigFile.start_link(config_file_path)
+
+      assert {:error, :replacing_multivar} =
+               ConfigFile.add_config_entries(
+                 cf,
+                 [
+                   %ConfigEntry{
+                     section: "core",
+                     subsection: nil,
+                     name: "gitproxy",
+                     value: ~s("proxy-command" for example.com)
+                   }
+                 ]
+               )
+
+      assert {:ok, :expected_tbd} = ConfigFile.get_entries(cf, section: "core", name: "gitproxy")
+
+      # Hold the phone. Looks like we didn't implement options for ConfigFile.get_entries.
+
+      # gitproxy=proxy-command for kernel.org
+      # gitproxy=default-proxy ; for all the rest
+    end
+
+    test "error: add? and replace_all? both specified" do
+      %{config_file_path: config_file_path} = setup_with_config!(initial_config: @example_config)
+
+      assert {:ok, cf} = ConfigFile.start_link(config_file_path)
+
+      assert_raise ArgumentError,
+                   "Xgit.Util.ConfigFile.add_config_entries/3: add? and replace_all? can not both be true",
+                   fn ->
+                     ConfigFile.add_config_entries(
+                       cf,
+                       [
+                         %ConfigEntry{
+                           section: "core",
+                           subsection: nil,
+                           name: "filemode",
+                           value: "true"
+                         }
+                       ],
+                       add?: true,
+                       replace_all?: true
+                     )
+                   end
+    end
+
+    test "error: invalid entry" do
+      %{config_file_path: config_file_path} = setup_with_config!(initial_config: @example_config)
+
+      assert {:ok, cf} = ConfigFile.start_link(config_file_path)
+
+      assert_raise ArgumentError,
+                   "Xgit.Util.ConfigFile.add_config_entries/3: one or more entries are invalid",
+                   fn ->
+                     ConfigFile.add_config_entries(
+                       cf,
+                       [
+                         %ConfigEntry{
+                           section: "no_underscores_allowed",
+                           subsection: nil,
+                           name: "filemode",
+                           value: "true"
+                         }
+                       ]
+                     )
+                   end
     end
   end
 
@@ -900,6 +1058,7 @@ defmodule Xgit.Util.ConfigFileTest do
 
   defp setup_with_config!(opts) do
     path = Keyword.get(opts, :path)
+
     %{xgit_path: path} = context = OnDiskRepoTestCase.repo!(path)
 
     config_file_path = Path.join(path, ".git/config")

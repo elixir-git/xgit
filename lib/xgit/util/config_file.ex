@@ -323,7 +323,7 @@ defmodule Xgit.Util.ConfigFile do
   @typedoc ~S"""
   Error codes that can be returned by `add_config_entries/3`.
   """
-  @type add_config_entries_reason :: File.posix()
+  @type add_config_entries_reason :: File.posix() | :replacing_multivar
 
   @doc ~S"""
   Add one or more new entries to an existing config.
@@ -347,6 +347,9 @@ defmodule Xgit.Util.ConfigFile do
 
   `:ok` if successful.
 
+  `{:error, :replacing_multivar}` if the existing variable has multiple variables.
+  Replacing such a variable requires either `add?: true` or `replace_all?: true`.
+
   `{:error, reason}` if unable. `reason` is likely a POSIX error code.
   """
   @spec add_config_entries(config_file :: t, entries :: [Xgit.ConfigEntry.t()],
@@ -356,6 +359,11 @@ defmodule Xgit.Util.ConfigFile do
           :ok | {:error, config_file :: add_config_entries_reason}
   def add_config_entries(config_file, entries, opts \\ [])
       when is_pid(config_file) and is_list(entries) and is_list(opts) do
+    if Keyword.get(opts, :add?) && Keyword.get(opts, :replace_all?) do
+      raise ArgumentError,
+            "Xgit.Util.ConfigFile.add_config_entries/3: add? and replace_all? can not both be true"
+    end
+
     if Enum.all?(entries, &ConfigEntry.valid?/1) do
       GenServer.call(config_file, {:add_config_entries, entries, opts})
     else
@@ -380,8 +388,10 @@ defmodule Xgit.Util.ConfigFile do
       |> Enum.join("\n")
 
     result = File.write(path, [config_text, "\n"])
-
     cover {:reply, result, of}
+  catch
+    :throw, :replacing_multivar ->
+      cover {:reply, {:error, :replacing_multivar}, of}
   end
 
   defp namespaces_from_entries(entries) do
@@ -471,14 +481,34 @@ defmodule Xgit.Util.ConfigFile do
          ] = match_and_after,
          entries_to_add,
          last_existing_line,
-         _add?,
-         _replace_all?
+         add?,
+         replace_all?
        ) do
-    {_replacing_lines, remaining_lines} =
+    {replacing_lines, remaining_lines} =
       Enum.split_with(match_and_after, &matches_namespace?(&1, section, subsection, name))
 
     {matching_entries_to_add, other_entries_to_add} =
       Enum.split_with(entries_to_add, &matches_namespace?(&1, section, subsection, name))
+
+    replacing_multivar? = Enum.count(replacing_lines) > 1
+
+    existing_matches_to_keep =
+      cond do
+        replace_all? ->
+          []
+
+        add? ->
+          replacing_lines
+
+        replacing_multivar? ->
+          throw(:replacing_multivar)
+
+        # Yes, this is flow control via exception.
+        # Not sure there is a clean way to avoid this.
+
+        true ->
+          []
+      end
 
     # IO.inspect(replacing, label: "replacing")
 
@@ -492,6 +522,7 @@ defmodule Xgit.Util.ConfigFile do
 
     new_lines =
       maybe_insert_subsection(last_existing_line, section, subsection) ++
+        existing_matches_to_keep ++
         Enum.map(matching_entries_to_add, &entry_to_line/1)
 
     {new_lines, remaining_lines, other_entries_to_add}
@@ -539,10 +570,14 @@ defmodule Xgit.Util.ConfigFile do
   defp entry_to_line(
          %ConfigEntry{section: section, subsection: subsection, name: name, value: value} = entry
        ) do
+    escaped_value =
+      value
+      |> String.replace("\\", "\\\\")
+      |> String.replace(~S("), ~S(\"))
+
     cover %__MODULE__.Line{
       entry: entry,
-      original: "\t#{name} = #{value}",
-      # ^^ TO DO: Needs quoting and escaping
+      original: "\t#{name} = #{escaped_value}",
       section: section,
       subsection: subsection
     }
