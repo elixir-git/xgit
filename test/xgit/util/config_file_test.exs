@@ -658,9 +658,144 @@ defmodule Xgit.Util.ConfigFileTest do
                 }
               ]} = ConfigFile.get_entries(cf)
     end
+
+    test "filter on section + name" do
+      assert entries_from_config_file!(
+               ~s"""
+               [core]
+               \trepositoryformatversion = 0
+               \tfilemode = true
+               \tbare = false
+               \tlogallrefupdates = true
+               [other]
+               \tfilemode = wrong
+               """,
+               section: "core",
+               name: "filemode"
+             ) == [
+               %ConfigEntry{
+                 name: "filemode",
+                 section: "core",
+                 subsection: nil,
+                 value: "true"
+               }
+             ]
+    end
+
+    test "filter on section + subsection + name" do
+      assert entries_from_config_file!(
+               ~s"""
+               [foo "zip"]
+               bar
+               [foo "zap"]
+               bar=false
+               n=3
+               [other "zip"]
+               this=is wrong
+               """,
+               section: "foo",
+               subsection: "zip",
+               name: "bar"
+             ) == [
+               %ConfigEntry{name: "bar", section: "foo", subsection: "zip", value: nil}
+             ]
+    end
+
+    test "filter on section + name won't match subsection" do
+      assert entries_from_config_file!(
+               ~s"""
+               [foo "zip"]
+               bar
+               [foo "zap"]
+               bar=false
+               n=3
+               [foo]
+               bar=only this
+               bah=but not this
+               """,
+               section: "foo",
+               name: "bar"
+             ) == [
+               %ConfigEntry{name: "bar", section: "foo", subsection: nil, value: "only this"}
+             ]
+    end
+
+    test "filter on section only" do
+      assert entries_from_config_file!(
+               ~s"""
+               [core]
+               \trepositoryformatversion = 0
+               \tfilemode = true
+               \tbare = false
+               \tlogallrefupdates = true
+               [other]
+               \tmumble = true
+               """,
+               section: "core"
+             ) == [
+               %ConfigEntry{
+                 name: "repositoryformatversion",
+                 section: "core",
+                 subsection: nil,
+                 value: "0"
+               },
+               %ConfigEntry{
+                 name: "filemode",
+                 section: "core",
+                 subsection: nil,
+                 value: "true"
+               },
+               %ConfigEntry{
+                 name: "bare",
+                 section: "core",
+                 subsection: nil,
+                 value: "false"
+               },
+               %ConfigEntry{
+                 name: "logallrefupdates",
+                 section: "core",
+                 subsection: nil,
+                 value: "true"
+               }
+             ]
+    end
+
+    test "filter on section + subsection" do
+      assert entries_from_config_file!(
+               ~s"""
+               [foo "zip"]
+               bar
+               [foo "zap"]
+               bar=false
+               n=3
+               """,
+               section: "foo",
+               subsection: "zap"
+             ) == [
+               %ConfigEntry{name: "bar", section: "foo", subsection: "zap", value: "false"},
+               %ConfigEntry{name: "n", section: "foo", subsection: "zap", value: "3"}
+             ]
+    end
+
+    test "filter on section alone won't match subsection" do
+      assert entries_from_config_file!(
+               ~s"""
+               [foo "zip"]
+               bar
+               [foo "zap"]
+               bar=false
+               n=3
+               [foo]
+               only=this
+               """,
+               section: "foo"
+             ) == [
+               %ConfigEntry{name: "only", section: "foo", subsection: nil, value: "this"}
+             ]
+    end
   end
 
-  defp entries_from_config_file!(config_file) do
+  defp entries_from_config_file!(config_file, opts \\ []) do
     %{tmp_dir: tmp_dir} = TempDirTestCase.tmp_dir!()
     config_path = Path.join(tmp_dir, "config")
 
@@ -668,7 +803,7 @@ defmodule Xgit.Util.ConfigFileTest do
     TestFileUtils.touch_back!(config_path)
 
     assert {:ok, cf} = ConfigFile.start_link(config_path)
-    assert {:ok, entries} = ConfigFile.get_entries(cf)
+    assert {:ok, entries} = ConfigFile.get_entries(cf, opts)
 
     entries
   end

@@ -65,7 +65,12 @@ defmodule Xgit.Util.ConfigFile do
 
   * `section:` (`String`) if provided, only returns entries in the named section
   * `subsection:` (`String`) if provided, only returns entries in the named subsection
+    (only meaningful if `section` is also provided)
   * `name:` (`String`) if provided, only returns entries with the given variable name
+    (only meaningful if `section` is also provided)
+
+  If `section` is provided but `subsection` is not, then only items within the top-level
+  section (i.e. with no subsection) will be matched.
 
   If no options are provided, returns all entries.
 
@@ -83,17 +88,32 @@ defmodule Xgit.Util.ConfigFile do
   def get_entries(config_file, opts \\ []) when is_pid(config_file) and is_list(opts),
     do: GenServer.call(config_file, {:get_entries, opts})
 
-  defp handle_get_entries(%ObservedFile{} = of, [] = _opts) do
+  defp handle_get_entries(%ObservedFile{} = of, opts) when is_list(opts) do
     %{parsed_state: lines} =
       of = ObservedFile.update_state_if_maybe_dirty(of, &parse_config_at_path/1, &empty_config/0)
+
+    opts = Enum.into(opts, %{})
 
     entries =
       lines
       |> Enum.filter(&(&1.entry != nil))
       |> Enum.map(& &1.entry)
+      |> Enum.filter(&matches_opts?(&1, opts))
 
     {:reply, {:ok, entries}, of}
   end
+
+  defp matches_opts?(item, %{section: section, name: name} = opts) do
+    subsection = Map.get(opts, :subsection)
+    item.section == section && item.subsection == subsection && item.name == name
+  end
+
+  defp matches_opts?(item, %{section: section} = opts) do
+    subsection = Map.get(opts, :subsection)
+    item.section == section && item.subsection == subsection
+  end
+
+  defp matches_opts?(_item, _opts), do: cover(true)
 
   ## --- Parsing ---
 
