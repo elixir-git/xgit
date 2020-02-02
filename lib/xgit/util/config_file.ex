@@ -65,7 +65,12 @@ defmodule Xgit.Util.ConfigFile do
 
   * `section:` (`String`) if provided, only returns entries in the named section
   * `subsection:` (`String`) if provided, only returns entries in the named subsection
+    (only meaningful if `section` is also provided)
   * `name:` (`String`) if provided, only returns entries with the given variable name
+    (only meaningful if `section` is also provided)
+
+  If `section` is provided but `subsection` is not, then only items within the top-level
+  section (i.e. with no subsection) will be matched.
 
   If no options are provided, returns all entries.
 
