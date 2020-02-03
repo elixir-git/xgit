@@ -115,8 +115,6 @@ defmodule Xgit.Util.ConfigFile do
 
   defp matches_opts?(_item, _opts), do: cover(true)
 
-  ## --- Parsing ---
-
   defp parse_config_at_path(path) do
     path
     |> File.stream!()
@@ -381,17 +379,22 @@ defmodule Xgit.Util.ConfigFile do
 
     namespaces = namespaces_from_entries(entries)
 
+    lines
+    |> new_config_lines([], entries, namespaces, add?, replace_all?)
+    |> reply_write_new_lines(path, of)
+  catch
+    :throw, :replacing_multivar ->
+      cover {:reply, {:error, :replacing_multivar}, of}
+  end
+
+  defp reply_write_new_lines(lines, path, of) do
     config_text =
       lines
-      |> new_config_lines([], entries, namespaces, add?, replace_all?)
       |> Enum.map(& &1.original)
       |> Enum.join("\n")
 
     result = File.write(path, [config_text, "\n"])
     cover {:reply, result, of}
-  catch
-    :throw, :replacing_multivar ->
-      cover {:reply, {:error, :replacing_multivar}, of}
   end
 
   defp namespaces_from_entries(entries) do
@@ -603,13 +606,93 @@ defmodule Xgit.Util.ConfigFile do
     }
   end
 
-  ## --- Callbacks ---
+  @typedoc ~S"""
+  Error codes that can be returned by `remove_entries/2`.
+  """
+  @type remove_entries_reason :: File.posix()
+
+  @doc ~S"""
+  Removes all configuration entries that match the requested search.
+
+  ## Options
+
+  * `section:` (`String`) if provided, only removes entries in the named section
+  * `subsection:` (`String`) if provided, only removes entries in the named subsection
+    (only meaningful if `section` is also provided)
+  * `name:` (`String`) if provided, only removes entries with the given variable name
+    (only meaningful if `section` is also provided)
+
+  If `section` is provided but `subsection` is not, then only items within the top-level
+  section (i.e. with no subsection) will be removed.
+
+  If no options are provided, removes all entries.
+
+  ## Return Values
+
+  `:ok` if able to complete the operation (regardless of whether any matching entries
+  were found and removed).
+
+  `{:error, reason}` if unable. `reason` is likely a POSIX error code.
+  """
+  @spec remove_entries(config_file :: t,
+          section: String.t(),
+          subsection: String.t(),
+          name: String.t()
+        ) ::
+          :ok | {:error, reason :: remove_entries_reason}
+  def remove_entries(config_file, opts \\ []) when is_pid(config_file) and is_list(opts),
+    do: GenServer.call(config_file, {:remove_entries, opts})
+
+  defp handle_remove_entries(%ObservedFile{path: path} = of, []) do
+    result = File.write(path, "")
+    cover {:reply, result, of}
+  end
+
+  defp handle_remove_entries(%ObservedFile{path: path} = of, opts) when is_list(opts) do
+    %{parsed_state: lines} =
+      of = ObservedFile.update_state_if_maybe_dirty(of, &parse_config_at_path/1, &empty_config/0)
+
+    opts = Enum.into(opts, %{})
+
+    lines
+    |> Enum.reject(&line_matches_opts?(&1, opts))
+    |> reply_write_new_lines(path, of)
+  end
+
+  defp line_matches_opts?(
+         %__MODULE__.Line{section: section, entry: %{name: name}} = line,
+         %{section: section, name: name} = opts
+       ),
+       do: line.subsection == Map.get(opts, :subsection)
+
+  defp line_matches_opts?(
+         %__MODULE__.Line{section: section, entry: %{name: name1}} = _line,
+         %{section: section, name: name2} = _opts
+       )
+       when is_binary(name1) and is_binary(name2),
+       do: cover(false)
+
+  defp line_matches_opts?(
+         %__MODULE__.Line{section: section, subsection: subsection} = line,
+         %{section: section, subsection: subsection} = opts
+       ),
+       do: line.subsection == Map.get(opts, :subsection)
+
+  defp line_matches_opts?(_line, %{section: _section, name: name}) when not is_nil(name),
+    do: cover(false)
+
+  defp line_matches_opts?(%__MODULE__.Line{section: section} = line, %{section: section} = opts),
+    do: line.subsection == Map.get(opts, :subsection)
+
+  defp line_matches_opts?(_line, _opts), do: cover(false)
 
   @impl true
   def handle_call({:get_entries, opts}, _from, state), do: handle_get_entries(state, opts)
 
   def handle_call({:add_entries, entries, opts}, _from, state),
     do: handle_add_entries(state, entries, opts)
+
+  def handle_call({:remove_entries, opts}, _from, state), do: handle_remove_entries(state, opts)
 
   def handle_call(message, _from, state) do
     Logger.warn("ConfigFile received unrecognized call #{inspect(message)}")

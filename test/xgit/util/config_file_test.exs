@@ -1123,6 +1123,20 @@ defmodule Xgit.Util.ConfigFileTest do
     end
   end
 
+  describe "remove_entries/2" do
+    test "clear entire file" do
+      assert_configs_are_equal(
+        initial_config: @example_config,
+        git_add_fn: fn path ->
+          File.write!(Path.join(path, ".git/config"), "")
+        end,
+        xgit_add_fn: fn config_file ->
+          assert :ok = ConfigFile.remove_entries(config_file)
+        end
+      )
+    end
+  end
+
   defp assert_configs_are_equal(opts) do
     initial_config = Keyword.get(opts, :initial_config)
 
