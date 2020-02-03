@@ -321,9 +321,9 @@ defmodule Xgit.Util.ConfigFile do
   defp empty_config, do: cover([])
 
   @typedoc ~S"""
-  Error codes that can be returned by `add_config_entries/3`.
+  Error codes that can be returned by `add_entries/3`.
   """
-  @type add_config_entries_reason :: File.posix() | :replacing_multivar
+  @type add_entries_reason :: File.posix() | :replacing_multivar
 
   @doc ~S"""
   Add one or more new entries to an existing config.
@@ -352,27 +352,27 @@ defmodule Xgit.Util.ConfigFile do
 
   `{:error, reason}` if unable. `reason` is likely a POSIX error code.
   """
-  @spec add_config_entries(config_file :: t, entries :: [Xgit.ConfigEntry.t()],
+  @spec add_entries(config_file :: t, entries :: [Xgit.ConfigEntry.t()],
           add?: boolean,
           replace_all?: boolean
         ) ::
-          :ok | {:error, config_file :: add_config_entries_reason}
-  def add_config_entries(config_file, entries, opts \\ [])
+          :ok | {:error, config_file :: add_entries_reason}
+  def add_entries(config_file, entries, opts \\ [])
       when is_pid(config_file) and is_list(entries) and is_list(opts) do
     if Keyword.get(opts, :add?) && Keyword.get(opts, :replace_all?) do
       raise ArgumentError,
-            "Xgit.Util.ConfigFile.add_config_entries/3: add? and replace_all? can not both be true"
+            "Xgit.Util.ConfigFile.add_entries/3: add? and replace_all? can not both be true"
     end
 
     if Enum.all?(entries, &ConfigEntry.valid?/1) do
-      GenServer.call(config_file, {:add_config_entries, entries, opts})
+      GenServer.call(config_file, {:add_entries, entries, opts})
     else
       raise ArgumentError,
-            "Xgit.Util.ConfigFile.add_config_entries/3: one or more entries are invalid"
+            "Xgit.Util.ConfigFile.add_entries/3: one or more entries are invalid"
     end
   end
 
-  defp handle_add_config_entries(%ObservedFile{path: path} = of, entries, opts) do
+  defp handle_add_entries(%ObservedFile{path: path} = of, entries, opts) do
     %{parsed_state: lines} =
       of = ObservedFile.update_state_if_maybe_dirty(of, &parse_config_at_path/1, &empty_config/0)
 
@@ -612,8 +612,8 @@ defmodule Xgit.Util.ConfigFile do
   @impl true
   def handle_call({:get_entries, opts}, _from, state), do: handle_get_entries(state, opts)
 
-  def handle_call({:add_config_entries, entries, opts}, _from, state),
-    do: handle_add_config_entries(state, entries, opts)
+  def handle_call({:add_entries, entries, opts}, _from, state),
+    do: handle_add_entries(state, entries, opts)
 
   def handle_call(message, _from, state) do
     Logger.warn("ConfigFile received unrecognized call #{inspect(message)}")

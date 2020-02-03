@@ -861,7 +861,7 @@ defmodule Xgit.Util.ConfigFileTest do
         end,
         xgit_add_fn: fn config_file ->
           assert :ok =
-                   ConfigFile.add_config_entries(
+                   ConfigFile.add_entries(
                      config_file,
                      [
                        %ConfigEntry{
@@ -885,7 +885,7 @@ defmodule Xgit.Util.ConfigFileTest do
         end,
         xgit_add_fn: fn config_file ->
           assert :ok =
-                   ConfigFile.add_config_entries(
+                   ConfigFile.add_entries(
                      config_file,
                      [
                        %ConfigEntry{
@@ -915,7 +915,7 @@ defmodule Xgit.Util.ConfigFileTest do
         end,
         xgit_add_fn: fn config_file ->
           assert :ok =
-                   ConfigFile.add_config_entries(
+                   ConfigFile.add_entries(
                      config_file,
                      [
                        %ConfigEntry{
@@ -939,7 +939,7 @@ defmodule Xgit.Util.ConfigFileTest do
         end,
         xgit_add_fn: fn config_file ->
           assert :ok =
-                   ConfigFile.add_config_entries(
+                   ConfigFile.add_entries(
                      config_file,
                      [
                        %ConfigEntry{
@@ -962,7 +962,7 @@ defmodule Xgit.Util.ConfigFileTest do
         end,
         xgit_add_fn: fn config_file ->
           assert :ok =
-                   ConfigFile.add_config_entries(
+                   ConfigFile.add_entries(
                      config_file,
                      [
                        %ConfigEntry{
@@ -991,7 +991,7 @@ defmodule Xgit.Util.ConfigFileTest do
         end,
         xgit_add_fn: fn config_file ->
           assert :ok =
-                   ConfigFile.add_config_entries(
+                   ConfigFile.add_entries(
                      config_file,
                      [
                        %ConfigEntry{
@@ -1025,7 +1025,7 @@ defmodule Xgit.Util.ConfigFileTest do
         end,
         xgit_add_fn: fn config_file ->
           assert :ok =
-                   ConfigFile.add_config_entries(
+                   ConfigFile.add_entries(
                      config_file,
                      [
                        %ConfigEntry{
@@ -1047,7 +1047,7 @@ defmodule Xgit.Util.ConfigFileTest do
       assert {:ok, cf} = ConfigFile.start_link(config_file_path)
 
       assert {:error, :replacing_multivar} =
-               ConfigFile.add_config_entries(
+               ConfigFile.add_entries(
                  cf,
                  [
                    %ConfigEntry{
@@ -1082,9 +1082,9 @@ defmodule Xgit.Util.ConfigFileTest do
       assert {:ok, cf} = ConfigFile.start_link(config_file_path)
 
       assert_raise ArgumentError,
-                   "Xgit.Util.ConfigFile.add_config_entries/3: add? and replace_all? can not both be true",
+                   "Xgit.Util.ConfigFile.add_entries/3: add? and replace_all? can not both be true",
                    fn ->
-                     ConfigFile.add_config_entries(
+                     ConfigFile.add_entries(
                        cf,
                        [
                          %ConfigEntry{
@@ -1106,9 +1106,9 @@ defmodule Xgit.Util.ConfigFileTest do
       assert {:ok, cf} = ConfigFile.start_link(config_file_path)
 
       assert_raise ArgumentError,
-                   "Xgit.Util.ConfigFile.add_config_entries/3: one or more entries are invalid",
+                   "Xgit.Util.ConfigFile.add_entries/3: one or more entries are invalid",
                    fn ->
-                     ConfigFile.add_config_entries(
+                     ConfigFile.add_entries(
                        cf,
                        [
                          %ConfigEntry{
