@@ -1135,6 +1135,61 @@ defmodule Xgit.Util.ConfigFileTest do
         end
       )
     end
+
+    test "remove by section" do
+      assert_configs_are_equal(
+        initial_config: @example_config,
+        git_add_fn: fn path ->
+          assert {"", 0} = System.cmd("git", ["config", "--remove-section", "core"], cd: path)
+        end,
+        xgit_add_fn: fn config_file ->
+          assert :ok =
+                   ConfigFile.remove_entries(
+                     config_file,
+                     section: "core"
+                   )
+        end
+      )
+    end
+
+    test "remove by subsection" do
+      assert_configs_are_equal(
+        initial_config: @example_config,
+        git_add_fn: fn path ->
+          assert {"", 0} =
+                   System.cmd(
+                     "git",
+                     ["config", "--remove-section", "http.https://weak.example.com"],
+                     cd: path
+                   )
+        end,
+        xgit_add_fn: fn config_file ->
+          assert :ok =
+                   ConfigFile.remove_entries(
+                     config_file,
+                     section: "http",
+                     subsection: "https://weak.example.com"
+                   )
+        end
+      )
+    end
+
+    test "remove by name" do
+      assert_configs_are_equal(
+        initial_config: @example_config,
+        git_add_fn: fn path ->
+          assert {"", 0} = System.cmd("git", ["config", "--unset-all", "core.filemode"], cd: path)
+        end,
+        xgit_add_fn: fn config_file ->
+          assert :ok =
+                   ConfigFile.remove_entries(
+                     config_file,
+                     section: "core",
+                     name: "filemode"
+                   )
+        end
+      )
+    end
   end
 
   defp assert_configs_are_equal(opts) do
