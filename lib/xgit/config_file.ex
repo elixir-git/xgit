@@ -1,9 +1,10 @@
-defmodule Xgit.Util.ConfigFile do
-  @moduledoc false
+defmodule Xgit.ConfigFile do
+  @moduledoc ~S"""
+  This GenServer monitors and potentially updates the contents
+  of an on-disk git config file.
 
-  # This GenServer monitors and potentially updates the contents
-  # of an on-disk git config file. It is primarily intended to be
-  # used by Xgit.Repository.OnDisk, but may be of use elsewhere.
+  See https://git-scm.com/docs/git-config for details on the config file format.
+  """
 
   use GenServer
 
@@ -39,7 +40,7 @@ defmodule Xgit.Util.ConfigFile do
   def start_link(path) when is_binary(path) do
     unless File.dir?(Path.dirname(path)) do
       raise ArgumentError,
-            "Xgit.Util.ConfigFile.start_link/1: Parent of path #{path} must be an existing directory"
+            "Xgit.ConfigFile.start_link/1: Parent of path #{path} must be an existing directory"
     end
 
     GenServer.start_link(__MODULE__, path)
@@ -78,6 +79,8 @@ defmodule Xgit.Util.ConfigFile do
 
   `{:ok, [entries]}` where `entries` is a list of `Xgit.ConfigEntry` structs that match the
   search parameters.
+
+  `{:error, reason}` if unable. `reason` is likely a POSIX error code.
   """
   @spec get_entries(config_file :: t,
           section: String.t(),
@@ -359,14 +362,14 @@ defmodule Xgit.Util.ConfigFile do
       when is_pid(config_file) and is_list(entries) and is_list(opts) do
     if Keyword.get(opts, :add?) && Keyword.get(opts, :replace_all?) do
       raise ArgumentError,
-            "Xgit.Util.ConfigFile.add_entries/3: add? and replace_all? can not both be true"
+            "Xgit.ConfigFile.add_entries/3: add? and replace_all? can not both be true"
     end
 
     if Enum.all?(entries, &ConfigEntry.valid?/1) do
       GenServer.call(config_file, {:add_entries, entries, opts})
     else
       raise ArgumentError,
-            "Xgit.Util.ConfigFile.add_entries/3: one or more entries are invalid"
+            "Xgit.ConfigFile.add_entries/3: one or more entries are invalid"
     end
   end
 
