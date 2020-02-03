@@ -516,10 +516,6 @@ defmodule Xgit.Util.ConfigFile do
         Enum.map(matching_entries_to_add, &entry_to_line/1)
 
     {new_lines, remaining_lines, other_entries_to_add}
-
-    # IO.inspect(new_lines, label: "new_lines")
-
-    # raise "argh, my head asplode!"
   end
 
   defp new_lines(
