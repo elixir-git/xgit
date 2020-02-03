@@ -906,6 +906,54 @@ defmodule Xgit.Util.ConfigFileTest do
       )
     end
 
+    test "creating a new subsection" do
+      assert_configs_are_equal(
+        initial_config: @example_config,
+        git_add_fn: fn path ->
+          assert {"", 0} =
+                   System.cmd("git", ["config", "other.mumble.filemode", "true"], cd: path)
+        end,
+        xgit_add_fn: fn config_file ->
+          assert :ok =
+                   ConfigFile.add_config_entries(
+                     config_file,
+                     [
+                       %ConfigEntry{
+                         section: "other",
+                         subsection: "mumble",
+                         name: "filemode",
+                         value: "true"
+                       }
+                     ]
+                   )
+        end
+      )
+    end
+
+    test "creating a new subsection requiring escaping" do
+      assert_configs_are_equal(
+        initial_config: @example_config,
+        git_add_fn: fn path ->
+          assert {"", 0} =
+                   System.cmd("git", ["config", ~s(other.mu"mb"\\le.filemode), "true"], cd: path)
+        end,
+        xgit_add_fn: fn config_file ->
+          assert :ok =
+                   ConfigFile.add_config_entries(
+                     config_file,
+                     [
+                       %ConfigEntry{
+                         section: "other",
+                         subsection: ~s(mu"mb"\\le),
+                         name: "filemode",
+                         value: "true"
+                       }
+                     ]
+                   )
+        end
+      )
+    end
+
     test "replace single-valued variable with redundant replace_all?: true" do
       assert_configs_are_equal(
         initial_config: @example_config,

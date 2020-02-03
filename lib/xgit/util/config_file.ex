@@ -576,9 +576,19 @@ defmodule Xgit.Util.ConfigFile do
   defp maybe_insert_subsection(_line, section, nil),
     do: cover([%__MODULE__.Line{original: "[#{section}]", section: section}])
 
-  defp maybe_insert_subsection(_line, _section, _subsection) do
-    raise "subsection unimplemented"
-    # TO DO: Needs quoting and escaping
+  defp maybe_insert_subsection(_line, section, subsection) do
+    escaped_subsection =
+      subsection
+      |> String.replace("\\", "\\\\")
+      |> String.replace(~S("), ~S(\"))
+
+    cover([
+      %__MODULE__.Line{
+        original: ~s([#{section} "#{escaped_subsection}"]),
+        section: section,
+        subsection: subsection
+      }
+    ])
   end
 
   defp entry_to_line(
