@@ -241,7 +241,7 @@ defmodule Xgit.Util.ConfigFile do
 
   defp read_quoted_string([?" | remainder]) do
     {quoted_string, remainder} = read_quoted_string([], remainder)
-    {Enum.reverse(quoted_string), remainder}
+    cover {Enum.reverse(quoted_string), remainder}
   end
 
   defp read_quoted_string(_acc, [?\n | _remainder]) do
