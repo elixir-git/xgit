@@ -1,11 +1,11 @@
-defmodule Xgit.Util.ConfigFileTest do
+defmodule Xgit.ConfigFileTest do
   use ExUnit.Case, async: true
 
   alias Xgit.ConfigEntry
+  alias Xgit.ConfigFile
   alias Xgit.Test.OnDiskRepoTestCase
   alias Xgit.Test.TempDirTestCase
   alias Xgit.Test.TestFileUtils
-  alias Xgit.Util.ConfigFile
 
   import ExUnit.CaptureLog
   import FolderDiff
@@ -16,7 +16,7 @@ defmodule Xgit.Util.ConfigFileTest do
       path = Path.join(tmp_dir, "config/blah")
 
       assert_raise ArgumentError,
-                   "Xgit.Util.ConfigFile.start_link/1: Parent of path #{path} must be an existing directory",
+                   "Xgit.ConfigFile.start_link/1: Parent of path #{path} must be an existing directory",
                    fn -> ConfigFile.start_link(path) end
     end
 
@@ -1082,7 +1082,7 @@ defmodule Xgit.Util.ConfigFileTest do
       assert {:ok, cf} = ConfigFile.start_link(config_file_path)
 
       assert_raise ArgumentError,
-                   "Xgit.Util.ConfigFile.add_entries/3: add? and replace_all? can not both be true",
+                   "Xgit.ConfigFile.add_entries/3: add? and replace_all? can not both be true",
                    fn ->
                      ConfigFile.add_entries(
                        cf,
@@ -1106,7 +1106,7 @@ defmodule Xgit.Util.ConfigFileTest do
       assert {:ok, cf} = ConfigFile.start_link(config_file_path)
 
       assert_raise ArgumentError,
-                   "Xgit.Util.ConfigFile.add_entries/3: one or more entries are invalid",
+                   "Xgit.ConfigFile.add_entries/3: one or more entries are invalid",
                    fn ->
                      ConfigFile.add_entries(
                        cf,
