@@ -1126,8 +1126,7 @@ defmodule Xgit.Util.ConfigFileTest do
   defp assert_configs_are_equal(opts) do
     initial_config = Keyword.get(opts, :initial_config)
 
-    %{xgit_path: ref_path} =
-      setup_with_config!(initial_config: initial_config)
+    %{xgit_path: ref_path} = setup_with_config!(initial_config: initial_config)
 
     %{xgit_path: xgit_path, config_file_path: xgit_config_file_path} =
       setup_with_config!(initial_config: initial_config)
