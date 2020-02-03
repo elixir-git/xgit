@@ -241,7 +241,7 @@ defmodule Xgit.Util.ConfigFile do
 
   defp read_quoted_string([?" | remainder]) do
     {quoted_string, remainder} = read_quoted_string([], remainder)
-    {Enum.reverse(quoted_string), remainder}
+    cover {Enum.reverse(quoted_string), remainder}
   end
 
   defp read_quoted_string(_acc, [?\n | _remainder]) do
@@ -320,10 +320,296 @@ defmodule Xgit.Util.ConfigFile do
 
   defp empty_config, do: cover([])
 
+  @typedoc ~S"""
+  Error codes that can be returned by `add_entries/3`.
+  """
+  @type add_entries_reason :: File.posix() | :replacing_multivar
+
+  @doc ~S"""
+  Add one or more new entries to an existing config.
+
+  The entries need not be sorted. However, if multiple values are provided
+  for the same variable (section, subsection, name tuple), they will be added
+  in the order provided here.
+
+  ## Parameters
+
+  `entries` (list of `Xgit.ConfigEntry`) entries to be added
+
+  ## Options
+
+  `add?`: if `true`, adds these entries to any that may already exist
+  `replace_all?`: if `true`, removes all existing entries that match any keys provided
+
+  See also the `:remove_all` option for the `value` member of `Xgit.ConfigEntry`.
+
+  ## Return Values
+
+  `:ok` if successful.
+
+  `{:error, :replacing_multivar}` if the existing variable has multiple variables.
+  Replacing such a variable requires either `add?: true` or `replace_all?: true`.
+
+  `{:error, reason}` if unable. `reason` is likely a POSIX error code.
+  """
+  @spec add_entries(config_file :: t, entries :: [Xgit.ConfigEntry.t()],
+          add?: boolean,
+          replace_all?: boolean
+        ) ::
+          :ok | {:error, config_file :: add_entries_reason}
+  def add_entries(config_file, entries, opts \\ [])
+      when is_pid(config_file) and is_list(entries) and is_list(opts) do
+    if Keyword.get(opts, :add?) && Keyword.get(opts, :replace_all?) do
+      raise ArgumentError,
+            "Xgit.Util.ConfigFile.add_entries/3: add? and replace_all? can not both be true"
+    end
+
+    if Enum.all?(entries, &ConfigEntry.valid?/1) do
+      GenServer.call(config_file, {:add_entries, entries, opts})
+    else
+      raise ArgumentError,
+            "Xgit.Util.ConfigFile.add_entries/3: one or more entries are invalid"
+    end
+  end
+
+  defp handle_add_entries(%ObservedFile{path: path} = of, entries, opts) do
+    %{parsed_state: lines} =
+      of = ObservedFile.update_state_if_maybe_dirty(of, &parse_config_at_path/1, &empty_config/0)
+
+    add? = Keyword.get(opts, :add?, false)
+    replace_all? = Keyword.get(opts, :replace_all?, false)
+
+    namespaces = namespaces_from_entries(entries)
+
+    config_text =
+      lines
+      |> new_config_lines([], entries, namespaces, add?, replace_all?)
+      |> Enum.map(& &1.original)
+      |> Enum.join("\n")
+
+    result = File.write(path, [config_text, "\n"])
+    cover {:reply, result, of}
+  catch
+    :throw, :replacing_multivar ->
+      cover {:reply, {:error, :replacing_multivar}, of}
+  end
+
+  defp namespaces_from_entries(entries) do
+    entries
+    |> Enum.map(&namespace_from_entry/1)
+    |> MapSet.new()
+  end
+
+  defp namespace_from_entry(%ConfigEntry{
+         section: section,
+         subsection: subsection,
+         name: name
+       }) do
+    {section, subsection, name}
+  end
+
+  defp new_config_lines(
+         remaining_old_lines,
+         new_lines_acc,
+         entries_to_add,
+         namespaces,
+         add?,
+         replace_all?
+       )
+
+  defp new_config_lines(
+         remaining_old_lines,
+         new_lines_acc,
+         [] = _entries_to_add,
+         _namespaces,
+         _add?,
+         _replace_all?
+       ) do
+    new_lines_acc ++ remaining_old_lines
+  end
+
+  defp new_config_lines(
+         remaining_old_lines,
+         new_lines_acc,
+         entries_to_add,
+         namespaces,
+         add?,
+         replace_all?
+       ) do
+    {before_match, match_and_after} =
+      Enum.split_while(remaining_old_lines, &(!matches_any_namespace?(&1, namespaces)))
+
+    existing_lines = new_lines_acc ++ before_match
+    last_existing_line = List.last(existing_lines)
+
+    {new_lines, remaining_old_lines, entries_to_add} =
+      new_lines(match_and_after, entries_to_add, last_existing_line, add?, replace_all?)
+
+    new_config_lines(
+      remaining_old_lines,
+      existing_lines ++ new_lines,
+      entries_to_add,
+      namespaces,
+      add?,
+      replace_all?
+    )
+  end
+
+  defp matches_any_namespace?(%__MODULE__.Line{entry: nil}, _namespaces), do: cover(false)
+
+  defp matches_any_namespace?(
+         %__MODULE__.Line{
+           entry: %ConfigEntry{section: section, subsection: subsection, name: name}
+         },
+         namespaces
+       ) do
+    MapSet.member?(namespaces, {section, subsection, name})
+  end
+
+  defp new_lines(match_and_after, entries_to_add, last_existing_line, add?, replace_all?)
+
+  defp new_lines(
+         [
+           %__MODULE__.Line{
+             entry: %{
+               section: section,
+               subsection: subsection,
+               name: name
+             }
+           }
+           | _
+         ] = match_and_after,
+         entries_to_add,
+         last_existing_line,
+         add?,
+         replace_all?
+       ) do
+    {replacing_lines, remaining_lines} =
+      Enum.split_with(match_and_after, &matches_namespace?(&1, section, subsection, name))
+
+    {matching_entries_to_add, other_entries_to_add} =
+      Enum.split_with(entries_to_add, &matches_namespace?(&1, section, subsection, name))
+
+    replacing_multivar? = Enum.count(replacing_lines) > 1
+
+    existing_matches_to_keep =
+      cond do
+        replace_all? ->
+          cover []
+
+        add? ->
+          cover replacing_lines
+
+        replacing_multivar? ->
+          throw(:replacing_multivar)
+
+        # Yes, this is flow control via exception.
+        # Not sure there is a clean way to avoid this.
+
+        true ->
+          cover []
+      end
+
+    new_lines =
+      maybe_insert_subsection(last_existing_line, section, subsection) ++
+        existing_matches_to_keep ++
+        Enum.map(matching_entries_to_add, &entry_to_line/1)
+
+    {new_lines, remaining_lines, other_entries_to_add}
+  end
+
+  defp new_lines(
+         [] = _match_and_after,
+         [
+           %ConfigEntry{
+             section: section,
+             subsection: subsection,
+             name: name
+           }
+           | _
+         ] = entries_to_add,
+         last_existing_line,
+         _add?,
+         _replace_all?
+       ) do
+    {matching_entries_to_add, other_entries_to_add} =
+      Enum.split_with(entries_to_add, &matches_namespace?(&1, section, subsection, name))
+
+    new_lines =
+      maybe_insert_subsection(last_existing_line, section, subsection) ++
+        Enum.map(matching_entries_to_add, &entry_to_line/1)
+
+    cover {new_lines, [], other_entries_to_add}
+  end
+
+  defp matches_namespace?(
+         %__MODULE__.Line{
+           entry: %ConfigEntry{section: section, subsection: subsection, name: name}
+         },
+         section,
+         subsection,
+         name
+       ),
+       do: cover(true)
+
+  defp matches_namespace?(
+         %ConfigEntry{section: section, subsection: subsection, name: name},
+         section,
+         subsection,
+         name
+       ),
+       do: cover(true)
+
+  defp matches_namespace?(_line, _section, _subsection, _name), do: cover(false)
+
+  defp maybe_insert_subsection(
+         %__MODULE__.Line{section: section, subsection: subsection},
+         section,
+         subsection
+       ),
+       do: cover([])
+
+  defp maybe_insert_subsection(_line, section, nil),
+    do: cover([%__MODULE__.Line{original: "[#{section}]", section: section}])
+
+  defp maybe_insert_subsection(_line, section, subsection) do
+    escaped_subsection =
+      subsection
+      |> String.replace("\\", "\\\\")
+      |> String.replace(~S("), ~S(\"))
+
+    cover([
+      %__MODULE__.Line{
+        original: ~s([#{section} "#{escaped_subsection}"]),
+        section: section,
+        subsection: subsection
+      }
+    ])
+  end
+
+  defp entry_to_line(
+         %ConfigEntry{section: section, subsection: subsection, name: name, value: value} = entry
+       ) do
+    escaped_value =
+      value
+      |> String.replace("\\", "\\\\")
+      |> String.replace(~S("), ~S(\"))
+
+    cover %__MODULE__.Line{
+      entry: entry,
+      original: "\t#{name} = #{escaped_value}",
+      section: section,
+      subsection: subsection
+    }
+  end
+
   ## --- Callbacks ---
 
   @impl true
   def handle_call({:get_entries, opts}, _from, state), do: handle_get_entries(state, opts)
+
+  def handle_call({:add_entries, entries, opts}, _from, state),
+    do: handle_add_entries(state, entries, opts)
 
   def handle_call(message, _from, state) do
     Logger.warn("ConfigFile received unrecognized call #{inspect(message)}")
