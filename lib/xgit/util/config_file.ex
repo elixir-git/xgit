@@ -495,10 +495,10 @@ defmodule Xgit.Util.ConfigFile do
     existing_matches_to_keep =
       cond do
         replace_all? ->
-          []
+          cover []
 
         add? ->
-          replacing_lines
+          cover replacing_lines
 
         replacing_multivar? ->
           throw(:replacing_multivar)
@@ -507,18 +507,8 @@ defmodule Xgit.Util.ConfigFile do
         # Not sure there is a clean way to avoid this.
 
         true ->
-          []
+          cover []
       end
-
-    # IO.inspect(replacing, label: "replacing")
-
-    # IO.inspect(remaining_lines, label: "remaining_lines")
-
-    # IO.inspect(entries_to_add, label: "entries_to_add")
-    # IO.inspect(matching_entries_to_add, label: "matching_entries_to_add")
-    # IO.inspect(other_entries_to_add, label: "other_entries_to_add")
-
-    # IO.inspect(last_existing_line, label: "last_existing_line")
 
     new_lines =
       maybe_insert_subsection(last_existing_line, section, subsection) ++
@@ -530,6 +520,30 @@ defmodule Xgit.Util.ConfigFile do
     # IO.inspect(new_lines, label: "new_lines")
 
     # raise "argh, my head asplode!"
+  end
+
+  defp new_lines(
+         [] = _match_and_after,
+         [
+           %ConfigEntry{
+             section: section,
+             subsection: subsection,
+             name: name
+           }
+           | _
+         ] = entries_to_add,
+         last_existing_line,
+         _add?,
+         _replace_all?
+       ) do
+    {matching_entries_to_add, other_entries_to_add} =
+      Enum.split_with(entries_to_add, &matches_namespace?(&1, section, subsection, name))
+
+    new_lines =
+      maybe_insert_subsection(last_existing_line, section, subsection) ++
+        Enum.map(matching_entries_to_add, &entry_to_line/1)
+
+    cover {new_lines, [], other_entries_to_add}
   end
 
   defp matches_namespace?(

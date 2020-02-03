@@ -876,6 +876,36 @@ defmodule Xgit.Util.ConfigFileTest do
       )
     end
 
+    test "add multiple entries in different sections" do
+      assert_configs_are_equal(
+        initial_config: @example_config,
+        git_add_fn: fn path ->
+          assert {"", 0} = System.cmd("git", ["config", "core.filemode", "true"], cd: path)
+          assert {"", 0} = System.cmd("git", ["config", "other.mumble", "42"], cd: path)
+        end,
+        xgit_add_fn: fn config_file ->
+          assert :ok =
+                   ConfigFile.add_config_entries(
+                     config_file,
+                     [
+                       %ConfigEntry{
+                         section: "core",
+                         subsection: nil,
+                         name: "filemode",
+                         value: "true"
+                       },
+                       %ConfigEntry{
+                         section: "other",
+                         subsection: nil,
+                         name: "mumble",
+                         value: "42"
+                       }
+                     ]
+                   )
+        end
+      )
+    end
+
     test "replace single-valued variable with redundant replace_all?: true" do
       assert_configs_are_equal(
         initial_config: @example_config,
@@ -981,12 +1011,21 @@ defmodule Xgit.Util.ConfigFileTest do
                  ]
                )
 
-      assert {:ok, :expected_tbd} = ConfigFile.get_entries(cf, section: "core", name: "gitproxy")
-
-      # Hold the phone. Looks like we didn't implement options for ConfigFile.get_entries.
-
-      # gitproxy=proxy-command for kernel.org
-      # gitproxy=default-proxy ; for all the rest
+      assert {:ok,
+              [
+                %Xgit.ConfigEntry{
+                  name: "gitproxy",
+                  section: "core",
+                  subsection: nil,
+                  value: "proxy-command for kernel.org"
+                },
+                %Xgit.ConfigEntry{
+                  name: "gitproxy",
+                  section: "core",
+                  subsection: nil,
+                  value: "default-proxy"
+                }
+              ]} = ConfigFile.get_entries(cf, section: "core", name: "gitproxy")
     end
 
     test "error: add? and replace_all? both specified" do
