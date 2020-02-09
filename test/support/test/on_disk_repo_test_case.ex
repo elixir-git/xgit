@@ -16,35 +16,47 @@ defmodule Xgit.Test.OnDiskRepoTestCase do
   Can optionally take a hard-wired path to use instead of the default
   temporary directory. Use that when you need to debug a test that is
   failing and you want to inspect the repo after the test completes.
+
+  ## Options
+
+  * `config_file_content:` (`String` | nil) optional override for `.git/config`
+    file (a string means use this content; `nil` means do not create the file)
   """
-  @spec repo!(path :: Path.t() | nil) :: %{
+  @spec repo!(path :: Path.t() | nil, config_file_content: String.t()) :: %{
           tmp_dir: Path.t(),
           xgit_path: Path.t(),
           xgit_repo: Storage.t()
         }
-  def repo!(path \\ nil)
+  def repo!(path \\ nil, opts \\ [])
 
-  def repo!(nil), do: git_init_repo(TempDirTestCase.tmp_dir!())
+  def repo!(nil, opts) when is_list(opts), do: git_init_repo(TempDirTestCase.tmp_dir!(), opts)
 
-  def repo!(dir) when is_binary(dir) do
+  def repo!(dir, opts) when is_binary(dir) and is_list(opts) do
     File.rm_rf!(dir)
     File.mkdir!(dir)
-    git_init_repo(%{tmp_dir: dir})
+    git_init_repo(%{tmp_dir: dir}, opts)
   end
 
-  defp git_init_repo(%{tmp_dir: xgit_path} = context) do
-    git_init_and_standardize(xgit_path)
+  defp git_init_repo(%{tmp_dir: xgit_path} = context, opts) do
+    git_init_and_standardize(xgit_path, opts)
 
     {:ok, xgit_repo} = OnDisk.start_link(work_dir: xgit_path)
 
     Map.merge(context, %{xgit_path: xgit_path, xgit_repo: xgit_repo})
   end
 
-  defp git_init_and_standardize(git_dir) do
+  @default_config_file_content ~s"""
+  [core]
+  \trepositoryformatversion = 0
+  \tfilemode = true
+  \tbare = false
+  \tlogallrefupdates = true
+  """
+  defp git_init_and_standardize(git_dir, opts) do
     git_dir
     |> git_init()
     |> remove_sample_hooks()
-    |> rewrite_config()
+    |> rewrite_config(Keyword.get(opts, :config_file_content, @default_config_file_content))
     |> rewrite_info_exclude()
   end
 
@@ -64,16 +76,18 @@ defmodule Xgit.Test.OnDiskRepoTestCase do
     git_dir
   end
 
-  defp rewrite_config(git_dir) do
+  defp rewrite_config(git_dir, config_file_content) when is_binary(config_file_content) do
     git_dir
     |> Path.join(".git/config")
-    |> File.write!(~s"""
-    [core]
-    \trepositoryformatversion = 0
-    \tfilemode = true
-    \tbare = false
-    \tlogallrefupdates = true
-    """)
+    |> File.write!(config_file_content)
+
+    git_dir
+  end
+
+  defp rewrite_config(git_dir, nil) do
+    git_dir
+    |> Path.join(".git/config")
+    |> File.rm()
 
     git_dir
   end
