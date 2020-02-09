@@ -339,8 +339,8 @@ defmodule Xgit.ConfigFile do
 
   ## Options
 
-  `add?`: if `true`, adds these entries to any that may already exist
-  `replace_all?`: if `true`, removes all existing entries that match any keys provided
+  * `add?`: if `true`, adds these entries to any that may already exist
+  * `replace_all?`: if `true`, removes all existing entries that match any keys provided
 
   See also the `:remove_all` option for the `value` member of `Xgit.ConfigEntry`.
 
