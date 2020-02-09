@@ -41,7 +41,7 @@ defmodule Xgit.Repository.Test.ConfigTest do
                  %ConfigEntry{
                    section: "core",
                    subsection: nil,
-                   name: "localrefupdates",
+                   name: "logallrefupdates",
                    value: "true"
                  },
                  %ConfigEntry{
