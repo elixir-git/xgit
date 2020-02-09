@@ -1,5 +1,19 @@
 # Changelog for v0.x Series
 
+## v0.7.3
+
+_09 February 2020_
+
+* **Implement `Xgit.ConfigFile`, which reads and writes git-style config files.** (#283, #287, #289, #294, #295, #296, #297)
+* Implement `Xgit.ConfigEntry`, which represents a single entry in a config file. (#283)
+* Add Elixir 1.10 to test matrix. (#293)
+* Bump credo from 1.1.5 to 1.2.2. (#290, #298)
+* Bump ex_doc from 0.21.2 to 0.21.3. (#291)
+* Bump excoveralls from 0.12.1 to 0.12.2. (#288)
+* Remove `Xgit.Util.FileSnapshot`. (#286)
+* Implement `Xgit.Util.ObservedFile`. (#285)
+* Adapt some of git's tests for `git init`. (#282)
+
 ## v0.7.2
 
 _07 January 2020_
