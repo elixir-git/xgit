@@ -14,6 +14,7 @@ defmodule Xgit.Repository.OnDisk do
 
   import Xgit.Util.ForceCoverage
 
+  alias Xgit.ConfigFile
   alias Xgit.ContentSource
   alias Xgit.Object
   alias Xgit.Ref
@@ -74,8 +75,9 @@ defmodule Xgit.Repository.OnDisk do
 
     with {:work_dir, true} <- {:work_dir, File.dir?(work_dir)},
          git_dir <- Path.join(work_dir, ".git"),
-         {:git_dir, true} <- {:git_dir, File.dir?(git_dir)} do
-      cover {:ok, %{work_dir: work_dir, git_dir: git_dir}}
+         {:git_dir, true} <- {:git_dir, File.dir?(git_dir)},
+         {:ok, config_file} <- ConfigFile.start_link(Path.join(git_dir, "config")) do
+      cover {:ok, %{work_dir: work_dir, git_dir: git_dir, config_file: config_file}}
     else
       {:work_dir, _} -> cover {:stop, :work_dir_doesnt_exist}
       {:git_dir, _} -> cover {:stop, :git_dir_doesnt_exist}
@@ -569,17 +571,26 @@ defmodule Xgit.Repository.OnDisk do
   ## --- Config ---
 
   @impl true
-  def handle_get_config_entries(state, _opts) do
-    {:error, :unimplemented, state}
+  def handle_get_config_entries(%{config_file: config_file} = state, opts) do
+    case ConfigFile.get_entries(config_file, opts) do
+      {:ok, entries} -> cover {:ok, entries, state}
+      {:error, reason} -> cover {:error, reason, state}
+    end
   end
 
   @impl true
-  def handle_add_config_entries(state, _entries, _opts) do
-    {:error, :unimplemented, state}
+  def handle_add_config_entries(%{config_file: config_file} = state, entries, opts) do
+    case ConfigFile.add_entries(config_file, entries, opts) do
+      :ok -> cover {:ok, state}
+      {:error, reason} -> cover {:error, reason, state}
+    end
   end
 
   @impl true
-  def handle_remove_config_entries(state, _opts) do
-    {:error, :unimplemented, state}
+  def handle_remove_config_entries(%{config_file: config_file} = state, opts) do
+    case ConfigFile.remove_entries(config_file, opts) do
+      :ok -> cover {:ok, state}
+      {:error, reason} -> cover {:error, reason, state}
+    end
   end
 end
