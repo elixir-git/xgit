@@ -13,6 +13,13 @@ defmodule Xgit.Repository.OnDisk.ConfigTest do
     %{repo: repo, path: path}
   end
 
+  describe "parsing existing file" do
+    test "file does not exist" do
+      %{xgit_repo: repo} = OnDiskRepoTestCase.repo!(config_file_content: nil)
+      assert {:ok, [] = config_entries} = Storage.get_config_entries(repo)
+    end
+  end
+
   # describe "get_ref/2" do
   #   test "invalid ref (malformed file)", %{repo: repo, path: path} do
   #     File.write!(Path.join(path, ".git/refs/heads/master"), "not a SHA-1 hash")

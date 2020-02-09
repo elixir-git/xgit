@@ -21,7 +21,7 @@ defmodule Xgit.Repository.InMemory do
     %ConfigEntry{
       section: "core",
       subsection: nil,
-      name: "localrefupdates",
+      name: "logallrefupdates",
       value: "true"
     },
     %ConfigEntry{
