@@ -855,7 +855,7 @@ defmodule Xgit.ConfigFileTest do
   describe "add_entries/3" do
     test "basic case with default options" do
       assert_configs_are_equal(
-        initial_config: @example_config,
+        config_file_content: @example_config,
         git_add_fn: fn path ->
           assert {"", 0} = System.cmd("git", ["config", "core.filemode", "true"], cd: path)
         end,
@@ -878,7 +878,7 @@ defmodule Xgit.ConfigFileTest do
 
     test "add multiple entries in different sections" do
       assert_configs_are_equal(
-        initial_config: @example_config,
+        config_file_content: @example_config,
         git_add_fn: fn path ->
           assert {"", 0} = System.cmd("git", ["config", "core.filemode", "true"], cd: path)
           assert {"", 0} = System.cmd("git", ["config", "other.mumble", "42"], cd: path)
@@ -908,7 +908,7 @@ defmodule Xgit.ConfigFileTest do
 
     test "creating a new subsection" do
       assert_configs_are_equal(
-        initial_config: @example_config,
+        config_file_content: @example_config,
         git_add_fn: fn path ->
           assert {"", 0} =
                    System.cmd("git", ["config", "other.mumble.filemode", "true"], cd: path)
@@ -932,7 +932,7 @@ defmodule Xgit.ConfigFileTest do
 
     test "creating a new subsection requiring escaping" do
       assert_configs_are_equal(
-        initial_config: @example_config,
+        config_file_content: @example_config,
         git_add_fn: fn path ->
           assert {"", 0} =
                    System.cmd("git", ["config", ~s(other.mu"mb"\\le.filemode), "true"], cd: path)
@@ -956,7 +956,7 @@ defmodule Xgit.ConfigFileTest do
 
     test "replace single-valued variable with redundant replace_all?: true" do
       assert_configs_are_equal(
-        initial_config: @example_config,
+        config_file_content: @example_config,
         git_add_fn: fn path ->
           assert {"", 0} = System.cmd("git", ["config", "core.filemode", "true"], cd: path)
         end,
@@ -980,7 +980,7 @@ defmodule Xgit.ConfigFileTest do
 
     test "add to existing multivar with add?: true" do
       assert_configs_are_equal(
-        initial_config: @example_config,
+        config_file_content: @example_config,
         git_add_fn: fn path ->
           assert {"", 0} =
                    System.cmd(
@@ -1009,7 +1009,7 @@ defmodule Xgit.ConfigFileTest do
 
     test "replace existing multivar with add?: true" do
       assert_configs_are_equal(
-        initial_config: @example_config,
+        config_file_content: @example_config,
         git_add_fn: fn path ->
           assert {"", 0} =
                    System.cmd(
@@ -1042,7 +1042,8 @@ defmodule Xgit.ConfigFileTest do
     end
 
     test "error: can't replace existing multivar without add? or replace_all?" do
-      %{config_file_path: config_file_path} = setup_with_config!(initial_config: @example_config)
+      %{config_file_path: config_file_path} =
+        OnDiskRepoTestCase.repo!(config_file_content: @example_config)
 
       assert {:ok, cf} = ConfigFile.start_link(config_file_path)
 
@@ -1077,7 +1078,8 @@ defmodule Xgit.ConfigFileTest do
     end
 
     test "error: add? and replace_all? both specified" do
-      %{config_file_path: config_file_path} = setup_with_config!(initial_config: @example_config)
+      %{config_file_path: config_file_path} =
+        OnDiskRepoTestCase.repo!(config_file_content: @example_config)
 
       assert {:ok, cf} = ConfigFile.start_link(config_file_path)
 
@@ -1101,7 +1103,8 @@ defmodule Xgit.ConfigFileTest do
     end
 
     test "error: invalid entry" do
-      %{config_file_path: config_file_path} = setup_with_config!(initial_config: @example_config)
+      %{config_file_path: config_file_path} =
+        OnDiskRepoTestCase.repo!(config_file_content: @example_config)
 
       assert {:ok, cf} = ConfigFile.start_link(config_file_path)
 
@@ -1126,7 +1129,7 @@ defmodule Xgit.ConfigFileTest do
   describe "remove_entries/2" do
     test "clear entire file" do
       assert_configs_are_equal(
-        initial_config: @example_config,
+        config_file_content: @example_config,
         git_add_fn: fn path ->
           File.write!(Path.join(path, ".git/config"), "")
         end,
@@ -1138,7 +1141,7 @@ defmodule Xgit.ConfigFileTest do
 
     test "remove by section" do
       assert_configs_are_equal(
-        initial_config: @example_config,
+        config_file_content: @example_config,
         git_add_fn: fn path ->
           assert {"", 0} = System.cmd("git", ["config", "--remove-section", "core"], cd: path)
         end,
@@ -1154,7 +1157,7 @@ defmodule Xgit.ConfigFileTest do
 
     test "remove by subsection" do
       assert_configs_are_equal(
-        initial_config: @example_config,
+        config_file_content: @example_config,
         git_add_fn: fn path ->
           assert {"", 0} =
                    System.cmd(
@@ -1176,7 +1179,7 @@ defmodule Xgit.ConfigFileTest do
 
     test "remove by name" do
       assert_configs_are_equal(
-        initial_config: @example_config,
+        config_file_content: @example_config,
         git_add_fn: fn path ->
           assert {"", 0} = System.cmd("git", ["config", "--unset-all", "core.filemode"], cd: path)
         end,
@@ -1193,12 +1196,12 @@ defmodule Xgit.ConfigFileTest do
   end
 
   defp assert_configs_are_equal(opts) do
-    initial_config = Keyword.get(opts, :initial_config)
+    config_file_content = Keyword.get(opts, :config_file_content)
 
-    %{xgit_path: ref_path} = setup_with_config!(initial_config: initial_config)
+    %{xgit_path: ref_path} = OnDiskRepoTestCase.repo!(config_file_content: config_file_content)
 
     %{xgit_path: xgit_path, config_file_path: xgit_config_file_path} =
-      setup_with_config!(initial_config: initial_config)
+      OnDiskRepoTestCase.repo!(config_file_content: config_file_content)
 
     git_add_fn = Keyword.get(opts, :git_add_fn)
     git_add_fn.(ref_path)
@@ -1209,18 +1212,6 @@ defmodule Xgit.ConfigFileTest do
     xgit_add_fn.(xgit_config_file)
 
     assert_folders_are_equal(Path.join(ref_path, ".git"), Path.join(xgit_path, ".git"))
-  end
-
-  defp setup_with_config!(opts) do
-    path = Keyword.get(opts, :path)
-
-    %{xgit_path: path} = context = OnDiskRepoTestCase.repo!(path)
-
-    config_file_path = Path.join(path, ".git/config")
-    initial_config = Keyword.get(opts, :initial_config)
-    File.write!(config_file_path, initial_config)
-
-    Map.put(context, :config_file_path, config_file_path)
   end
 
   test "handles unknown message" do
