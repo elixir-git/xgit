@@ -13,28 +13,42 @@ defmodule Xgit.Test.OnDiskRepoTestCase do
   @doc ~S"""
   Returns a context with an on-disk repository set up.
 
-  Can optionally take a hard-wired path to use instead of the default
-  temporary directory. Use that when you need to debug a test that is
-  failing and you want to inspect the repo after the test completes.
-
   ## Options
+
+  * `path:` (`Path`) if present, uses the named path for the git repo
+    instead of the default (temporary directory). The directory will be
+    erased at the start of the test and left in place afterwards.
+    Use this option when you need to debug a test that is failing and
+    you want to inspect the repo after the test completes.
 
   * `config_file_content:` (`String` | nil) optional override for `.git/config`
     file (a string means use this content; `nil` means do not create the file)
   """
-  @spec repo!(path :: Path.t() | nil, config_file_content: String.t()) :: %{
+  @spec repo!(path: Path.t(), config_file_content: String.t()) :: %{
           tmp_dir: Path.t(),
           xgit_path: Path.t(),
           xgit_repo: Storage.t()
         }
-  def repo!(path \\ nil, opts \\ [])
+  def repo!(opts \\ [])
 
-  def repo!(nil, opts) when is_list(opts), do: git_init_repo(TempDirTestCase.tmp_dir!(), opts)
+  def repo!(path) when is_binary(path) do
+    repo!(path: path)
+    # For backward compatibility. Non-preferred interface.
+  end
 
-  def repo!(dir, opts) when is_binary(dir) and is_list(opts) do
-    File.rm_rf!(dir)
-    File.mkdir!(dir)
-    git_init_repo(%{tmp_dir: dir}, opts)
+  def repo!(opts) when is_list(opts) do
+    context =
+      case Keyword.get(opts, :path) do
+        nil ->
+          TempDirTestCase.tmp_dir!()
+
+        path when is_binary(path) ->
+          File.rm_rf!(path)
+          File.mkdir!(path)
+          %{tmp_dir: path}
+      end
+
+    git_init_repo(context, opts)
   end
 
   defp git_init_repo(%{tmp_dir: xgit_path} = context, opts) do
@@ -42,7 +56,11 @@ defmodule Xgit.Test.OnDiskRepoTestCase do
 
     {:ok, xgit_repo} = OnDisk.start_link(work_dir: xgit_path)
 
-    Map.merge(context, %{xgit_path: xgit_path, xgit_repo: xgit_repo})
+    Map.merge(context, %{
+      xgit_path: xgit_path,
+      xgit_repo: xgit_repo,
+      config_file_path: Path.join(xgit_path, ".git/config")
+    })
   end
 
   @default_config_file_content ~s"""
@@ -139,7 +157,7 @@ defmodule Xgit.Test.OnDiskRepoTestCase do
           tree_id: binary()
         }
   def setup_with_valid_tree!(path \\ nil) do
-    %{xgit_path: xgit_path} = context = repo!(path)
+    %{xgit_path: xgit_path} = context = repo!(path: path)
 
     test_content_path = Temp.path!()
     File.write!(test_content_path, "test content\n")
