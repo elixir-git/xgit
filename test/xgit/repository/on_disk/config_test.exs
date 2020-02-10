@@ -1,12 +1,7 @@
 defmodule Xgit.Repository.OnDisk.ConfigTest do
   use Xgit.Repository.Test.ConfigTest, async: true
 
-  # alias Xgit.ConfigEntry
-  # alias Xgit.Repository.Plumbing
-  # alias Xgit.Repository.Storage
   alias Xgit.Test.OnDiskRepoTestCase
-
-  # import FolderDiff
 
   setup do
     %{xgit_repo: repo, xgit_path: path} = OnDiskRepoTestCase.repo!()
