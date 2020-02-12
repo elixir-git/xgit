@@ -30,7 +30,7 @@ jobs:
         if: steps.cache-mix-deps.outputs.cache-hit != 'true'
       - run: mix deps.compile
         if: steps.cache-mix-deps.outputs.cache-hit != 'true'
-      - run: mix coveralls.json
+      - run: XGIT_FORCE_COVERAGE=1 mix coveralls.json
       - name: Upload coverage to CodeCov
         uses: codecov/codecov-action@v1.0.3
         with:

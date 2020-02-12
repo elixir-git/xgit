@@ -14,7 +14,7 @@ defmodule Xgit.Util.ForceCoverage do
 
   # coveralls-ignore-start
 
-  if Application.get_env(:xgit, :use_force_coverage?) do
+  if System.get_env("XGIT_FORCE_COVERAGE") do
     defmacro cover(false = x) do
       quote do
         inspect(unquote(x))
