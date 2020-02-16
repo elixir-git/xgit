@@ -863,44 +863,9 @@ defmodule Xgit.ConfigFileTest do
           assert :ok =
                    ConfigFile.add_entries(
                      config_file,
-                     [
-                       %ConfigEntry{
-                         section: "core",
-                         subsection: nil,
-                         name: "filemode",
-                         value: "true"
-                       }
-                     ]
-                   )
-        end
-      )
-    end
-
-    test "add multiple entries in different sections" do
-      assert_configs_are_equal(
-        config_file_content: @example_config,
-        git_add_fn: fn path ->
-          assert {"", 0} = System.cmd("git", ["config", "core.filemode", "true"], cd: path)
-          assert {"", 0} = System.cmd("git", ["config", "other.mumble", "42"], cd: path)
-        end,
-        xgit_add_fn: fn config_file ->
-          assert :ok =
-                   ConfigFile.add_entries(
-                     config_file,
-                     [
-                       %ConfigEntry{
-                         section: "core",
-                         subsection: nil,
-                         name: "filemode",
-                         value: "true"
-                       },
-                       %ConfigEntry{
-                         section: "other",
-                         subsection: nil,
-                         name: "mumble",
-                         value: "42"
-                       }
-                     ]
+                     "true",
+                     section: "core",
+                     name: "filemode"
                    )
         end
       )
@@ -917,14 +882,10 @@ defmodule Xgit.ConfigFileTest do
           assert :ok =
                    ConfigFile.add_entries(
                      config_file,
-                     [
-                       %ConfigEntry{
-                         section: "other",
-                         subsection: "mumble",
-                         name: "filemode",
-                         value: "true"
-                       }
-                     ]
+                     "true",
+                     section: "other",
+                     subsection: "mumble",
+                     name: "filemode"
                    )
         end
       )
@@ -941,14 +902,10 @@ defmodule Xgit.ConfigFileTest do
           assert :ok =
                    ConfigFile.add_entries(
                      config_file,
-                     [
-                       %ConfigEntry{
-                         section: "other",
-                         subsection: ~s(mu"mb"\\le),
-                         name: "filemode",
-                         value: "true"
-                       }
-                     ]
+                     "true",
+                     section: "other",
+                     subsection: ~s(mu"mb"\\le),
+                     name: "filemode"
                    )
         end
       )
@@ -964,14 +921,9 @@ defmodule Xgit.ConfigFileTest do
           assert :ok =
                    ConfigFile.add_entries(
                      config_file,
-                     [
-                       %ConfigEntry{
-                         section: "core",
-                         subsection: nil,
-                         name: "filemode",
-                         value: "true"
-                       }
-                     ],
+                     "true",
+                     section: "core",
+                     name: "filemode",
                      replace_all?: true
                    )
         end
@@ -993,14 +945,9 @@ defmodule Xgit.ConfigFileTest do
           assert :ok =
                    ConfigFile.add_entries(
                      config_file,
-                     [
-                       %ConfigEntry{
-                         section: "core",
-                         subsection: nil,
-                         name: "gitproxy",
-                         value: ~s("proxy-command" for example.com)
-                       }
-                     ],
+                     ~s("proxy-command" for example.com),
+                     section: "core",
+                     name: "gitproxy",
                      add?: true
                    )
         end
@@ -1027,14 +974,9 @@ defmodule Xgit.ConfigFileTest do
           assert :ok =
                    ConfigFile.add_entries(
                      config_file,
-                     [
-                       %ConfigEntry{
-                         section: "core",
-                         subsection: nil,
-                         name: "gitproxy",
-                         value: ~s("proxy-command" for example.com)
-                       }
-                     ],
+                     ~s("proxy-command" for example.com),
+                     section: "core",
+                     name: "gitproxy",
                      replace_all?: true
                    )
         end
@@ -1050,14 +992,9 @@ defmodule Xgit.ConfigFileTest do
       assert {:error, :replacing_multivar} =
                ConfigFile.add_entries(
                  cf,
-                 [
-                   %ConfigEntry{
-                     section: "core",
-                     subsection: nil,
-                     name: "gitproxy",
-                     value: ~s("proxy-command" for example.com)
-                   }
-                 ]
+                 ~s("proxy-command" for example.com),
+                 section: "core",
+                 name: "gitproxy"
                )
 
       assert {:ok,
@@ -1088,14 +1025,9 @@ defmodule Xgit.ConfigFileTest do
                    fn ->
                      ConfigFile.add_entries(
                        cf,
-                       [
-                         %ConfigEntry{
-                           section: "core",
-                           subsection: nil,
-                           name: "filemode",
-                           value: "true"
-                         }
-                       ],
+                       "true",
+                       section: "core",
+                       name: "filemode",
                        add?: true,
                        replace_all?: true
                      )
@@ -1113,14 +1045,9 @@ defmodule Xgit.ConfigFileTest do
                    fn ->
                      ConfigFile.add_entries(
                        cf,
-                       [
-                         %ConfigEntry{
-                           section: "no_underscores_allowed",
-                           subsection: nil,
-                           name: "filemode",
-                           value: "true"
-                         }
-                       ]
+                       "true",
+                       section: "no_underscores_allowed",
+                       name: "filemode"
                      )
                    end
     end

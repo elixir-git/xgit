@@ -327,18 +327,17 @@ defmodule Xgit.ConfigFile do
   @type add_entries_reason :: File.posix() | :replacing_multivar
 
   @doc ~S"""
-  Add one or more new entries to an existing config.
-
-  The entries need not be sorted. However, if multiple values are provided
-  for the same variable (section, subsection, name tuple), they will be added
-  in the order provided here.
+  Add one or more new values to an existing config value.
 
   ## Parameters
 
-  `entries` (list of `Xgit.ConfigEntry`) entries to be added
+  `value` (`nil` or `String` or list of `String`) value(s) to be added to this variable
 
   ## Options
 
+  * `section`: **required**
+  * `subsection`: _(optional)_
+  * `name`: **required**
   * `add?`: if `true`, adds these entries to any that may already exist
   * `replace_all?`: if `true`, removes all existing entries that match any keys provided
 
@@ -353,17 +352,23 @@ defmodule Xgit.ConfigFile do
 
   `{:error, reason}` if unable. `reason` is likely a POSIX error code.
   """
-  @spec add_entries(config_file :: t, entries :: [Xgit.ConfigEntry.t()],
+  @spec add_entries(config_file :: t, value :: nil | String.t() | [String.t()],
+          section: String.t(),
+          subsection: String.t(),
+          name: String.t(),
           add?: boolean,
           replace_all?: boolean
         ) ::
           :ok | {:error, config_file :: add_entries_reason}
-  def add_entries(config_file, entries, opts \\ [])
-      when is_pid(config_file) and is_list(entries) and is_list(opts) do
+  def add_entries(config_file, value, opts \\ [])
+      when is_pid(config_file) and (is_nil(value) or is_binary(value) or is_list(value)) and
+             is_list(opts) do
     if Keyword.get(opts, :add?) && Keyword.get(opts, :replace_all?) do
       raise ArgumentError,
             "Xgit.ConfigFile.add_entries/3: add? and replace_all? can not both be true"
     end
+
+    entries = value_and_opts_to_entries(value, opts)
 
     if Enum.all?(entries, &ConfigEntry.valid?/1) do
       GenServer.call(config_file, {:add_entries, entries, opts})
@@ -371,6 +376,22 @@ defmodule Xgit.ConfigFile do
       raise ArgumentError,
             "Xgit.ConfigFile.add_entries/3: one or more entries are invalid"
     end
+  end
+
+  defp value_and_opts_to_entries([first | _] = values, opts) do
+    [first_entry] = value_and_opts_to_entries(first, opts)
+    Enum.map(values, &%{first_entry | value: &1})
+  end
+
+  defp value_and_opts_to_entries(value, opts) do
+    [
+      %ConfigEntry{
+        section: Keyword.get(opts, :section),
+        subsection: Keyword.get(opts, :subsection),
+        name: Keyword.get(opts, :name),
+        value: value
+      }
+    ]
   end
 
   defp handle_add_entries(%ObservedFile{path: path} = of, entries, opts) do
