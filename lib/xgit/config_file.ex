@@ -358,7 +358,7 @@ defmodule Xgit.ConfigFile do
           replace_all?: boolean
         ) ::
           :ok | {:error, config_file :: update_reason}
-  def update(config_file, value, opts \\ [])
+  def update(config_file, value, opts)
       when is_pid(config_file) and (is_nil(value) or is_binary(value)) and
              is_list(opts) do
     if Keyword.get(opts, :add?) && Keyword.get(opts, :replace_all?) do
