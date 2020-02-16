@@ -200,8 +200,58 @@ defmodule Xgit.Repository.InMemory do
     cover {:ok, config, state}
   end
 
+  def handle_get_config_entries(%{config: config} = state, opts) when is_list(opts) do
+    opts = Enum.into(opts, %{})
+    matching_entries = Enum.filter(config, &matches_opts?(&1, opts))
+    cover {:ok, matching_entries, state}
+  end
+
+  defp matches_opts?(item, %{section: section, name: name} = opts) do
+    subsection = Map.get(opts, :subsection)
+    item.section == section && item.subsection == subsection && item.name == name
+  end
+
+  defp matches_opts?(item, %{section: section} = opts) do
+    subsection = Map.get(opts, :subsection)
+    item.section == section && item.subsection == subsection
+  end
+
+  defp matches_opts?(_item, _opts), do: cover(true)
+
   @impl true
-  def handle_add_config_entries(state, _entries, _opts) do
+  def handle_add_config_entries(%{config: config} = state, entries, opts) do
+    add? = Keyword.get(opts, :add?, false)
+    replace_all? = Keyword.get(opts, :replace_all?, false)
+
+    opts = Enum.into(opts, %{})
+
+    cond do
+      add? ->
+        new_config = config ++ entries
+        cover {:ok, %{state | config: new_config}}
+
+      replace_all? ->
+        new_config =
+          config
+          |> Enum.reject(&matches_opts?(&1, opts))
+          |> Enum.concat(entries)
+
+          opts = Enum.into(opts, %{})
+
+      true ->
+        {replacing, remaining_config} = Enum.split_with(&matches_opts?(&1, opts))
+
+        if Enum.count(replacing) > 1 do
+          cover {:error, :replacing_multivar}
+        else
+          cover {:ok, %{state | config: remaining_config ++ entries}}
+        end
+    end
+    unless add? or replace_all? do
+    existing_count =
+      config
+      |> Enum.filter(config, )
+
     cover {:error, :unimplemented, state}
   end
 

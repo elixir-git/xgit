@@ -75,7 +75,7 @@ defmodule Xgit.Repository.Test.ConfigTest do
       end
 
       test "can filter by subsection", %{repo: repo} do
-        assert {:ok, [] = config_entries} =
+        assert {:ok, [] = _config_entries} =
                  Storage.get_config_entries(repo, section: "core", subsection: "mumble")
       end
 
@@ -89,8 +89,37 @@ defmodule Xgit.Repository.Test.ConfigTest do
       end
     end
 
-    describe "add_config_entries/2" do
+    describe "add_config_entries/3" do
+      test "basic case with default options", %{repo: repo} do
+        assert :ok =
+                 Storage.add_config_entries(repo, [
+                   %ConfigEntry{
+                     section: "core",
+                     subsection: nil,
+                     name: "filemode",
+                     value: "true"
+                   }
+                 ])
 
+        assert {:ok, config_entries} = Storage.get_config_entries(repo)
+
+        assert [
+                 %ConfigEntry{section: "core", subsection: nil, name: "bare", value: "false"},
+                 %ConfigEntry{section: "core", subsection: nil, name: "filemode", value: "true"},
+                 %ConfigEntry{
+                   section: "core",
+                   subsection: nil,
+                   name: "logallrefupdates",
+                   value: "true"
+                 },
+                 %ConfigEntry{
+                   section: "core",
+                   subsection: nil,
+                   name: "repositoryformatversion",
+                   value: "0"
+                 }
+               ] = Enum.sort(config_entries)
+      end
     end
   end
 end
