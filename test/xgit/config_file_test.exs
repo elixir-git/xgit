@@ -871,6 +871,24 @@ defmodule Xgit.ConfigFileTest do
       )
     end
 
+    test "creating a new top-level section" do
+      assert_configs_are_equal(
+        config_file_content: @example_config,
+        git_add_fn: fn path ->
+          assert {"", 0} = System.cmd("git", ["config", "other.filemode", "true"], cd: path)
+        end,
+        xgit_add_fn: fn config_file ->
+          assert :ok =
+                   ConfigFile.update(
+                     config_file,
+                     "true",
+                     section: "other",
+                     name: "filemode"
+                   )
+        end
+      )
+    end
+
     test "creating a new subsection" do
       assert_configs_are_equal(
         config_file_content: @example_config,
