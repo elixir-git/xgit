@@ -852,7 +852,7 @@ defmodule Xgit.ConfigFileTest do
     cookieFile = /tmp/cookie.txt
   """
 
-  describe "add_entries/3" do
+  describe "update/3" do
     test "basic case with default options" do
       assert_configs_are_equal(
         config_file_content: @example_config,
@@ -861,7 +861,7 @@ defmodule Xgit.ConfigFileTest do
         end,
         xgit_add_fn: fn config_file ->
           assert :ok =
-                   ConfigFile.add_entries(
+                   ConfigFile.update(
                      config_file,
                      "true",
                      section: "core",
@@ -880,7 +880,7 @@ defmodule Xgit.ConfigFileTest do
         end,
         xgit_add_fn: fn config_file ->
           assert :ok =
-                   ConfigFile.add_entries(
+                   ConfigFile.update(
                      config_file,
                      "true",
                      section: "other",
@@ -900,7 +900,7 @@ defmodule Xgit.ConfigFileTest do
         end,
         xgit_add_fn: fn config_file ->
           assert :ok =
-                   ConfigFile.add_entries(
+                   ConfigFile.update(
                      config_file,
                      "true",
                      section: "other",
@@ -919,7 +919,7 @@ defmodule Xgit.ConfigFileTest do
         end,
         xgit_add_fn: fn config_file ->
           assert :ok =
-                   ConfigFile.add_entries(
+                   ConfigFile.update(
                      config_file,
                      "true",
                      section: "core",
@@ -943,7 +943,7 @@ defmodule Xgit.ConfigFileTest do
         end,
         xgit_add_fn: fn config_file ->
           assert :ok =
-                   ConfigFile.add_entries(
+                   ConfigFile.update(
                      config_file,
                      ~s("proxy-command" for example.com),
                      section: "core",
@@ -972,7 +972,7 @@ defmodule Xgit.ConfigFileTest do
         end,
         xgit_add_fn: fn config_file ->
           assert :ok =
-                   ConfigFile.add_entries(
+                   ConfigFile.update(
                      config_file,
                      ~s("proxy-command" for example.com),
                      section: "core",
@@ -990,7 +990,7 @@ defmodule Xgit.ConfigFileTest do
       assert {:ok, cf} = ConfigFile.start_link(config_file_path)
 
       assert {:error, :replacing_multivar} =
-               ConfigFile.add_entries(
+               ConfigFile.update(
                  cf,
                  ~s("proxy-command" for example.com),
                  section: "core",
@@ -1021,9 +1021,9 @@ defmodule Xgit.ConfigFileTest do
       assert {:ok, cf} = ConfigFile.start_link(config_file_path)
 
       assert_raise ArgumentError,
-                   "Xgit.ConfigFile.add_entries/3: add? and replace_all? can not both be true",
+                   "Xgit.ConfigFile.update/3: add? and replace_all? can not both be true",
                    fn ->
-                     ConfigFile.add_entries(
+                     ConfigFile.update(
                        cf,
                        "true",
                        section: "core",
@@ -1041,9 +1041,9 @@ defmodule Xgit.ConfigFileTest do
       assert {:ok, cf} = ConfigFile.start_link(config_file_path)
 
       assert_raise ArgumentError,
-                   "Xgit.ConfigFile.add_entries/3: one or more entries are invalid",
+                   "Xgit.ConfigFile.update/3: one or more entries are invalid",
                    fn ->
-                     ConfigFile.add_entries(
+                     ConfigFile.update(
                        cf,
                        "true",
                        section: "no_underscores_allowed",

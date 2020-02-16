@@ -322,26 +322,24 @@ defmodule Xgit.ConfigFile do
   defp empty_config, do: cover([])
 
   @typedoc ~S"""
-  Error codes that can be returned by `add_entries/3`.
+  Error codes that can be returned by `update/3`.
   """
-  @type add_entries_reason :: File.posix() | :replacing_multivar
+  @type update_reason :: File.posix() | :replacing_multivar
 
   @doc ~S"""
-  Add one or more new values to an existing config value.
+  Create or update a config value.
 
   ## Parameters
 
-  `value` (`nil` or `String` or list of `String`) value(s) to be added to this variable
+  `value` (`nil` or `String`) value to be added to this variable
 
   ## Options
 
-  * `section`: **required**
-  * `subsection`: _(optional)_
-  * `name`: **required**
-  * `add?`: if `true`, adds these entries to any that may already exist
+  * `section`: **required** section to add the value to
+  * `subsection`: _(optional)_ subsection to add the value to
+  * `name`: **required** name of variable to update or replace
+  * `add?`: if `true`, adds this value to any that may already exist
   * `replace_all?`: if `true`, removes all existing entries that match any keys provided
-
-  See also the `:remove_all` option for the `value` member of `Xgit.ConfigEntry`.
 
   ## Return Values
 
@@ -352,35 +350,35 @@ defmodule Xgit.ConfigFile do
 
   `{:error, reason}` if unable. `reason` is likely a POSIX error code.
   """
-  @spec add_entries(config_file :: t, value :: nil | String.t() | [String.t()],
+  @spec update(config_file :: t, value :: nil | String.t(),
           section: String.t(),
           subsection: String.t(),
           name: String.t(),
           add?: boolean,
           replace_all?: boolean
         ) ::
-          :ok | {:error, config_file :: add_entries_reason}
-  def add_entries(config_file, value, opts \\ [])
-      when is_pid(config_file) and (is_nil(value) or is_binary(value) or is_list(value)) and
+          :ok | {:error, config_file :: update_reason}
+  def update(config_file, value, opts \\ [])
+      when is_pid(config_file) and (is_nil(value) or is_binary(value)) and
              is_list(opts) do
     if Keyword.get(opts, :add?) && Keyword.get(opts, :replace_all?) do
       raise ArgumentError,
-            "Xgit.ConfigFile.add_entries/3: add? and replace_all? can not both be true"
+            "Xgit.ConfigFile.update/3: add? and replace_all? can not both be true"
     end
 
     entries = value_and_opts_to_entries(value, opts)
 
+    # NOTE: Some of the implementation here carries over from an earlier
+    # implementation which allowed multiple variables to be updated at once.
+    # I've since removed that interface, but the implementation could still
+    # support that.
+
     if Enum.all?(entries, &ConfigEntry.valid?/1) do
-      GenServer.call(config_file, {:add_entries, entries, opts})
+      GenServer.call(config_file, {:update, entries, opts})
     else
       raise ArgumentError,
-            "Xgit.ConfigFile.add_entries/3: one or more entries are invalid"
+            "Xgit.ConfigFile.update/3: one or more entries are invalid"
     end
-  end
-
-  defp value_and_opts_to_entries([first | _] = values, opts) do
-    [first_entry] = value_and_opts_to_entries(first, opts)
-    Enum.map(values, &%{first_entry | value: &1})
   end
 
   defp value_and_opts_to_entries(value, opts) do
@@ -394,7 +392,7 @@ defmodule Xgit.ConfigFile do
     ]
   end
 
-  defp handle_add_entries(%ObservedFile{path: path} = of, entries, opts) do
+  defp handle_update(%ObservedFile{path: path} = of, entries, opts) do
     %{parsed_state: lines} =
       of = ObservedFile.update_state_if_maybe_dirty(of, &parse_config_at_path/1, &empty_config/0)
 
@@ -713,8 +711,7 @@ defmodule Xgit.ConfigFile do
   @impl true
   def handle_call({:get_entries, opts}, _from, state), do: handle_get_entries(state, opts)
 
-  def handle_call({:add_entries, entries, opts}, _from, state),
-    do: handle_add_entries(state, entries, opts)
+  def handle_call({:update, entries, opts}, _from, state), do: handle_update(state, entries, opts)
 
   def handle_call({:remove_entries, opts}, _from, state), do: handle_remove_entries(state, opts)
 
