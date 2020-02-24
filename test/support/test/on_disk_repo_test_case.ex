@@ -73,6 +73,7 @@ defmodule Xgit.Test.OnDiskRepoTestCase do
   defp git_init_and_standardize(git_dir, opts) do
     git_dir
     |> git_init()
+    |> remove_branches_dir()
     |> remove_sample_hooks()
     |> rewrite_config(Keyword.get(opts, :config_file_content, @default_config_file_content))
     |> rewrite_info_exclude()
@@ -80,6 +81,13 @@ defmodule Xgit.Test.OnDiskRepoTestCase do
 
   defp git_init(git_dir) do
     {_, 0} = System.cmd("git", ["init", git_dir])
+    git_dir
+  end
+
+  defp remove_branches_dir(git_dir) do
+    branches_dir = Path.join(git_dir, ".git/branches")
+    if File.dir?(branches_dir), do: File.rm_rf!(branches_dir)
+
     git_dir
   end
 
