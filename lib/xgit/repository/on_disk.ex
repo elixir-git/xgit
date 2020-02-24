@@ -134,7 +134,7 @@ defmodule Xgit.Repository.OnDisk do
   end
 
   defp create_git_dir(git_dir) do
-    with :ok <- create_branches_dir(git_dir),
+    with :ok <- File.mkdir_p(git_dir),
          :ok <- create_config(git_dir),
          :ok <- create_description(git_dir),
          :ok <- create_head(git_dir),
@@ -146,12 +146,6 @@ defmodule Xgit.Repository.OnDisk do
     else
       {:error, reason} -> {:error, reason}
     end
-  end
-
-  defp create_branches_dir(git_dir) do
-    git_dir
-    |> Path.join("branches")
-    |> File.mkdir_p()
   end
 
   defp create_config(git_dir) do
