@@ -152,7 +152,7 @@ defmodule Xgit.Test.OnDiskRepoTestCase do
   temporary directory. Use that when you need to debug a test that is
   failing and you want to inspect the repo after the test completes.
   """
-    @spec setup_with_valid_tree!(path: Path.t(), config_file_content: String.t()) :: %{
+  @spec setup_with_valid_tree!(path: Path.t(), config_file_content: String.t()) :: %{
           tmp_dir: Path.t(),
           config_file_path: Path.t(),
           xgit_path: Path.t(),
