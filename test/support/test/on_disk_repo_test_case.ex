@@ -26,17 +26,11 @@ defmodule Xgit.Test.OnDiskRepoTestCase do
   """
   @spec repo!(path: Path.t(), config_file_content: String.t()) :: %{
           tmp_dir: Path.t(),
+          config_file_path: Path.t(),
           xgit_path: Path.t(),
           xgit_repo: Storage.t()
         }
-  def repo!(opts \\ [])
-
-  def repo!(path) when is_binary(path) do
-    repo!(path: path)
-    # For backward compatibility. Non-preferred interface.
-  end
-
-  def repo!(opts) when is_list(opts) do
+  def repo!(opts \\ []) when is_list(opts) do
     context =
       case Keyword.get(opts, :path) do
         nil ->
@@ -73,6 +67,7 @@ defmodule Xgit.Test.OnDiskRepoTestCase do
   defp git_init_and_standardize(git_dir, opts) do
     git_dir
     |> git_init()
+    |> remove_branches_dir()
     |> remove_sample_hooks()
     |> rewrite_config(Keyword.get(opts, :config_file_content, @default_config_file_content))
     |> rewrite_info_exclude()
@@ -80,6 +75,13 @@ defmodule Xgit.Test.OnDiskRepoTestCase do
 
   defp git_init(git_dir) do
     {_, 0} = System.cmd("git", ["init", git_dir])
+    git_dir
+  end
+
+  defp remove_branches_dir(git_dir) do
+    branches_dir = Path.join(git_dir, ".git/branches")
+    if File.dir?(branches_dir), do: File.rm_rf!(branches_dir)
+
     git_dir
   end
 
@@ -150,14 +152,15 @@ defmodule Xgit.Test.OnDiskRepoTestCase do
   temporary directory. Use that when you need to debug a test that is
   failing and you want to inspect the repo after the test completes.
   """
-  @spec setup_with_valid_tree!(path :: Path.t() | nil) :: %{
+  @spec setup_with_valid_tree!(path: Path.t(), config_file_content: String.t()) :: %{
           tmp_dir: Path.t(),
+          config_file_path: Path.t(),
           xgit_path: Path.t(),
           xgit_repo: Storage.t(),
           tree_id: binary()
         }
-  def setup_with_valid_tree!(path \\ nil) do
-    %{xgit_path: xgit_path} = context = repo!(path: path)
+  def setup_with_valid_tree!(opts \\ []) when is_list(opts) do
+    %{xgit_path: xgit_path} = context = repo!(opts)
 
     test_content_path = Temp.path!()
     File.write!(test_content_path, "test content\n")
@@ -214,15 +217,16 @@ defmodule Xgit.Test.OnDiskRepoTestCase do
   temporary directory. Use that when you need to debug a test that is
   failing and you want to inspect the repo after the test completes.
   """
-  @spec setup_with_valid_parent_commit!(path :: Path.t() | nil) :: %{
+  @spec setup_with_valid_parent_commit!(path: Path.t(), config_file_content: String.t()) :: %{
           tmp_dir: Path.t(),
+          config_file_path: Path.t(),
           xgit_path: Path.t(),
           xgit_repo: Storage.t(),
           tree_id: String.t(),
           parent_id: String.t()
         }
-  def setup_with_valid_parent_commit!(path \\ nil) do
-    %{xgit_path: xgit_path} = context = setup_with_valid_tree!(path)
+  def setup_with_valid_parent_commit!(opts \\ []) when is_list(opts) do
+    %{xgit_path: xgit_path} = context = setup_with_valid_tree!(opts)
 
     {empty_tree_id_str, 0} =
       System.cmd(
