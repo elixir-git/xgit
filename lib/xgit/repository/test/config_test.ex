@@ -258,5 +258,60 @@ defmodule Xgit.Repository.Test.ConfigTest do
                      end
       end
     end
+
+    describe "remove_config_entries/2" do
+      test "basic case without options (remove everything)", %{repo: repo} do
+        assert :ok = Storage.remove_config_entries(repo)
+        assert {:ok, []} = Storage.get_config_entries(repo)
+      end
+
+      test "basic case: remove by section", %{repo: repo} do
+        assert :ok =
+                 Storage.add_config_entry(
+                   repo,
+                   %ConfigEntry{
+                     section: "other",
+                     subsection: nil,
+                     name: "filemode",
+                     value: "false"
+                   }
+                 )
+
+        assert :ok = Storage.remove_config_entries(repo, section: "core")
+
+        assert {:ok, config_entries} = Storage.get_config_entries(repo)
+
+        assert [
+                 %ConfigEntry{
+                   section: "other",
+                   subsection: nil,
+                   name: "filemode",
+                   value: "false"
+                 }
+               ] = Enum.sort(config_entries)
+      end
+
+      test "basic case: remove specific variable", %{repo: repo} do
+        assert :ok = Storage.remove_config_entries(repo, section: "core", name: "filemode")
+
+        assert {:ok, config_entries} = Storage.get_config_entries(repo)
+
+        assert [
+                 %ConfigEntry{section: "core", subsection: nil, name: "bare", value: "false"},
+                 %ConfigEntry{
+                   section: "core",
+                   subsection: nil,
+                   name: "logallrefupdates",
+                   value: "true"
+                 },
+                 %ConfigEntry{
+                   section: "core",
+                   subsection: nil,
+                   name: "repositoryformatversion",
+                   value: "0"
+                 }
+               ] = Enum.sort(config_entries)
+      end
+    end
   end
 end

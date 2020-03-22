@@ -219,9 +219,6 @@ defmodule Xgit.Repository.InMemory do
   defp matches_opts?(_item, _opts), do: cover(true)
 
   @impl true
-  @spec handle_add_config_entry(%{config: any}, Xgit.ConfigEntry.t(), keyword) ::
-          {:error, :replacing_multivar, %{config: maybe_improper_list}}
-          | {:ok, %{config: maybe_improper_list}}
   def handle_add_config_entry(
         %{config: config} = state,
         %ConfigEntry{section: section, subsection: subsection, name: name} = entry,
@@ -262,7 +259,10 @@ defmodule Xgit.Repository.InMemory do
   end
 
   @impl true
-  def handle_remove_config_entries(state, _opts) do
-    cover {:error, :unimplemented, state}
+  def handle_remove_config_entries(%{config: config} = state, opts) do
+    opts = Map.new(opts)
+    new_config = Enum.reject(config, &matches_opts?(&1, opts))
+
+    cover {:ok, %{state | config: new_config}}
   end
 end

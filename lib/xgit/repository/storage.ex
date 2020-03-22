@@ -724,7 +724,7 @@ defmodule Xgit.Repository.Storage do
 
   ## Return Values
 
-  `:ok` if successful. (This _could_ mean no matching items were found to remove.
+  `:ok` if successful. (This _could_ mean no matching items were found to remove.)
 
   `{:error, TBD}` if unable.
   """
