@@ -121,6 +121,142 @@ defmodule Xgit.Repository.Test.ConfigTest do
                  }
                ] = Enum.sort(config_entries)
       end
+
+      test "add?: true", %{repo: repo} do
+        # Yes, this example is nonsense.
+
+        assert :ok =
+                 Storage.add_config_entry(
+                   repo,
+                   %ConfigEntry{
+                     section: "core",
+                     subsection: nil,
+                     name: "filemode",
+                     value: "false"
+                   },
+                   add?: true
+                 )
+
+        assert {:ok, config_entries} =
+                 Storage.get_config_entries(repo,
+                   section: "core",
+                   subsection: nil,
+                   name: "filemode"
+                 )
+
+        # Spec is agnostic as to whether new items get inserted at end of overall list
+        # or elsewhere; only that the values for this entry must be sorted in the order added.
+
+        assert [
+                 %ConfigEntry{section: "core", subsection: nil, name: "filemode", value: "true"},
+                 %ConfigEntry{section: "core", subsection: nil, name: "filemode", value: "false"}
+               ] = config_entries
+      end
+
+      test "replace_all?: true", %{repo: repo} do
+        # Build upon previous nonsense example. Have multiple values and then replace them all.
+
+        assert :ok =
+                 Storage.add_config_entry(
+                   repo,
+                   %ConfigEntry{
+                     section: "core",
+                     subsection: nil,
+                     name: "filemode",
+                     value: "false"
+                   },
+                   add?: true
+                 )
+
+        # Not testing output; duplicates previous test.
+
+        assert :ok =
+                 Storage.add_config_entry(
+                   repo,
+                   %ConfigEntry{
+                     section: "core",
+                     subsection: nil,
+                     name: "filemode",
+                     value: "42"
+                   },
+                   replace_all?: true
+                 )
+
+        assert {:ok, config_entries} =
+                 Storage.get_config_entries(repo,
+                   section: "core",
+                   subsection: nil,
+                   name: "filemode"
+                 )
+
+        # Spec is agnostic as to whether new items get inserted at end of overall list
+        # or elsewhere; only that the values for this entry must be sorted in the order added.
+
+        assert [
+                 %ConfigEntry{section: "core", subsection: nil, name: "filemode", value: "42"}
+               ] = config_entries
+      end
+
+      test "error: replacing multivar", %{repo: repo} do
+        # Build upon previous nonsense example. Have multiple values and then
+        # attempt to replace them all but without the replace_all?: true flag.
+
+        assert :ok =
+                 Storage.add_config_entry(
+                   repo,
+                   %ConfigEntry{
+                     section: "core",
+                     subsection: nil,
+                     name: "filemode",
+                     value: "false"
+                   },
+                   add?: true
+                 )
+
+        # Not testing output; duplicates previous test.
+
+        assert {:error, :replacing_multivar} =
+                 Storage.add_config_entry(
+                   repo,
+                   %ConfigEntry{
+                     section: "core",
+                     subsection: nil,
+                     name: "filemode",
+                     value: "42"
+                   }
+                 )
+
+        assert {:ok, config_entries} =
+                 Storage.get_config_entries(repo,
+                   section: "core",
+                   subsection: nil,
+                   name: "filemode"
+                 )
+
+        # Spec is agnostic as to whether new items get inserted at end of overall list
+        # or elsewhere; only that the values for this entry must be sorted in the order added.
+
+        assert [
+                 %ConfigEntry{section: "core", subsection: nil, name: "filemode", value: "true"},
+                 %ConfigEntry{section: "core", subsection: nil, name: "filemode", value: "false"}
+               ] = config_entries
+      end
+
+      test "error: invalid entry", %{repo: repo} do
+        assert_raise ArgumentError,
+                     "Xgit.Repository.Storage.add_config_entry/3: entry is invalid",
+                     fn ->
+                       Storage.add_config_entry(
+                         repo,
+                         %ConfigEntry{
+                           section: "no spaces allowed",
+                           subsection: nil,
+                           name: "filemode",
+                           value: "true"
+                         }
+                       )
+                     end
+      end
     end
   end
 end
