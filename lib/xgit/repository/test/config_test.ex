@@ -89,17 +89,18 @@ defmodule Xgit.Repository.Test.ConfigTest do
       end
     end
 
-    describe "add_config_entries/3" do
+    describe "add_config_entry/3" do
       test "basic case with default options", %{repo: repo} do
         assert :ok =
-                 Storage.add_config_entries(repo, [
+                 Storage.add_config_entry(
+                   repo,
                    %ConfigEntry{
                      section: "core",
                      subsection: nil,
                      name: "filemode",
                      value: "true"
                    }
-                 ])
+                 )
 
         assert {:ok, config_entries} = Storage.get_config_entries(repo)
 

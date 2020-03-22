@@ -219,22 +219,31 @@ defmodule Xgit.Repository.InMemory do
   defp matches_opts?(_item, _opts), do: cover(true)
 
   @impl true
-  def handle_add_config_entries(%{config: config} = state, entries, opts) do
+  def handle_add_config_entry(
+        %{config: config} = state,
+        %ConfigEntry{section: section, subsection: subsection, name: name} = entry,
+        opts
+      ) do
     add? = Keyword.get(opts, :add?, false)
     replace_all? = Keyword.get(opts, :replace_all?, false)
 
-    opts = Enum.into(opts, %{})
+    opts =
+      opts
+      |> Enum.into(%{})
+      |> Map.put(:section, section)
+      |> Map.put(:subsection, subsection)
+      |> Map.put(:name, name)
 
     cond do
       add? ->
-        new_config = config ++ entries
+        new_config = config ++ [entry]
         cover {:ok, %{state | config: new_config}}
 
       replace_all? ->
         new_config =
           config
           |> Enum.reject(&matches_opts?(&1, opts))
-          |> Enum.concat(entries)
+          |> Enum.concat(entry)
 
         cover {:ok, %{state | config: new_config}}
 
@@ -244,7 +253,7 @@ defmodule Xgit.Repository.InMemory do
         if Enum.count(replacing) > 1 do
           cover {:error, :replacing_multivar}
         else
-          cover {:ok, %{state | config: remaining_config ++ entries}}
+          cover {:ok, %{state | config: remaining_config ++ [entry]}}
         end
     end
   end

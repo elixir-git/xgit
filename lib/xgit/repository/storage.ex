@@ -638,27 +638,22 @@ defmodule Xgit.Repository.Storage do
               | {:error, reason :: get_config_entries_reason, state :: any}
 
   @typedoc ~S"""
-  Error codes that can be returned by `add_config_entries/3`.
+  Error codes that can be returned by `add_config_entry/3`.
   """
-  @type add_config_entries_reason :: File.posix()
+  @type add_config_entry_reason :: File.posix()
 
   @doc ~S"""
-  Add one or more new entries to an existing config.
-
-  The entries need not be sorted. However, if multiple values are provided
-  for the same variable (section, subsection, name tuple), they will be added
-  in the order provided here.
+  Add an entry to an existing config.
 
   ## Parameters
 
-  `entries` (list of `Xgit.ConfigEntry`) entries to be added
+  `entry` (`Xgit.ConfigEntry`) entry to be added
 
   ## Options
 
-  `add?`: if `true`, adds these entries to any that may already exist
+  `add?`: if `true`, adds this entry to any that may already exist
   `replace_all?`: if `true`, removes all existing entries that match any keys provided
-
-  See also the `:remove_all` option for the `value` member of `Xgit.ConfigEntry`.
+    before adding the existing one
 
   ## Return Values
 
@@ -666,40 +661,35 @@ defmodule Xgit.Repository.Storage do
 
   `{:error, TBD}` if unable.
   """
-  @spec add_config_entries(repository :: t, entries :: [Xgit.ConfigEntry.t()],
+  @spec add_config_entry(repository :: t, entry :: Xgit.ConfigEntry.t(),
           add?: boolean,
           replace_all?: boolean
         ) ::
-          :ok | {:error, reason :: add_config_entries_reason}
-  def add_config_entries(repository, entries, opts \\ [])
-      when is_pid(repository) and is_list(entries) and is_list(opts) do
-    if Enum.all?(entries, &ConfigEntry.valid?/1) do
-      GenServer.call(repository, {:add_config_entries, entries, opts})
+          :ok | {:error, reason :: add_config_entry_reason}
+  def add_config_entry(repository, %ConfigEntry{} = entry, opts \\ [])
+      when is_pid(repository) and is_list(opts) do
+    if ConfigEntry.valid?(entry) do
+      GenServer.call(repository, {:add_config_entry, entry, opts})
     else
       raise ArgumentError,
-            "Xgit.Repository.Storage.add_config_entries/3: one or more entries are invalid"
+            "Xgit.Repository.Storage.add_config_entry/3: entry is invalid"
     end
   end
 
   @doc ~S"""
-  Add one or more new entries to an existing config.
+  Add a new entry to an existing config.
 
-  Called when `add_config_entries/3` is called.
-
-  The entries need not be sorted. However, if multiple values are provided
-  for the same variable (section, subsection, name tuple), they will be added
-  in the order provided here.
+  Called when `add_config_entry/3` is called.
 
   ## Parameters
 
-  `entries` (list of `Xgit.ConfigEntry`) entries to be added
+  `entry` (`Xgit.ConfigEntry`) entry to be added
 
   ## Options
 
-  `add?`: if `true`, adds these entries to any that may already exist
+  `add?`: if `true`, adds this entry to any that may already exist
   `replace_all?`: if `true`, removes all existing entries that match any keys provided
-
-  See also the `:remove_all` option for the `value` member of `Xgit.ConfigEntry`.
+    before adding this one
 
   ## Return Value
 
@@ -707,14 +697,14 @@ defmodule Xgit.Repository.Storage do
 
   Should return `{:error, reason, state}` if unable to complete the update.
   """
-  @callback handle_add_config_entries(
+  @callback handle_add_config_entry(
               state :: any,
-              entries :: [Xgit.ConfigEntry.t()],
+              entry :: Xgit.ConfigEntry.t(),
               add?: boolean,
               replace_all?: boolean
             ) ::
               {:ok, state :: any}
-              | {:error, reason :: add_config_entries_reason, state :: any}
+              | {:error, reason :: add_config_entry_reason, state :: any}
 
   @typedoc ~S"""
   Error codes that can be returned by `remove_config_entries/2`.
@@ -820,8 +810,8 @@ defmodule Xgit.Repository.Storage do
   def handle_call({:get_config_entries, opts}, _from, state),
     do: delegate_call_to(state, :handle_get_config_entries, [opts])
 
-  def handle_call({:add_config_entries, entries, opts}, _from, state),
-    do: delegate_call_to(state, :handle_add_config_entries, [entries, opts])
+  def handle_call({:add_config_entry, entry, opts}, _from, state),
+    do: delegate_call_to(state, :handle_add_config_entry, [entry, opts])
 
   def handle_call({:remove_config_entries, opts}, _from, state),
     do: delegate_call_to(state, :handle_remove_config_entries, [opts])

@@ -14,6 +14,7 @@ defmodule Xgit.Repository.OnDisk do
 
   import Xgit.Util.ForceCoverage
 
+  alias Xgit.ConfigEntry
   alias Xgit.ConfigFile
   alias Xgit.ContentSource
   alias Xgit.Object
@@ -81,6 +82,8 @@ defmodule Xgit.Repository.OnDisk do
     else
       {:work_dir, _} -> cover {:stop, :work_dir_doesnt_exist}
       {:git_dir, _} -> cover {:stop, :git_dir_doesnt_exist}
+      :ignore -> :ignore
+      {:error, error} -> cover {:error, error}
     end
   end
 
@@ -573,8 +576,18 @@ defmodule Xgit.Repository.OnDisk do
   end
 
   @impl true
-  def handle_add_config_entries(%{config_file: config_file} = state, entries, opts) do
-    case ConfigFile.add_entries(config_file, entries, opts) do
+  def handle_add_config_entry(
+        %{config_file: config_file} = state,
+        %ConfigEntry{section: section, subsection: subsection, name: name, value: value} = _entry,
+        opts
+      ) do
+    opts =
+      opts
+      |> Keyword.put(:section, section)
+      |> Keyword.put(:subsection, subsection)
+      |> Keyword.put(:name, name)
+
+    case ConfigFile.update(config_file, value, opts) do
       :ok -> cover {:ok, state}
       {:error, reason} -> cover {:error, reason, state}
     end
