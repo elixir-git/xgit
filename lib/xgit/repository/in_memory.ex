@@ -236,10 +236,10 @@ defmodule Xgit.Repository.InMemory do
           |> Enum.reject(&matches_opts?(&1, opts))
           |> Enum.concat(entries)
 
-          opts = Enum.into(opts, %{})
+        cover {:ok, %{state | config: new_config}}
 
       true ->
-        {replacing, remaining_config} = Enum.split_with(&matches_opts?(&1, opts))
+        {replacing, remaining_config} = Enum.split_with(config, &matches_opts?(&1, opts))
 
         if Enum.count(replacing) > 1 do
           cover {:error, :replacing_multivar}
@@ -247,12 +247,6 @@ defmodule Xgit.Repository.InMemory do
           cover {:ok, %{state | config: remaining_config ++ entries}}
         end
     end
-    unless add? or replace_all? do
-    existing_count =
-      config
-      |> Enum.filter(config, )
-
-    cover {:error, :unimplemented, state}
   end
 
   @impl true
