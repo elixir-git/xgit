@@ -28,7 +28,7 @@ defmodule Xgit.ConfigFileTest do
       assert {:ok, cf} = ConfigFile.start_link(path)
       assert is_pid(cf)
 
-      assert {:ok, []} = ConfigFile.get_entries(cf)
+      assert [] = ConfigFile.get_entries(cf)
     end
 
     test "simple file exists" do
@@ -638,27 +638,25 @@ defmodule Xgit.ConfigFileTest do
 
       assert {:ok, cf} = ConfigFile.start_link(config_path)
 
-      assert {:ok,
-              [
-                %ConfigEntry{
-                  name: "bar",
-                  section: "foo",
-                  subsection: "zip",
-                  value: "42"
-                }
-              ]} = ConfigFile.get_entries(cf)
+      assert [
+               %ConfigEntry{
+                 name: "bar",
+                 section: "foo",
+                 subsection: "zip",
+                 value: "42"
+               }
+             ] = ConfigFile.get_entries(cf)
 
       File.write!(config_path, ~s([foo "zip"] bar = 44))
 
-      assert {:ok,
-              [
-                %ConfigEntry{
-                  name: "bar",
-                  section: "foo",
-                  subsection: "zip",
-                  value: "44"
-                }
-              ]} = ConfigFile.get_entries(cf)
+      assert [
+               %ConfigEntry{
+                 name: "bar",
+                 section: "foo",
+                 subsection: "zip",
+                 value: "44"
+               }
+             ] = ConfigFile.get_entries(cf)
     end
 
     test "filter on section + name" do
@@ -805,7 +803,7 @@ defmodule Xgit.ConfigFileTest do
     TestFileUtils.touch_back!(config_path)
 
     assert {:ok, cf} = ConfigFile.start_link(config_path)
-    assert {:ok, entries} = ConfigFile.get_entries(cf, opts)
+    assert entries = ConfigFile.get_entries(cf, opts)
 
     entries
   end
@@ -1015,21 +1013,20 @@ defmodule Xgit.ConfigFileTest do
                  name: "gitproxy"
                )
 
-      assert {:ok,
-              [
-                %Xgit.ConfigEntry{
-                  name: "gitproxy",
-                  section: "core",
-                  subsection: nil,
-                  value: "proxy-command for kernel.org"
-                },
-                %Xgit.ConfigEntry{
-                  name: "gitproxy",
-                  section: "core",
-                  subsection: nil,
-                  value: "default-proxy"
-                }
-              ]} = ConfigFile.get_entries(cf, section: "core", name: "gitproxy")
+      assert [
+               %Xgit.ConfigEntry{
+                 name: "gitproxy",
+                 section: "core",
+                 subsection: nil,
+                 value: "proxy-command for kernel.org"
+               },
+               %Xgit.ConfigEntry{
+                 name: "gitproxy",
+                 section: "core",
+                 subsection: nil,
+                 value: "default-proxy"
+               }
+             ] = ConfigFile.get_entries(cf, section: "core", name: "gitproxy")
     end
 
     test "error: add? and replace_all? both specified" do
