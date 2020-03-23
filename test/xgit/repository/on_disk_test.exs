@@ -29,6 +29,28 @@ defmodule Xgit.Repository.OnDiskTest do
       assert WorkingTree.valid?(working_tree)
     end
 
+    test "error: can't launch because bad config file" do
+      %{tmp_dir: xgit_root} = TempDirTestCase.tmp_dir!()
+
+      xgit = Path.join(xgit_root, "tmp")
+
+      assert :ok = OnDisk.create(xgit)
+
+      config_path = Path.join([xgit_root, "tmp", ".git", "config"])
+      File.write!(config_path, "[bogus] config var name with spaces = bogus")
+
+      assert {:ok, repo} = OnDisk.start_link(work_dir: xgit)
+
+      assert is_pid(repo)
+      assert Repository.valid?(repo)
+      assert Storage.valid?(repo)
+      Storage.assert_valid(repo)
+
+      assert working_tree = Storage.default_working_tree(repo)
+      assert is_pid(working_tree)
+      assert WorkingTree.valid?(working_tree)
+    end
+
     test "handles unknown message" do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!()
 

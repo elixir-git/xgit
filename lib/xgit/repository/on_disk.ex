@@ -569,10 +569,8 @@ defmodule Xgit.Repository.OnDisk do
 
   @impl true
   def handle_get_config_entries(%{config_file: config_file} = state, opts) do
-    case ConfigFile.get_entries(config_file, opts) do
-      {:ok, entries} -> cover {:ok, entries, state}
-      {:error, reason} -> cover {:error, reason, state}
-    end
+    entries = ConfigFile.get_entries(config_file, opts)
+    cover {:ok, entries, state}
   end
 
   @impl true
@@ -595,9 +593,7 @@ defmodule Xgit.Repository.OnDisk do
 
   @impl true
   def handle_remove_config_entries(%{config_file: config_file} = state, opts) do
-    case ConfigFile.remove_entries(config_file, opts) do
-      :ok -> cover {:ok, state}
-      {:error, reason} -> cover {:error, reason, state}
-    end
+    :ok = ConfigFile.remove_entries(config_file, opts)
+    cover {:ok, state}
   end
 end
