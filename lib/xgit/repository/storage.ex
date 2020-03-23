@@ -571,11 +571,6 @@ defmodule Xgit.Repository.Storage do
 
   ## --- Config ---
 
-  @typedoc ~S"""
-  Error codes that can be returned by `get_config_entries/2`.
-  """
-  @type get_config_entries_reason :: File.posix()
-
   @doc ~S"""
   Return any configuration entries that match the requested search.
 
@@ -592,19 +587,16 @@ defmodule Xgit.Repository.Storage do
 
   ## Return Values
 
-  `{:ok, [entries]}` where `entries` is a list of `Xgit.ConfigEntry` structs that match the
-  search parameters.
-
-  `{:error, TBD}` if unable.
+  A list of `Xgit.ConfigEntry` structs that match the search parameters.
   """
   @spec get_config_entries(repository :: t,
           section: String.t(),
           subsection: String.t(),
           name: String.t()
-        ) ::
-          {:ok, entries :: [Xgit.ConfigEntry.t()]} | {:error, reason :: get_config_entries_reason}
+        ) :: [Xgit.ConfigEntry.t()]
   def get_config_entries(repository, opts \\ []) when is_pid(repository) and is_list(opts) do
-    GenServer.call(repository, {:get_config_entries, opts})
+    {:ok, entries} = GenServer.call(repository, {:get_config_entries, opts})
+    entries
   end
 
   @doc ~S"""
@@ -626,8 +618,6 @@ defmodule Xgit.Repository.Storage do
 
   Should return `{:ok, entries, state}` where `entries` is a list of `Xgit.ConfigEntry`
   structs that match the search parameters.
-
-  Should return `{:error, reason, state}` if unable to respond.
   """
   @callback handle_get_config_entries(state :: any,
               section: String.t(),
@@ -635,7 +625,6 @@ defmodule Xgit.Repository.Storage do
               name: String.t()
             ) ::
               {:ok, entries :: [Xgit.ConfigEntry.t()], state :: any}
-              | {:error, reason :: get_config_entries_reason, state :: any}
 
   @typedoc ~S"""
   Error codes that can be returned by `add_config_entry/3`.
@@ -706,11 +695,6 @@ defmodule Xgit.Repository.Storage do
               {:ok, state :: any}
               | {:error, reason :: add_config_entry_reason, state :: any}
 
-  @typedoc ~S"""
-  Error codes that can be returned by `remove_config_entries/2`.
-  """
-  @type remove_config_entries_reason :: File.posix()
-
   @doc ~S"""
   Remove any configuration entries that match the requested search.
 
@@ -724,17 +708,13 @@ defmodule Xgit.Repository.Storage do
 
   ## Return Values
 
-  `:ok` if successful. (This _could_ mean no matching items were found to remove.)
-
-  `{:error, TBD}` if unable.
+  `:ok` regardless of whether any matching items were found to remove.
   """
   @spec remove_config_entries(repository :: t,
           section: String.t(),
           subsection: String.t(),
           name: String.t()
-        ) ::
-          {:ok, entries :: [Xgit.ConfigEntry.t()]}
-          | {:error, reason :: remove_config_entries_reason}
+        ) :: :ok
   def remove_config_entries(repository, opts \\ []) when is_pid(repository) and is_list(opts) do
     GenServer.call(repository, {:remove_config_entries, opts})
   end
@@ -756,16 +736,12 @@ defmodule Xgit.Repository.Storage do
 
   Should return `{:ok, state}` if successful. (This _could_ mean no matching items were
   found to remove.)
-
-  Should return `{:error, reason, state}` if unable to find or remove items.
   """
   @callback handle_remove_config_entries(state :: any,
               section: String.t(),
               subsection: String.t(),
               name: String.t()
-            ) ::
-              {:ok, state :: any}
-              | {:error, reason :: remove_config_entries_reason, state :: any}
+            ) :: {:ok, state :: any}
 
   ## --- Callbacks ---
 

@@ -13,7 +13,7 @@ defmodule Xgit.Repository.OnDisk.ConfigTest do
 
     test "file does not exist" do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!(config_file_content: nil)
-      assert {:ok, [] = config_entries} = Storage.get_config_entries(repo)
+      assert [] = Storage.get_config_entries(repo)
     end
 
     test "simple file exists" do
@@ -95,9 +95,7 @@ defmodule Xgit.Repository.OnDisk.ConfigTest do
 
     defp entries_from_config_file!(config_file_content) do
       %{xgit_repo: repo} = OnDiskRepoTestCase.repo!(config_file_content: config_file_content)
-      assert {:ok, entries} = Storage.get_config_entries(repo)
-
-      entries
+      Storage.get_config_entries(repo)
     end
   end
 

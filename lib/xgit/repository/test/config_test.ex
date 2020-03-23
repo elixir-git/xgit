@@ -33,7 +33,7 @@ defmodule Xgit.Repository.Test.ConfigTest do
 
     describe "get_config_entries/2" do
       test "default case returns expected initial case", %{repo: repo} do
-        assert {:ok, [_ | _] = config_entries} = Storage.get_config_entries(repo)
+        assert [_ | _] = config_entries = Storage.get_config_entries(repo)
 
         assert [
                  %ConfigEntry{section: "core", subsection: nil, name: "bare", value: "false"},
@@ -54,7 +54,7 @@ defmodule Xgit.Repository.Test.ConfigTest do
       end
 
       test "can filter by section", %{repo: repo} do
-        assert {:ok, [_ | _] = config_entries} = Storage.get_config_entries(repo, section: "core")
+        assert [_ | _] = config_entries = Storage.get_config_entries(repo, section: "core")
 
         assert [
                  %ConfigEntry{section: "core", subsection: nil, name: "bare", value: "false"},
@@ -75,13 +75,14 @@ defmodule Xgit.Repository.Test.ConfigTest do
       end
 
       test "can filter by subsection", %{repo: repo} do
-        assert {:ok, [] = _config_entries} =
+        assert [] =
+                 _config_entries =
                  Storage.get_config_entries(repo, section: "core", subsection: "mumble")
       end
 
       test "can filter by section + name", %{repo: repo} do
-        assert {:ok, [_ | _] = config_entries} =
-                 Storage.get_config_entries(repo, section: "core", name: "bare")
+        assert [_ | _] =
+                 config_entries = Storage.get_config_entries(repo, section: "core", name: "bare")
 
         assert [
                  %ConfigEntry{section: "core", subsection: nil, name: "bare", value: "false"}
@@ -102,7 +103,7 @@ defmodule Xgit.Repository.Test.ConfigTest do
                    }
                  )
 
-        assert {:ok, config_entries} = Storage.get_config_entries(repo)
+        config_entries = Storage.get_config_entries(repo)
 
         assert [
                  %ConfigEntry{section: "core", subsection: nil, name: "bare", value: "false"},
@@ -137,12 +138,12 @@ defmodule Xgit.Repository.Test.ConfigTest do
                    add?: true
                  )
 
-        assert {:ok, config_entries} =
-                 Storage.get_config_entries(repo,
-                   section: "core",
-                   subsection: nil,
-                   name: "filemode"
-                 )
+        config_entries =
+          Storage.get_config_entries(repo,
+            section: "core",
+            subsection: nil,
+            name: "filemode"
+          )
 
         # Spec is agnostic as to whether new items get inserted at end of overall list
         # or elsewhere; only that the values for this entry must be sorted in the order added.
@@ -182,12 +183,12 @@ defmodule Xgit.Repository.Test.ConfigTest do
                    replace_all?: true
                  )
 
-        assert {:ok, config_entries} =
-                 Storage.get_config_entries(repo,
-                   section: "core",
-                   subsection: nil,
-                   name: "filemode"
-                 )
+        config_entries =
+          Storage.get_config_entries(repo,
+            section: "core",
+            subsection: nil,
+            name: "filemode"
+          )
 
         # Spec is agnostic as to whether new items get inserted at end of overall list
         # or elsewhere; only that the values for this entry must be sorted in the order added.
@@ -226,12 +227,12 @@ defmodule Xgit.Repository.Test.ConfigTest do
                    }
                  )
 
-        assert {:ok, config_entries} =
-                 Storage.get_config_entries(repo,
-                   section: "core",
-                   subsection: nil,
-                   name: "filemode"
-                 )
+        config_entries =
+          Storage.get_config_entries(repo,
+            section: "core",
+            subsection: nil,
+            name: "filemode"
+          )
 
         # Spec is agnostic as to whether new items get inserted at end of overall list
         # or elsewhere; only that the values for this entry must be sorted in the order added.
@@ -262,7 +263,7 @@ defmodule Xgit.Repository.Test.ConfigTest do
     describe "remove_config_entries/2" do
       test "basic case without options (remove everything)", %{repo: repo} do
         assert :ok = Storage.remove_config_entries(repo)
-        assert {:ok, []} = Storage.get_config_entries(repo)
+        assert [] = Storage.get_config_entries(repo)
       end
 
       test "basic case: remove by section", %{repo: repo} do
@@ -279,7 +280,7 @@ defmodule Xgit.Repository.Test.ConfigTest do
 
         assert :ok = Storage.remove_config_entries(repo, section: "core")
 
-        assert {:ok, config_entries} = Storage.get_config_entries(repo)
+        config_entries = Storage.get_config_entries(repo)
 
         assert [
                  %ConfigEntry{
@@ -294,7 +295,7 @@ defmodule Xgit.Repository.Test.ConfigTest do
       test "basic case: remove specific variable", %{repo: repo} do
         assert :ok = Storage.remove_config_entries(repo, section: "core", name: "filemode")
 
-        assert {:ok, config_entries} = Storage.get_config_entries(repo)
+        config_entries = Storage.get_config_entries(repo)
 
         assert [
                  %ConfigEntry{section: "core", subsection: nil, name: "bare", value: "false"},
