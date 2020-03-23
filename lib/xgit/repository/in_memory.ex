@@ -10,9 +10,27 @@ defmodule Xgit.Repository.InMemory do
 
   import Xgit.Util.ForceCoverage
 
+  alias Xgit.ConfigEntry
   alias Xgit.ContentSource
   alias Xgit.Object
   alias Xgit.Ref
+
+  @config_entries [
+    %ConfigEntry{section: "core", subsection: nil, name: "bare", value: "false"},
+    %ConfigEntry{section: "core", subsection: nil, name: "filemode", value: "true"},
+    %ConfigEntry{
+      section: "core",
+      subsection: nil,
+      name: "logallrefupdates",
+      value: "true"
+    },
+    %ConfigEntry{
+      section: "core",
+      subsection: nil,
+      name: "repositoryformatversion",
+      value: "0"
+    }
+  ]
 
   @doc ~S"""
   Start an in-memory git repository.
@@ -34,11 +52,14 @@ defmodule Xgit.Repository.InMemory do
     cover(
       {:ok,
        %{
+         config: @config_entries,
          loose_objects: %{},
          refs: %{"HEAD" => %Ref{name: "HEAD", target: "ref: refs/heads/master"}}
        }}
     )
   end
+
+  ## --- Objects ---
 
   @impl true
   def handle_has_all_object_ids?(%{loose_objects: objects} = state, object_ids) do
@@ -79,6 +100,8 @@ defmodule Xgit.Repository.InMemory do
 
   defp maybe_read_object_content(%Object{content: content} = object),
     do: %{object | content: content |> ContentSource.stream() |> Enum.concat()}
+
+  ## --- References ---
 
   @impl true
   def handle_list_refs(%{refs: refs} = state) do
@@ -163,9 +186,83 @@ defmodule Xgit.Repository.InMemory do
         get_ref_imp(state, link_target, true)
 
       x ->
-        x
+        cover x
     end
   end
 
   defp get_ref_imp(%{refs: refs} = _state, name, _follow_link), do: Map.get(refs, name)
+
+  ## --- Config ---
+
+  @impl true
+  def handle_get_config_entries(%{config: config} = state, [] = _opts) do
+    # Optimized case for "all" entries.
+    cover {:ok, config, state}
+  end
+
+  def handle_get_config_entries(%{config: config} = state, opts) when is_list(opts) do
+    opts = Enum.into(opts, %{})
+    matching_entries = Enum.filter(config, &matches_opts?(&1, opts))
+    cover {:ok, matching_entries, state}
+  end
+
+  defp matches_opts?(item, %{section: section, name: name} = opts) do
+    subsection = Map.get(opts, :subsection)
+    item.section == section && item.subsection == subsection && item.name == name
+  end
+
+  defp matches_opts?(item, %{section: section} = opts) do
+    subsection = Map.get(opts, :subsection)
+    item.section == section && item.subsection == subsection
+  end
+
+  defp matches_opts?(_item, _opts), do: cover(true)
+
+  @impl true
+  def handle_add_config_entry(
+        %{config: config} = state,
+        %ConfigEntry{section: section, subsection: subsection, name: name} = entry,
+        opts
+      ) do
+    add? = Keyword.get(opts, :add?, false)
+    replace_all? = Keyword.get(opts, :replace_all?, false)
+
+    opts =
+      opts
+      |> Enum.into(%{})
+      |> Map.put(:section, section)
+      |> Map.put(:subsection, subsection)
+      |> Map.put(:name, name)
+
+    cond do
+      add? ->
+        new_config = config ++ [entry]
+        cover {:ok, %{state | config: new_config}}
+
+      replace_all? ->
+        new_config =
+          config
+          |> Enum.reject(&matches_opts?(&1, opts))
+          |> Enum.concat([entry])
+
+        cover {:ok, %{state | config: new_config}}
+
+      true ->
+        {replacing, remaining_config} = Enum.split_with(config, &matches_opts?(&1, opts))
+
+        if Enum.count(replacing) > 1 do
+          cover {:error, :replacing_multivar, state}
+        else
+          cover {:ok, %{state | config: remaining_config ++ [entry]}}
+        end
+    end
+  end
+
+  @impl true
+  def handle_remove_config_entries(%{config: config} = state, opts) do
+    opts = Map.new(opts)
+    new_config = Enum.reject(config, &matches_opts?(&1, opts))
+
+    cover {:ok, %{state | config: new_config}}
+  end
 end

@@ -14,6 +14,8 @@ defmodule Xgit.Repository.OnDisk do
 
   import Xgit.Util.ForceCoverage
 
+  alias Xgit.ConfigEntry
+  alias Xgit.ConfigFile
   alias Xgit.ContentSource
   alias Xgit.Object
   alias Xgit.Ref
@@ -74,11 +76,14 @@ defmodule Xgit.Repository.OnDisk do
 
     with {:work_dir, true} <- {:work_dir, File.dir?(work_dir)},
          git_dir <- Path.join(work_dir, ".git"),
-         {:git_dir, true} <- {:git_dir, File.dir?(git_dir)} do
-      cover {:ok, %{work_dir: work_dir, git_dir: git_dir}}
+         {:git_dir, true} <- {:git_dir, File.dir?(git_dir)},
+         {:ok, config_file} <- ConfigFile.start_link(Path.join(git_dir, "config")) do
+      cover {:ok, %{work_dir: work_dir, git_dir: git_dir, config_file: config_file}}
     else
       {:work_dir, _} -> cover {:stop, :work_dir_doesnt_exist}
       {:git_dir, _} -> cover {:stop, :git_dir_doesnt_exist}
+      :ignore -> :ignore
+      {:error, error} -> cover {:error, error}
     end
   end
 
@@ -219,6 +224,8 @@ defmodule Xgit.Repository.OnDisk do
       {:error, reason} -> {:error, reason}
     end
   end
+
+  ## --- Objects ---
 
   @impl true
   def handle_has_all_object_ids?(%{git_dir: git_dir} = state, object_ids) do
@@ -396,6 +403,8 @@ defmodule Xgit.Repository.OnDisk do
   defp deflate_and_write_bytes(file, z, bytes, flush \\ :none),
     do: IO.binwrite(file, :zlib.deflate(z, bytes, flush))
 
+  ## --- References ---
+
   @impl true
   def handle_list_refs(%{git_dir: git_dir} = state) do
     refs_dir = Path.join(git_dir, "refs")
@@ -554,5 +563,37 @@ defmodule Xgit.Repository.OnDisk do
       {:valid_ref?, false} -> cover :invalid_ref
       reason when is_atom(reason) -> cover reason
     end
+  end
+
+  ## --- Config ---
+
+  @impl true
+  def handle_get_config_entries(%{config_file: config_file} = state, opts) do
+    entries = ConfigFile.get_entries(config_file, opts)
+    cover {:ok, entries, state}
+  end
+
+  @impl true
+  def handle_add_config_entry(
+        %{config_file: config_file} = state,
+        %ConfigEntry{section: section, subsection: subsection, name: name, value: value} = _entry,
+        opts
+      ) do
+    opts =
+      opts
+      |> Keyword.put(:section, section)
+      |> Keyword.put(:subsection, subsection)
+      |> Keyword.put(:name, name)
+
+    case ConfigFile.update(config_file, value, opts) do
+      :ok -> cover {:ok, state}
+      {:error, reason} -> cover {:error, reason, state}
+    end
+  end
+
+  @impl true
+  def handle_remove_config_entries(%{config_file: config_file} = state, opts) do
+    :ok = ConfigFile.remove_entries(config_file, opts)
+    cover {:ok, state}
   end
 end
