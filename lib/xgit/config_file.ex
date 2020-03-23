@@ -52,11 +52,6 @@ defmodule Xgit.ConfigFile do
            ObservedFile.initial_state_for_path(path, &parse_config_at_path/1, &empty_config/0)}
   end
 
-  @typedoc ~S"""
-  Error codes that can be returned by `get_entries/2`.
-  """
-  @type get_entries_reason :: File.posix()
-
   @doc ~S"""
   Return any configuration entries that match the requested search.
 
@@ -75,19 +70,13 @@ defmodule Xgit.ConfigFile do
 
   If no options are provided, returns all entries.
 
-  ## Return Values
-
-  `{:ok, [entries]}` where `entries` is a list of `Xgit.ConfigEntry` structs that match the
-  search parameters.
-
-  `{:error, reason}` if unable. `reason` is likely a POSIX error code.
+  A list of `Xgit.ConfigEntry` structs that match the search parameters.
   """
   @spec get_entries(config_file :: t,
           section: String.t(),
           subsection: String.t(),
           name: String.t()
-        ) ::
-          {:ok, entries :: [Xgit.ConfigEntry.t()]} | {:error, reason :: get_entries_reason}
+        ) :: [Xgit.ConfigEntry.t()]
   def get_entries(config_file, opts \\ []) when is_pid(config_file) and is_list(opts),
     do: GenServer.call(config_file, {:get_entries, opts})
 
@@ -103,7 +92,7 @@ defmodule Xgit.ConfigFile do
       |> Enum.map(& &1.entry)
       |> Enum.filter(&matches_opts?(&1, opts))
 
-    {:reply, {:ok, entries}, of}
+    {:reply, entries, of}
   end
 
   defp matches_opts?(item, %{section: section, name: name} = opts) do
@@ -321,11 +310,6 @@ defmodule Xgit.ConfigFile do
 
   defp empty_config, do: cover([])
 
-  @typedoc ~S"""
-  Error codes that can be returned by `update/3`.
-  """
-  @type update_reason :: File.posix() | :replacing_multivar
-
   @doc ~S"""
   Create or update a config value.
 
@@ -347,8 +331,6 @@ defmodule Xgit.ConfigFile do
 
   `{:error, :replacing_multivar}` if the existing variable has multiple variables.
   Replacing such a variable requires either `add?: true` or `replace_all?: true`.
-
-  `{:error, reason}` if unable. `reason` is likely a POSIX error code.
   """
   @spec update(config_file :: t, value :: nil | String.t(),
           section: String.t(),
@@ -356,8 +338,7 @@ defmodule Xgit.ConfigFile do
           name: String.t(),
           add?: boolean,
           replace_all?: boolean
-        ) ::
-          :ok | {:error, config_file :: update_reason}
+        ) :: :ok
   def update(config_file, value, opts)
       when is_pid(config_file) and (is_nil(value) or is_binary(value)) and
              is_list(opts) do
@@ -415,8 +396,8 @@ defmodule Xgit.ConfigFile do
       |> Enum.map(& &1.original)
       |> Enum.join("\n")
 
-    result = File.write(path, [config_text, "\n"])
-    cover {:reply, result, of}
+    File.write!(path, [config_text, "\n"])
+    cover {:reply, :ok, of}
   end
 
   defp namespaces_from_entries(entries) do
@@ -649,12 +630,7 @@ defmodule Xgit.ConfigFile do
 
   If no options are provided, removes all entries.
 
-  ## Return Values
-
-  `:ok` if able to complete the operation (regardless of whether any matching entries
-  were found and removed).
-
-  `{:error, reason}` if unable. `reason` is likely a POSIX error code.
+  Returns `:ok` regardless of whether any matching entries were found and removed.
   """
   @spec remove_entries(config_file :: t,
           section: String.t(),
