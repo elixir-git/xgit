@@ -422,6 +422,34 @@ defmodule Xgit.ConfigFileTest do
              ]
     end
 
+    test "value implied if no equal sign" do
+      assert entries_from_config_file!(~s"""
+             [foo "zip"]
+                bar
+             """) == [
+               %ConfigEntry{
+                 name: "bar",
+                 section: "foo",
+                 subsection: "zip",
+                 value: nil
+               }
+             ]
+    end
+
+    test "value may be empty" do
+      assert entries_from_config_file!(~s"""
+             [foo "zip"]
+                bar=
+             """) == [
+               %ConfigEntry{
+                 name: "bar",
+                 section: "foo",
+                 subsection: "zip",
+                 value: ""
+               }
+             ]
+    end
+
     test "values may be quoted" do
       assert entries_from_config_file!(~s"""
              [foo "zip"]
