@@ -39,4 +39,29 @@ defmodule Xgit.Config do
       cover value
     end)
   end
+
+  @doc ~S"""
+  If there is a single string for this variable, return it.
+
+  If there are zero or multiple values for this variable, return `nil`.
+  """
+  @spec get_string(
+          repository :: Repository.t(),
+          section :: String.t(),
+          subsection :: String.t() | nil,
+          name :: String.t()
+        ) :: String.t() | nil
+  def get_string(repository, section, subsection \\ nil, name) do
+    repository
+    |> get_string_list(section, subsection, name)
+    |> single_string_value()
+  end
+
+  defp single_string_value([value]) when is_binary(value) do
+    cover value
+  end
+
+  defp single_string_value(_) do
+    cover nil
+  end
 end
