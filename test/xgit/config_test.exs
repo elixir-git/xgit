@@ -292,16 +292,76 @@ defmodule Xgit.ConfigTest do
       assert Config.get_integer(repo, "test", "sub", "blah", 97) == 97
     end
 
-    test "scale with K suffix" do
-      flunk("unimplemented")
+    test "scale with k suffix", %{repo: repo} do
+      :ok =
+        Storage.add_config_entry(repo, %ConfigEntry{
+          section: "test",
+          subsection: nil,
+          name: "blah",
+          value: "5k"
+        })
+
+      assert Config.get_integer(repo, "test", "blah", 52) == 5120
     end
 
-    test "scale with M suffix" do
-      flunk("unimplemented")
+    test "scale with K suffix", %{repo: repo} do
+      :ok =
+        Storage.add_config_entry(repo, %ConfigEntry{
+          section: "test",
+          subsection: nil,
+          name: "blah",
+          value: "5K"
+        })
+
+      assert Config.get_integer(repo, "test", "blah", 52) == 5120
     end
 
-    test "scale with G suffix" do
-      flunk("unimplemented")
+    test "scale with m suffix", %{repo: repo} do
+      :ok =
+        Storage.add_config_entry(repo, %ConfigEntry{
+          section: "test",
+          subsection: nil,
+          name: "blah",
+          value: "4m"
+        })
+
+      assert Config.get_integer(repo, "test", "blah", 52) == 4_194_304
+    end
+
+    test "scale with M suffix", %{repo: repo} do
+      :ok =
+        Storage.add_config_entry(repo, %ConfigEntry{
+          section: "test",
+          subsection: nil,
+          name: "blah",
+          value: "4M"
+        })
+
+      assert Config.get_integer(repo, "test", "blah", 52) == 4_194_304
+    end
+
+    test "scale with g suffix", %{repo: repo} do
+      :ok =
+        Storage.add_config_entry(repo, %ConfigEntry{
+          section: "test",
+          subsection: nil,
+          name: "blah",
+          value: "3g"
+        })
+
+      assert Config.get_integer(repo, "test", "blah", 52) == 3_221_225_472
+    end
+
+    test "scale with G suffix", %{repo: repo} do
+      :ok =
+        Storage.add_config_entry(repo, %ConfigEntry{
+          section: "test",
+          subsection: nil,
+          name: "blah",
+          value: "3G"
+        })
+
+      assert Config.get_integer(repo, "test", "blah", 52) == 3_221_225_472
     end
   end
 

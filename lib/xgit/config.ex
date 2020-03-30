@@ -98,6 +98,12 @@ defmodule Xgit.Config do
   defp to_integer_or_default(value, default) do
     case Integer.parse(value) do
       {n, ""} -> cover n
+      {n, "k"} -> cover n * 1024
+      {n, "K"} -> cover n * 1024
+      {n, "m"} -> cover n * 1024 * 1024
+      {n, "M"} -> cover n * 1024 * 1024
+      {n, "g"} -> cover n * 1024 * 1024 * 1024
+      {n, "G"} -> cover n * 1024 * 1024 * 1024
       _ -> cover default
     end
   end
