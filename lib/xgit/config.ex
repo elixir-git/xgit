@@ -92,9 +92,8 @@ defmodule Xgit.Config do
     |> to_integer_or_default(default)
   end
 
-  defp to_integer_or_default(nil, default) do
-    cover default
-  end
+  defp to_integer_or_default(nil, default), do: cover(default)
+  defp to_integer_or_default(:empty, default), do: cover(default)
 
   defp to_integer_or_default(value, default) do
     case Integer.parse(value) do
@@ -124,23 +123,20 @@ defmodule Xgit.Config do
   end
 
   defp to_lower_if_string(nil), do: cover(nil)
+  defp to_lower_if_string(:empty), do: cover(:empty)
   defp to_lower_if_string(s) when is_binary(s), do: String.downcase(s)
 
   defp to_boolean_or_default("yes", _default), do: cover(true)
   defp to_boolean_or_default("on", _default), do: cover(true)
   defp to_boolean_or_default("true", _default), do: cover(true)
   defp to_boolean_or_default("1", _default), do: cover(true)
-
-  # defp to_boolean_or_default("1", _default), do: cover(true)
-  # what does value without = look like?
+  defp to_boolean_or_default(:empty, _default), do: cover(true)
 
   defp to_boolean_or_default("no", _default), do: cover(false)
   defp to_boolean_or_default("off", _default), do: cover(false)
   defp to_boolean_or_default("false", _default), do: cover(false)
   defp to_boolean_or_default("0", _default), do: cover(false)
-
-  # defp to_boolean_or_default("1", _default), do: cover(true)
-  # what does empty string look like
+  defp to_boolean_or_default("", _default), do: cover(false)
 
   defp to_boolean_or_default(_, default), do: cover(default)
 end

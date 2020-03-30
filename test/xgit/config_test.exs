@@ -208,6 +208,18 @@ defmodule Xgit.ConfigTest do
       assert Config.get_integer(repo, "test", "sub", "blah", 87) == -87
     end
 
+    test "single empty value exists", %{repo: repo} do
+      :ok =
+        Storage.add_config_entry(repo, %ConfigEntry{
+          section: "test",
+          subsection: nil,
+          name: "blah",
+          value: nil
+        })
+
+      assert Config.get_integer(repo, "test", "blah", 52) == 52
+    end
+
     test "single invalid string exists (no subsection)", %{repo: repo} do
       :ok =
         Storage.add_config_entry(repo, %ConfigEntry{
@@ -440,12 +452,28 @@ defmodule Xgit.ConfigTest do
       assert Config.get_boolean(repo, "test", "sub", "blah", true) == true
     end
 
-    test "true: value without =" do
-      flunk("unimplemented")
+    test "true: value without =", %{repo: repo} do
+      :ok =
+        Storage.add_config_entry(repo, %ConfigEntry{
+          section: "test",
+          subsection: "sub",
+          name: "blah",
+          value: nil
+        })
+
+      assert Config.get_boolean(repo, "test", "sub", "blah", false) == true
     end
 
-    test "false: value with = but nothing further" do
-      flunk("unimplemented")
+    test "false: value with = but nothing further", %{repo: repo} do
+      :ok =
+        Storage.add_config_entry(repo, %ConfigEntry{
+          section: "test",
+          subsection: "sub",
+          name: "blah",
+          value: ""
+        })
+
+      assert Config.get_boolean(repo, "test", "sub", "blah", true) == false
     end
   end
 end
