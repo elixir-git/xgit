@@ -102,6 +102,30 @@ defmodule Xgit.ConfigTest do
       assert Config.get_string(repo, "test", "sub", "blah") == "foo"
     end
 
+    test "single string exists (no = sign)", %{repo: repo} do
+      :ok =
+        Storage.add_config_entry(repo, %ConfigEntry{
+          section: "test",
+          subsection: nil,
+          name: "blah",
+          value: nil
+        })
+
+      assert Config.get_string(repo, "test", "blah") == :empty
+    end
+
+    test "single string exists (no value after =)", %{repo: repo} do
+      :ok =
+        Storage.add_config_entry(repo, %ConfigEntry{
+          section: "test",
+          subsection: nil,
+          name: "blah",
+          value: ""
+        })
+
+      assert Config.get_string(repo, "test", "blah") == ""
+    end
+
     test "multiple strings exist (no subsection)", %{repo: repo} do
       :ok =
         Storage.add_config_entry(repo, %ConfigEntry{
