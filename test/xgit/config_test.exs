@@ -326,6 +326,48 @@ defmodule Xgit.ConfigTest do
       assert Config.get_boolean(repo, "test", "sub", "blah", true) == true
     end
 
+    defp check_true_alias(repo, value) do
+      :ok =
+        Storage.add_config_entry(repo, %ConfigEntry{
+          section: "test",
+          subsection: nil,
+          name: "blah",
+          value: value
+        })
+
+      assert Config.get_boolean(repo, "test", "blah", false) == true
+    end
+
+    defp check_false_alias(repo, value) do
+      :ok =
+        Storage.add_config_entry(repo, %ConfigEntry{
+          section: "test",
+          subsection: nil,
+          name: "blah",
+          value: value
+        })
+
+      assert Config.get_boolean(repo, "test", "blah", true) == false
+    end
+
+    test "aliases for true", %{repo: repo} do
+      check_true_alias(repo, "yes")
+      check_true_alias(repo, "yEs")
+      check_true_alias(repo, "on")
+      check_true_alias(repo, "ON")
+      check_true_alias(repo, "TrUe")
+      check_true_alias(repo, "1")
+    end
+
+    test "aliases for false", %{repo: repo} do
+      check_false_alias(repo, "no")
+      check_false_alias(repo, "nO")
+      check_false_alias(repo, "off")
+      check_false_alias(repo, "oFf")
+      check_false_alias(repo, "fAlSe")
+      check_false_alias(repo, "0")
+    end
+
     test "multiple strings exist (no subsection)", %{repo: repo} do
       :ok =
         Storage.add_config_entry(repo, %ConfigEntry{
