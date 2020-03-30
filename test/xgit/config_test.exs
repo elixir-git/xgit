@@ -150,4 +150,110 @@ defmodule Xgit.ConfigTest do
       assert Config.get_string(repo, "test", "sub", "blah") == nil
     end
   end
+
+  describe "get_integer/5" do
+    test "empty case (no subsection)", %{repo: repo} do
+      assert Config.get_integer(repo, "core", "blah", 42) == 42
+    end
+
+    test "empty case (with subsection)", %{repo: repo} do
+      assert Config.get_integer(repo, "core", "subsection", "blah", 59) == 59
+    end
+
+    test "single integer string exists (no subsection)", %{repo: repo} do
+      :ok =
+        Storage.add_config_entry(repo, %ConfigEntry{
+          section: "test",
+          subsection: nil,
+          name: "blah",
+          value: "43"
+        })
+
+      assert Config.get_integer(repo, "test", "blah", 52) == 43
+    end
+
+    test "single integer string exists (with subsection)", %{repo: repo} do
+      :ok =
+        Storage.add_config_entry(repo, %ConfigEntry{
+          section: "test",
+          subsection: "sub",
+          name: "blah",
+          value: "-87"
+        })
+
+      assert Config.get_integer(repo, "test", "sub", "blah", 87) == -87
+    end
+
+    test "single invalid string exists (no subsection)", %{repo: repo} do
+      :ok =
+        Storage.add_config_entry(repo, %ConfigEntry{
+          section: "test",
+          subsection: nil,
+          name: "blah",
+          value: "33.5"
+        })
+
+      assert Config.get_integer(repo, "test", "blah", 56) == 56
+    end
+
+    test "single invalid string exists (with subsection)", %{repo: repo} do
+      :ok =
+        Storage.add_config_entry(repo, %ConfigEntry{
+          section: "test",
+          subsection: "sub",
+          name: "blah",
+          value: "foo"
+        })
+
+      assert Config.get_integer(repo, "test", "sub", "blah", 314) == 314
+    end
+
+    test "multiple strings exist (no subsection)", %{repo: repo} do
+      :ok =
+        Storage.add_config_entry(repo, %ConfigEntry{
+          section: "test",
+          subsection: nil,
+          name: "blah",
+          value: "14"
+        })
+
+      :ok =
+        Storage.add_config_entry(
+          repo,
+          %ConfigEntry{
+            section: "test",
+            subsection: nil,
+            name: "blah",
+            value: "15"
+          },
+          add?: true
+        )
+
+      assert Config.get_integer(repo, "test", "blah", 13) == 13
+    end
+
+    test "multiple strings exist (with subsection)", %{repo: repo} do
+      :ok =
+        Storage.add_config_entry(repo, %ConfigEntry{
+          section: "test",
+          subsection: "sub",
+          name: "blah",
+          value: "22"
+        })
+
+      :ok =
+        Storage.add_config_entry(
+          repo,
+          %ConfigEntry{
+            section: "test",
+            subsection: "sub",
+            name: "blah",
+            value: "24"
+          },
+          add?: true
+        )
+
+      assert Config.get_integer(repo, "test", "sub", "blah", 97) == 97
+    end
+  end
 end

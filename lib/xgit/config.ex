@@ -22,13 +22,15 @@ defmodule Xgit.Config do
         ) :: [String.t()]
   def get_string_list(repository, section, subsection \\ nil, name)
 
-  def get_string_list(repository, section, nil, name) do
+  def get_string_list(repository, section, nil, name)
+      when is_binary(section) and is_binary(name) do
     repository
     |> Storage.get_config_entries(section: section, name: name)
     |> entries_to_values()
   end
 
-  def get_string_list(repository, section, subsection, name) do
+  def get_string_list(repository, section, subsection, name)
+      when is_binary(section) and is_binary(subsection) and is_binary(name) do
     repository
     |> Storage.get_config_entries(section: section, subsection: subsection, name: name)
     |> entries_to_values()
@@ -63,5 +65,35 @@ defmodule Xgit.Config do
 
   defp single_string_value(_) do
     cover nil
+  end
+
+  @doc ~S"""
+  Return the config value interpreted as an integer.
+
+  Use `default` if it can not be interpreted as such.
+  """
+  @spec get_integer(
+          repository :: Repository.t(),
+          section :: String.t(),
+          subsection :: String.t() | nil,
+          name :: String.t(),
+          default :: integer()
+        ) :: integer()
+  def get_integer(repository, section, subsection \\ nil, name, default)
+      when is_integer(default) do
+    repository
+    |> get_string(section, subsection, name)
+    |> to_integer_or_default(default)
+  end
+
+  defp to_integer_or_default(nil, default) do
+    cover default
+  end
+
+  defp to_integer_or_default(value, default) do
+    case Integer.parse(value) do
+      {n, ""} -> cover n
+      _ -> cover default
+    end
   end
 end
