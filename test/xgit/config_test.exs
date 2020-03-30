@@ -257,15 +257,129 @@ defmodule Xgit.ConfigTest do
     end
 
     test "scale with K suffix" do
-      flunk "unimplemented"
+      flunk("unimplemented")
     end
 
     test "scale with M suffix" do
-      flunk "unimplemented"
+      flunk("unimplemented")
     end
 
     test "scale with G suffix" do
-      flunk "unimplemented"
+      flunk("unimplemented")
+    end
+  end
+
+  describe "get_boolean/5" do
+    test "empty case (no subsection)", %{repo: repo} do
+      assert Config.get_boolean(repo, "core", "blah", true) == true
+    end
+
+    test "empty case (with subsection)", %{repo: repo} do
+      assert Config.get_boolean(repo, "core", "subsection", "blah", false) == false
+    end
+
+    test "single boolean string exists (no subsection)", %{repo: repo} do
+      :ok =
+        Storage.add_config_entry(repo, %ConfigEntry{
+          section: "test",
+          subsection: nil,
+          name: "blah",
+          value: "true"
+        })
+
+      assert Config.get_boolean(repo, "test", "blah", false) == true
+    end
+
+    test "single boolean string exists (with subsection)", %{repo: repo} do
+      :ok =
+        Storage.add_config_entry(repo, %ConfigEntry{
+          section: "test",
+          subsection: "sub",
+          name: "blah",
+          value: "false"
+        })
+
+      assert Config.get_boolean(repo, "test", "sub", "blah", true) == false
+    end
+
+    test "single invalid string exists (no subsection)", %{repo: repo} do
+      :ok =
+        Storage.add_config_entry(repo, %ConfigEntry{
+          section: "test",
+          subsection: nil,
+          name: "blah",
+          value: "33"
+        })
+
+      assert Config.get_boolean(repo, "test", "blah", false) == false
+    end
+
+    test "single invalid string exists (with subsection)", %{repo: repo} do
+      :ok =
+        Storage.add_config_entry(repo, %ConfigEntry{
+          section: "test",
+          subsection: "sub",
+          name: "blah",
+          value: "foo"
+        })
+
+      assert Config.get_boolean(repo, "test", "sub", "blah", true) == true
+    end
+
+    test "multiple strings exist (no subsection)", %{repo: repo} do
+      :ok =
+        Storage.add_config_entry(repo, %ConfigEntry{
+          section: "test",
+          subsection: nil,
+          name: "blah",
+          value: "true"
+        })
+
+      :ok =
+        Storage.add_config_entry(
+          repo,
+          %ConfigEntry{
+            section: "test",
+            subsection: nil,
+            name: "blah",
+            value: "false"
+          },
+          add?: true
+        )
+
+      assert Config.get_boolean(repo, "test", "blah", false) == false
+    end
+
+    test "multiple strings exist (with subsection)", %{repo: repo} do
+      :ok =
+        Storage.add_config_entry(repo, %ConfigEntry{
+          section: "test",
+          subsection: "sub",
+          name: "blah",
+          value: "false"
+        })
+
+      :ok =
+        Storage.add_config_entry(
+          repo,
+          %ConfigEntry{
+            section: "test",
+            subsection: "sub",
+            name: "blah",
+            value: "true"
+          },
+          add?: true
+        )
+
+      assert Config.get_boolean(repo, "test", "sub", "blah", true) == true
+    end
+
+    test "true: value without =" do
+      flunk("unimplemented")
+    end
+
+    test "false: value with = but nothing further" do
+      flunk("unimplemented")
     end
   end
 end
