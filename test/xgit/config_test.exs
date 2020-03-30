@@ -1,4 +1,4 @@
-defmodule Xgit.ConfigFileTest do
+defmodule Xgit.ConfigTest do
   use ExUnit.Case, async: true
 
   alias Xgit.Config
