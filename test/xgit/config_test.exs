@@ -255,5 +255,17 @@ defmodule Xgit.ConfigTest do
 
       assert Config.get_integer(repo, "test", "sub", "blah", 97) == 97
     end
+
+    test "scale with K suffix" do
+      flunk "unimplemented"
+    end
+
+    test "scale with M suffix" do
+      flunk "unimplemented"
+    end
+
+    test "scale with G suffix" do
+      flunk "unimplemented"
+    end
   end
 end
