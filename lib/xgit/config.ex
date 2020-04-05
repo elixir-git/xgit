@@ -4,6 +4,9 @@ defmodule Xgit.Config do
 
   IMPORTANT: The on-disk repository implementation (`Xgit.Repository.OnDisk`) does not
   examine configuration directives in global or home directory.
+
+  This module should be considered roughly analogous to the
+  [`git config`](https://git-scm.com/docs/git-config) command.
   """
 
   alias Xgit.Repository
