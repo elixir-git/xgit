@@ -1,5 +1,20 @@
 # Changelog for v0.x Series
 
+## v0.8.0
+
+_04 April 2020_
+
+* **Implement `Xgit.Config` module.** This is roughly analogous to the [`git config`](https://git-scm.com/docs/git-config) command. (#314, #315)
+* [API BREAKING] Add configuration APIs to `Xgit.Repository.Storage` behaviour. (#284)
+* [API BREAKING] `Xgit.ConfigFile` APIs are very unlikely to return POSIX errors. (#312)
+* Bump credo from 1.2.2 to 1.3.2 (#309, #316)
+* Bump excoveralls from 0.12.2 to 0.12.3 (#311)
+* Bump dialyxir from 1.0.0-rc.7 to 1.0.0 (#310)
+* `OnDiskRepoTestCase`: Fix up a few minor issues. (#306)
+* Match `git init` behavior of more recent comamnd-line git versions. (#305)
+* [API BREAKING] Replace `Xgit.ConfigFile.add_entries/3` with `Xgit.ConfigFile.update/3`. (#303)
+* Add an option to OnDiskRepoTestCase.repo!/1 to override initial config file content. (#301, #302)
+
 ## v0.7.3
 
 _09 February 2020_
