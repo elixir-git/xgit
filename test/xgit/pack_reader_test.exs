@@ -7,6 +7,16 @@ defmodule Xgit.PackReaderTest do
   @pack_34be9032_path "test/fixtures/pack-34be9032ac282b11fa9babdc2b2a93ca996c9c2f"
   @pack_index_v2_34be9032_path "test/fixtures/pack-34be9032ac282b11fa9babdc2b2a93ca996c9c2f.idxV2"
 
+  test "error: index file doesn't exist" do
+    assert {:error, :enoent} =
+             PackReader.open(@pack_34be9032_path, @pack_index_v2_34be9032_path <> "bogus")
+  end
+
+  test "error: index file is invalid (premature EOF)" do
+    assert {:error, :invalid_index} =
+             PackReader.open(@pack_34be9032_path, @pack_index_v2_34be9032_path <> "-partial")
+  end
+
   test "can open small pack with v2 index" do
     assert {:ok, %PackReader{} = reader} =
              PackReader.open(@pack_34be9032_path, @pack_index_v2_34be9032_path)

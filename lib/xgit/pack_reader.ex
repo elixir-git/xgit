@@ -74,7 +74,7 @@ defmodule Xgit.PackReader do
 
   `{:error, posix}` if unable to physically access either file.
 
-  `{:rror, :invalid_index}` if the index file can not be parsed.
+  `{:error, :invalid_index}` if the index file can not be parsed.
   """
   @spec open(pack_path :: Path.t(), idx_path :: Path.t()) :: {:ok, t} | {:error, open_reason}
   def open(pack_path, idx_path) when is_binary(pack_path) and is_binary(idx_path) do
