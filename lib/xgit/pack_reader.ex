@@ -210,10 +210,10 @@ defmodule Xgit.PackReader do
     def count(%PackReader{count: count}), do: cover({:ok, count})
 
     @impl true
-    def member?(_, _), do: cover {:error, PackReader}
+    def member?(_, _), do: cover({:error, PackReader})
 
     @impl true
-    def slice(_), do: cover {:error, PackReader}
+    def slice(_), do: cover({:error, PackReader})
 
     @impl true
     def reduce(%PackReader{idx_version: 2} = reader, acc, fun) do
@@ -222,7 +222,7 @@ defmodule Xgit.PackReader do
 
     defp reduce_v2(reader, index, acc, fun)
 
-    defp reduce_v2(_reader, _index, {:halt, acc}, _fun), do: cover {:halted, acc}
+    defp reduce_v2(_reader, _index, {:halt, acc}, _fun), do: cover({:halted, acc})
 
     # TO DO: Restore this case if we find that we actually use suspended enumerations.
     # For now, I don't see a use case for it.
