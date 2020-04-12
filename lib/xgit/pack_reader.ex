@@ -89,12 +89,14 @@ defmodule Xgit.PackReader do
   end
 
   defp read_index(pack_path, idx_path) do
-    with {:ok, iodevice} <- File.open(idx_path, [:read, :binary]) do
-      res = read_index_file(pack_path, iodevice)
-      File.close(iodevice)
-      cover res
-    else
-      {:error, err} -> cover {:error, err}
+    case File.open(idx_path, [:read, :binary]) do
+      {:ok, iodevice} ->
+        res = read_index_file(pack_path, iodevice)
+        File.close(iodevice)
+        cover res
+
+      {:error, err} ->
+        cover {:error, err}
     end
   end
 
@@ -259,6 +261,7 @@ defmodule Xgit.PackReader do
       if offset > 0x80000000 do
         raise "64-bit offsets not yet supported"
       end
+
       # coveralls-ignore-stop
 
       crc =
