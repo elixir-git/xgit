@@ -72,7 +72,9 @@ defmodule Xgit.PackReaderTest do
 
     # Test halted enumeration case.
 
-    assert Enum.take(reader, 2) == [
+    assert reader
+           |> Stream.take(2)
+           |> Enum.to_list() == [
              %PackReaderEntry{
                crc: 3_266_724_440,
                name: "4b825dc642cb6eb9a060e54bf8d69288fbee4904",

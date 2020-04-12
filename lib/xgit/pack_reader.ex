@@ -224,7 +224,9 @@ defmodule Xgit.PackReader do
 
     defp reduce_v2(reader, index, acc, fun)
 
-    defp reduce_v2(_reader, _index, {:halt, acc}, _fun), do: cover({:halted, acc})
+    defp reduce_v2(_reader, _index, {:halt, acc}, _fun) do
+      cover({:halted, acc})
+    end
 
     # TO DO: Restore this case if we find that we actually use suspended enumerations.
     # For now, I don't see a use case for it.
