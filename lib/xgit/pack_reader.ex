@@ -252,9 +252,14 @@ defmodule Xgit.PackReader do
         |> NB.decode_uint32()
         |> elem(0)
 
+      # TO DO: Add support for 64-bit offsets when reading V2 pack files.
+      # https://github.com/elixir-git/xgit/issues/320
+
+      # coveralls-ignore-start
       if offset > 0x80000000 do
         raise "64-bit offsets not yet supported"
       end
+      # coveralls-ignore-stop
 
       crc =
         crc
