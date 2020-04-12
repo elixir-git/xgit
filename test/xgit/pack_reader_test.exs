@@ -18,8 +18,7 @@ defmodule Xgit.PackReaderTest do
   end
 
   test "error: index file is invalid (directory)" do
-    assert {:error, :invalid_index} =
-             PackReader.open(@pack_34be9032_path, "text/fixtures")
+    assert {:error, :invalid_index} = PackReader.open(@pack_34be9032_path, "text/fixtures")
   end
 
   test "can open small pack with v2 index" do
