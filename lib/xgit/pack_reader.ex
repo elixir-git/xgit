@@ -78,13 +78,13 @@ defmodule Xgit.PackReader do
   """
   @spec open(pack_path :: Path.t(), idx_path :: Path.t()) :: {:ok, t} | {:error, open_reason}
   def open(pack_path, idx_path) when is_binary(pack_path) and is_binary(idx_path) do
-    with {:exists?, true} <- {:exists?, File.exists?(idx_path)},
-         {:ok, %__MODULE__{} = reader} <- read_index(pack_path, idx_path) do
-      # TO DO: Also verify pack file.
-      cover {:ok, reader}
-    else
-      {:exists?, _} -> cover {:error, :enoent}
-      {:error, err} -> cover {:error, err}
+    case read_index(pack_path, idx_path) do
+      {:ok, %__MODULE__{} = reader} ->
+        # TO DO: Also verify pack file.
+        cover {:ok, reader}
+
+      {:error, err} ->
+        cover {:error, err}
     end
   end
 
@@ -212,10 +212,10 @@ defmodule Xgit.PackReader do
     def count(%PackReader{count: count}), do: cover({:ok, count})
 
     @impl true
-    def member?(_, _), do: cover({:error, PackReader})
+    def member?(_, _), do: {:error, PackReader}
 
     @impl true
-    def slice(_), do: cover({:error, PackReader})
+    def slice(_), do: {:error, PackReader}
 
     @impl true
     def reduce(%PackReader{idx_version: 2} = reader, acc, fun) do
@@ -224,9 +224,7 @@ defmodule Xgit.PackReader do
 
     defp reduce_v2(reader, index, acc, fun)
 
-    defp reduce_v2(_reader, _index, {:halt, acc}, _fun) do
-      cover({:halted, acc})
-    end
+    defp reduce_v2(_reader, _index, {:halt, acc}, _fun), do: cover({:halted, acc})
 
     # TO DO: Restore this case if we find that we actually use suspended enumerations.
     # For now, I don't see a use case for it.
