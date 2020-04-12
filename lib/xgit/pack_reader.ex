@@ -107,8 +107,39 @@ defmodule Xgit.PackReader do
     end
   end
 
-  defp read_index_file_v1(_pack_path, _idx_iodevice, _fanout0) do
-    raise "unimplemented"
+  defp read_index_file_v1(pack_path, idx_iodevice, fanout0) do
+    fanout0 =
+      fanout0
+      |> :erlang.binary_to_list()
+      |> NB.decode_uint32()
+      |> elem(0)
+
+    with {fanout, count} when is_tuple(fanout) <- read_fanout_table(idx_iodevice, fanout0),
+         {:ok, offset_sha} <- read_blob(idx_iodevice, count * 24),
+         {:ok, packfile_checksum} <- read_blob(idx_iodevice, 20),
+         {:ok, idxfile_checksum} <- read_blob(idx_iodevice, 20),
+         :error <- read_blob(idx_iodevice, 1) do
+      {:ok,
+       %__MODULE__{
+         pack_path: pack_path,
+         idx_version: 1,
+         count: count,
+         fanout: fanout,
+         offset_sha: offset_sha,
+         packfile_checksum: packfile_checksum,
+         idxfile_checksum: idxfile_checksum
+       }}
+    else
+      _ -> cover {:error, :invalid_index}
+    end
+  end
+
+  defp read_fanout_table(idx_iodevice, fanout0) do
+    with entries <-
+           Enum.concat([fanout0], Enum.map(1..255, fn _ -> read_fanout_entry(idx_iodevice) end)),
+         size when is_integer(size) <- check_fanout_table(entries) do
+      {List.to_tuple(entries), size}
+    end
   end
 
   defp read_index_file_v2(pack_path, idx_iodevice) do
@@ -218,8 +249,49 @@ defmodule Xgit.PackReader do
     def slice(_), do: {:error, PackReader}
 
     @impl true
+    def reduce(%PackReader{idx_version: 1} = reader, acc, fun) do
+      reduce_v1(reader, 0, acc, fun)
+    end
+
     def reduce(%PackReader{idx_version: 2} = reader, acc, fun) do
       reduce_v2(reader, 0, acc, fun)
+    end
+
+    defp reduce_v1(reader, index, acc, fun)
+
+    defp reduce_v1(_reader, _index, {:halt, acc}, _fun), do: cover({:halted, acc})
+
+    # TO DO: Restore this case if we find that we actually use suspended enumerations.
+    # For now, I don't see a use case for it.
+    # defp reduce_v1(_reader, _index, {:suspend, acc}, _fun) do
+    #   {:suspended, acc, &reduce_v1(reader, index, &1, fun)}
+    # end
+
+    defp reduce_v1(%PackReader{count: index}, index, {:cont, acc}, _fun) do
+      cover {:done, acc}
+    end
+
+    defp reduce_v1(
+           %PackReader{offset_sha: offset_sha} = reader,
+           index,
+           {:cont, acc},
+           fun
+         ) do
+      name =
+        offset_sha
+        |> :binary.part(index * 24 + 4, 20)
+        |> ObjectId.from_binary_iodata()
+
+      offset =
+        offset_sha
+        |> :binary.part(index * 24, 4)
+        |> :binary.bin_to_list()
+        |> NB.decode_uint32()
+        |> elem(0)
+
+      entry = %Entry{name: name, offset: offset}
+
+      reduce_v1(reader, index + 1, fun.(entry, acc), fun)
     end
 
     defp reduce_v2(reader, index, acc, fun)
