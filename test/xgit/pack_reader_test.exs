@@ -65,5 +65,21 @@ defmodule Xgit.PackReaderTest do
                offset: 178
              }
            ]
-  end
+
+           # Test halted enumeration case.
+
+           assert Enum.take(reader, 2) == [
+            %PackReaderEntry{
+              crc: 3_266_724_440,
+              name: "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+              offset: 7782
+            },
+            %PackReaderEntry{
+              crc: 1_923_962_818,
+              name: "540a36d136cf413e4b064c2b0e0a4db60f77feab",
+              offset: 339
+            }]
+
+
+          end
 end
