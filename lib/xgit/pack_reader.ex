@@ -2,6 +2,11 @@ defmodule Xgit.PackReader do
   @moduledoc ~S"""
   Given a combination of `.pack` and `.idx` files, a pack reader
   can access the objects within it.
+
+  A `PackReader` implements the `Enumerable` protocol. An iteration
+  of a `PackReader` struct will produce a series of `Xgit.PackReader.Entry`
+  structs describing the name, position, and (for V2 packs only)
+  the CRC sum for each object as described in the pack index.
   """
 
   alias Xgit.Util.NB
@@ -14,7 +19,9 @@ defmodule Xgit.PackReader do
 
   ## Struct Members
 
+  * `:pack_path`: path to the pack file
   * `:idx_version`: the index version (either 1 or 2)
+  * `:count`: number of objects in this pack
   * `:fanout`: fanout table (256-element tuple); indexes into offset and/or sha tables
   * `:offset_sha`: (binary) offset + SHAs table (version 1 only)
   * `:sha1`: (binary) SHA listings (version 2 only)
@@ -27,6 +34,7 @@ defmodule Xgit.PackReader do
   @type t :: %__MODULE__{
           pack_path: Path.t(),
           idx_version: 1..2,
+          count: non_neg_integer,
           fanout: tuple,
           offset_sha: binary | nil,
           sha1: binary | nil,
@@ -37,10 +45,11 @@ defmodule Xgit.PackReader do
           idxfile_checksum: binary
         }
 
-  @enforce_keys [:pack_path, :idx_version, :fanout, :packfile_checksum, :idxfile_checksum]
+  @enforce_keys [:pack_path, :idx_version, :count, :fanout, :packfile_checksum, :idxfile_checksum]
   defstruct [
     :pack_path,
     :idx_version,
+    :count,
     :fanout,
     :offset_sha,
     :sha1,
@@ -102,10 +111,10 @@ defmodule Xgit.PackReader do
 
   defp read_index_file_v2(pack_path, idx_iodevice) do
     with "\x00\x00\x00\x02" <- IO.binread(idx_iodevice, 4),
-         {fanout, size} when is_tuple(fanout) <- read_fanout_table(idx_iodevice),
-         {:ok, sha1} <- read_blob(idx_iodevice, size * 20),
-         {:ok, crc} <- read_blob(idx_iodevice, size * 4),
-         {:ok, offset} <- read_blob(idx_iodevice, size * 4),
+         {fanout, count} when is_tuple(fanout) <- read_fanout_table(idx_iodevice),
+         {:ok, sha1} <- read_blob(idx_iodevice, count * 20),
+         {:ok, crc} <- read_blob(idx_iodevice, count * 4),
+         {:ok, offset} <- read_blob(idx_iodevice, count * 4),
          offset_64bit <- "TO DO: read offset_64bit",
          {:ok, packfile_checksum} <- read_blob(idx_iodevice, 20),
          {:ok, idxfile_checksum} <- read_blob(idx_iodevice, 20),
@@ -114,6 +123,7 @@ defmodule Xgit.PackReader do
        %__MODULE__{
          pack_path: pack_path,
          idx_version: 2,
+         count: count,
          fanout: fanout,
          sha1: sha1,
          crc: crc,
@@ -138,7 +148,7 @@ defmodule Xgit.PackReader do
     with bin when is_binary(bin) <- IO.binread(idx_iodevice, 4),
          list <- :erlang.binary_to_list(bin),
          {size, []} <- NB.decode_uint32(list) do
-      size
+      cover size
     end
   end
 
@@ -171,5 +181,91 @@ defmodule Xgit.PackReader do
   #   raise "unimplemented"
   # end
 
-  # TO DO: Some kind of iterator for pack object IDs.
+  defmodule Entry do
+    @moduledoc ~S"""
+    Represents a single entry from a pack index.
+
+    ## Struct Members
+
+    * `:name`: (`Xgit.ObjectID.t`) SHA1 name of the object
+    * `:offset`: (integer) offset of the packed object in the pack file
+    * `:crc`: (optional, binary) CRC checksum of the packed object
+    """
+    @type t :: %__MODULE__{
+            name: Xgit.ObjectId.t(),
+            offset: non_neg_integer,
+            crc: binary | nil
+          }
+
+    @enforce_keys [:name, :offset]
+    defstruct [:name, :offset, :crc]
+  end
+
+  defimpl Enumerable do
+    alias Xgit.ObjectId
+    alias Xgit.PackReader
+    alias Xgit.PackReader.Entry
+
+    @impl true
+    def count(%PackReader{count: count}), do: cover({:ok, count})
+
+    @impl true
+    def member?(_, _), do: cover {:error, PackReader}
+
+    @impl true
+    def slice(_), do: cover {:error, PackReader}
+
+    @impl true
+    def reduce(%PackReader{idx_version: 2} = reader, acc, fun) do
+      reduce_v2(reader, 0, acc, fun)
+    end
+
+    defp reduce_v2(reader, index, acc, fun)
+
+    defp reduce_v2(_reader, _index, {:halt, acc}, _fun), do: cover {:halted, acc}
+
+    # TO DO: Restore this case if we find that we actually use suspended enumerations.
+    # For now, I don't see a use case for it.
+    # defp reduce_v2(_reader, _index, {:suspend, acc}, _fun) do
+    #   {:suspended, acc, &reduce_v2(reader, index, &1, fun)}
+    # end
+
+    defp reduce_v2(%PackReader{count: index}, index, {:cont, acc}, _fun) do
+      cover {:done, acc}
+    end
+
+    defp reduce_v2(
+           %PackReader{sha1: sha1, offset: offset, crc: crc} = reader,
+           index,
+           {:cont, acc},
+           fun
+         ) do
+      name =
+        sha1
+        |> :binary.part(index * 20, 20)
+        |> ObjectId.from_binary_iodata()
+
+      offset =
+        offset
+        |> :binary.part(index * 4, 4)
+        |> :binary.bin_to_list()
+        |> NB.decode_uint32()
+        |> elem(0)
+
+      if offset > 0x80000000 do
+        raise "64-bit offsets not yet supported"
+      end
+
+      crc =
+        crc
+        |> :binary.part(index * 4, 4)
+        |> :binary.bin_to_list()
+        |> NB.decode_uint32()
+        |> elem(0)
+
+      entry = %Entry{name: name, offset: offset, crc: crc}
+
+      reduce_v2(reader, index + 1, fun.(entry, acc), fun)
+    end
+  end
 end
