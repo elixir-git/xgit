@@ -4,6 +4,8 @@ defmodule Xgit.PackReader do
   can access the objects within it.
   """
 
+  alias Xgit.Util.NB
+
   import Xgit.Util.ForceCoverage
 
   @typedoc ~S"""
@@ -81,7 +83,7 @@ defmodule Xgit.PackReader do
     with {:ok, iodevice} <- File.open(idx_path, [:read, :binary]) do
       res = read_index_file(pack_path, iodevice)
       File.close(iodevice)
-      res
+      cover res
     else
       {:error, err} -> cover {:error, err}
     end
@@ -98,23 +100,66 @@ defmodule Xgit.PackReader do
     raise "unimplemented"
   end
 
-  def read_index_file_v2(pack_path, idx_iodevice) do
+  defp read_index_file_v2(pack_path, idx_iodevice) do
     with "\x00\x00\x00\x02" <- IO.binread(idx_iodevice, 4),
-         fanout when is_binary(fanout) <- IO.binread(idx_iodevice, 1024) do
+         {fanout, size} when is_tuple(fanout) <- read_fanout_table(idx_iodevice),
+         {:ok, sha1} <- read_blob(idx_iodevice, size * 20),
+         {:ok, crc} <- read_blob(idx_iodevice, size * 4),
+         {:ok, offset} <- read_blob(idx_iodevice, size * 4),
+         offset_64bit <- "TO DO: read offset_64bit",
+         {:ok, packfile_checksum} <- read_blob(idx_iodevice, 20),
+         {:ok, idxfile_checksum} <- read_blob(idx_iodevice, 20),
+         :error <- read_blob(idx_iodevice, 1) do
       {:ok,
        %__MODULE__{
          pack_path: pack_path,
          idx_version: 2,
          fanout: fanout,
-         sha1: "TO DO: sha1",
-         crc: "TO DO: crc",
-         offset: "TO DO: offset",
-         offset_64bit: "TO DO: offset_64bit",
-         packfile_checksum: "TO DO: packfile_checksum",
-         idxfile_checksum: "TO DO: idxfile_checksum"
+         sha1: sha1,
+         crc: crc,
+         offset: offset,
+         offset_64bit: offset_64bit,
+         packfile_checksum: packfile_checksum,
+         idxfile_checksum: idxfile_checksum
        }}
     else
-      _ -> {:error, :invalid_index}
+      _ -> cover {:error, :invalid_index}
+    end
+  end
+
+  defp read_fanout_table(idx_iodevice) do
+    with entries <- Enum.map(0..255, fn _ -> read_fanout_entry(idx_iodevice) end),
+         size when is_integer(size) <- check_fanout_table(entries) do
+      {List.to_tuple(entries), size}
+    end
+  end
+
+  defp read_fanout_entry(idx_iodevice) do
+    with bin when is_binary(bin) <- IO.binread(idx_iodevice, 4),
+         list <- :erlang.binary_to_list(bin),
+         {size, []} <- NB.decode_uint32(list) do
+      size
+    end
+  end
+
+  defp check_fanout_table(entries) do
+    Enum.reduce_while(entries, 0, &check_fanout_entry/2)
+  end
+
+  defp check_fanout_entry(current, previous) when is_integer(current) and current >= previous do
+    cover {:cont, current}
+  end
+
+  defp check_fanout_entry(_current, _previous) do
+    cover {:halt, :error}
+  end
+
+  defp read_blob(idx_iodevice, size) do
+    with bin when is_binary(bin) <- IO.binread(idx_iodevice, size),
+         ^size <- byte_size(bin) do
+      cover {:ok, bin}
+    else
+      _ -> cover :error
     end
   end
 
