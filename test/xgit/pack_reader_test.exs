@@ -18,7 +18,12 @@ defmodule Xgit.PackReaderTest do
              PackReader.open(@pack_34be9032_path, @pack_index_v2_34be9032_path <> "-partial")
   end
 
-  test "error: index file is invalid (bad fanout table)" do
+  test "error: index file is invalid (bad V1 fanout table)" do
+    assert {:error, :invalid_index} =
+             PackReader.open(@pack_34be9032_path, @pack_index_v1_34be9032_path <> "-bad-fanout")
+  end
+
+  test "error: index file is invalid (bad V2 fanout table)" do
     assert {:error, :invalid_index} =
              PackReader.open(@pack_34be9032_path, @pack_index_v2_34be9032_path <> "-bad-fanout")
   end
