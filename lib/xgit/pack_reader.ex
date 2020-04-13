@@ -9,6 +9,7 @@ defmodule Xgit.PackReader do
   the CRC sum for each object as described in the pack index.
   """
 
+  alias Xgit.ObjectId
   alias Xgit.Util.NB
 
   import Xgit.Util.ForceCoverage
@@ -206,13 +207,64 @@ defmodule Xgit.PackReader do
     end
   end
 
-  # def has_object?(_reader, _object_id) do
-  #   raise "unimplemented"
-  # end
+  def has_object?(reader, object_id) do
+    case index_for_object_id(reader, object_id) do
+      nil -> false
+      _ -> true
+    end
+  end
 
   # def get_object(_reader, _object_id) do
   #   raise "unimplemented"
   # end
+
+  defp index_for_object_id(%__MODULE__{fanout: fanout} = reader, object_id)
+       when is_binary(object_id) do
+    binary_id = ObjectId.to_binary_iodata(object_id)
+    fanout_index = :binary.at(binary_id, 0)
+
+    # Potential optimization: Binary search between starting_index and next fanout index entry.
+
+    starting_index =
+      case fanout_index do
+        0 -> 0
+        x -> elem(fanout, x - 1)
+      end
+
+    index_for_object_id(reader, binary_id, starting_index)
+  end
+
+  defp index_for_object_id(reader, binary_id, index)
+
+  defp index_for_object_id(%__MODULE__{count: count}, _binary_id, count), do:     cover(nil)
+
+  defp index_for_object_id(
+         %__MODULE__{idx_version: 1, offset_sha: offset_sha} = reader,
+         binary_id,
+         index
+       ) do
+    id_at_offset = :binary.part(offset_sha, index * 24 + 4, 20)
+
+    cond do
+      id_at_offset == binary_id -> cover(index)
+      id_at_offset > binary_id -> cover(nil)
+      true -> index_for_object_id(reader, binary_id, index + 1)
+    end
+  end
+
+  defp index_for_object_id(
+         %__MODULE__{idx_version: 2, sha1: sha1} = reader,
+         binary_id,
+         index
+       ) do
+    id_at_offset = :binary.part(sha1, index * 20, 20)
+
+    cond do
+      id_at_offset == binary_id -> cover(index)
+      id_at_offset > binary_id -> cover(nil)
+      true -> index_for_object_id(reader, binary_id, index + 1)
+    end
+  end
 
   defmodule Entry do
     @moduledoc ~S"""

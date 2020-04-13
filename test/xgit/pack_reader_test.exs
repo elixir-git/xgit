@@ -38,6 +38,11 @@ defmodule Xgit.PackReaderTest do
 
     assert Enum.count(reader) == 8
 
+    assert PackReader.has_object?(reader, "5b6e7c66c276e7610d4a73c70ec1a1f7c1003259")
+    refute PackReader.has_object?(reader, "5b6e7c66c276e7610d4a73c70ec1a1f7c1004259")
+    assert PackReader.has_object?(reader, "c59759f143fb1fe21c197981df75a7ee00290799")
+    refute PackReader.has_object?(reader, "f59759f143fb1fe21c197981df75a7ee00290799")
+
     assert Enum.to_list(reader) == [
              %PackReaderEntry{
                name: "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
@@ -94,6 +99,11 @@ defmodule Xgit.PackReaderTest do
              PackReader.open(@pack_34be9032_path, @pack_index_v2_34be9032_path)
 
     assert Enum.count(reader) == 8
+
+    assert PackReader.has_object?(reader, "5b6e7c66c276e7610d4a73c70ec1a1f7c1003259")
+    refute PackReader.has_object?(reader, "5b6e7c66c276e7610d4a73c70ec1a1f7c1004259")
+    assert PackReader.has_object?(reader, "c59759f143fb1fe21c197981df75a7ee00290799")
+    refute PackReader.has_object?(reader, "f59759f143fb1fe21c197981df75a7ee00290799")
 
     assert Enum.to_list(reader) == [
              %PackReaderEntry{
