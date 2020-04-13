@@ -236,7 +236,7 @@ defmodule Xgit.PackReader do
 
   defp index_for_object_id(reader, binary_id, index)
 
-  defp index_for_object_id(%__MODULE__{count: count}, _binary_id, count), do:     cover(nil)
+  defp index_for_object_id(%__MODULE__{count: count}, _binary_id, count), do: cover(nil)
 
   defp index_for_object_id(
          %__MODULE__{idx_version: 1, offset_sha: offset_sha} = reader,
