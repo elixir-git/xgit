@@ -207,6 +207,10 @@ defmodule Xgit.PackReader do
     end
   end
 
+  @doc ~S"""
+  Return `true` if the object in question is present in this pack.
+  """
+  @spec has_object?(reader :: t, object_id :: ObjectId.t()) :: boolean
   def has_object?(reader, object_id) do
     case index_for_object_id(reader, object_id) do
       nil -> false
