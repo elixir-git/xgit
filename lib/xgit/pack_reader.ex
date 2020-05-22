@@ -9,6 +9,7 @@ defmodule Xgit.PackReader do
   the CRC sum for each object as described in the pack index.
   """
 
+  alias Xgit.Object
   alias Xgit.ObjectId
   alias Xgit.Util.NB
 
@@ -218,10 +219,6 @@ defmodule Xgit.PackReader do
     end
   end
 
-  # def get_object(_reader, _object_id) do
-  #   raise "unimplemented"
-  # end
-
   defp index_for_object_id(%__MODULE__{fanout: fanout} = reader, object_id)
        when is_binary(object_id) do
     binary_id = ObjectId.to_binary_iodata(object_id)
@@ -267,6 +264,35 @@ defmodule Xgit.PackReader do
       id_at_offset == binary_id -> cover(index)
       id_at_offset > binary_id -> cover(nil)
       true -> index_for_object_id(reader, binary_id, index + 1)
+    end
+  end
+
+  @typedoc ~S"""
+  Error codes that can be returned by `get_object/2`.
+  """
+  @type get_object_reason :: :not_found | :invalid_object
+
+  @doc ~S"""
+  Retrieves an object from the pack.
+
+  ## Return Value
+
+  `{:ok, object}` if the object exists in the pack.
+
+  `{:error, :not_found}` if the object does not exist in the pack.
+
+  `{:error, :invalid_object}` if object was found, but invalid.
+  """
+  @spec get_object(pack_reader :: t(), object_id :: ObjectId.t()) ::
+          {:ok, object :: Object.t()} | {:error, reason :: get_object_reason()}
+  def get_object(%__MODULE__{} = reader, object_id) when is_binary(object_id) do
+    index = index_for_object_id(reader, object_id)
+
+    if is_integer(index) do
+      pack_entry = pack_entry_at_index(reader, index)
+      object_from_pack(reader, pack_entry)
+    else
+      cover {:error, :not_found}
     end
   end
 
@@ -344,6 +370,48 @@ defmodule Xgit.PackReader do
       |> elem(0)
 
     %__MODULE__.Entry{name: name, offset: offset, crc: crc}
+  end
+
+  defp object_from_pack(
+         %__MODULE__{pack_path: pack_path} = _reader,
+         %__MODULE__.Entry{name: object_id, offset: offset} = _pack_entry
+       ) do
+    case File.open(pack_path, [:read, :binary]) do
+      {:ok, pack_iodevice} ->
+        res = read_object_from_pack(pack_iodevice, offset, object_id)
+        File.close(pack_iodevice)
+        cover res
+
+      {:error, err} ->
+        cover {:error, err}
+    end
+  end
+
+  defp read_object_from_pack(pack_iodevice, offset, object_id) do
+    with <<?P, ?A, ?C, ?K, 0, 0, 0, 2>> <- IO.binread(pack_iodevice, 8),
+         {:ok, ^offset} <- :file.position(pack_iodevice, offset),
+         {type, size} <- object_type_and_size(pack_iodevice),
+         :to_do <- unpack_object(pack_iodevice) do
+      {:ok,
+       %Object{
+         content: "Xgit.ContentSource.t()",
+         id: object_id,
+         size: size,
+         type: type
+       }}
+    else
+      _ -> {:error, :invalid_object}
+    end
+  end
+
+  defp object_type_and_size(_pack_iodevice) do
+    # obviously bogus
+    {:commit, 245}
+  end
+
+  defp unpack_object(_pack_iodevice) do
+    # Thinking the answer here is to unpack to a temp file.
+    :to_do
   end
 
   defimpl Enumerable do
