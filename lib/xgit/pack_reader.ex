@@ -290,10 +290,65 @@ defmodule Xgit.PackReader do
     defstruct [:name, :offset, :crc]
   end
 
+  @doc ~S"""
+  Return a single entry from the pack index.
+  """
+  @spec pack_entry_at_index(reader :: t, index :: non_neg_integer) :: __MODULE__.Entry.t()
+  def pack_entry_at_index(%__MODULE__{idx_version: 1, offset_sha: offset_sha} = _reader, index) do
+    name =
+      offset_sha
+      |> :binary.part(index * 24 + 4, 20)
+      |> ObjectId.from_binary_iodata()
+
+    offset =
+      offset_sha
+      |> :binary.part(index * 24, 4)
+      |> :binary.bin_to_list()
+      |> NB.decode_uint32()
+      |> elem(0)
+
+    %__MODULE__.Entry{name: name, offset: offset}
+  end
+
+  def pack_entry_at_index(
+        %__MODULE__{idx_version: 2, sha1: sha1, offset: offset, crc: crc} = _reader,
+        index
+      ) do
+    name =
+      sha1
+      |> :binary.part(index * 20, 20)
+      |> ObjectId.from_binary_iodata()
+
+    offset =
+      offset
+      |> :binary.part(index * 4, 4)
+      |> :binary.bin_to_list()
+      |> NB.decode_uint32()
+      |> elem(0)
+
+    # TO DO: Add support for 64-bit offsets when reading V2 pack files.
+    # https://github.com/elixir-git/xgit/issues/320
+
+    # coveralls-ignore-start
+    if offset > 0x80000000 do
+      raise "64-bit offsets not yet supported"
+    end
+
+    # coveralls-ignore-stop
+
+    crc =
+      crc
+      |> :binary.part(index * 4, 4)
+      |> :binary.bin_to_list()
+      |> NB.decode_uint32()
+      |> elem(0)
+
+    %__MODULE__.Entry{name: name, offset: offset, crc: crc}
+  end
+
   defimpl Enumerable do
     alias Xgit.ObjectId
     alias Xgit.PackReader
-    alias Xgit.PackReader.Entry
 
     @impl true
     def count(%PackReader{count: count}), do: cover({:ok, count})
@@ -327,26 +382,8 @@ defmodule Xgit.PackReader do
       cover {:done, acc}
     end
 
-    defp reduce_v1(
-           %PackReader{offset_sha: offset_sha} = reader,
-           index,
-           {:cont, acc},
-           fun
-         ) do
-      name =
-        offset_sha
-        |> :binary.part(index * 24 + 4, 20)
-        |> ObjectId.from_binary_iodata()
-
-      offset =
-        offset_sha
-        |> :binary.part(index * 24, 4)
-        |> :binary.bin_to_list()
-        |> NB.decode_uint32()
-        |> elem(0)
-
-      entry = %Entry{name: name, offset: offset}
-
+    defp reduce_v1(reader, index, {:cont, acc}, fun) do
+      entry = PackReader.pack_entry_at_index(reader, index)
       reduce_v1(reader, index + 1, fun.(entry, acc), fun)
     end
 
@@ -364,43 +401,8 @@ defmodule Xgit.PackReader do
       cover {:done, acc}
     end
 
-    defp reduce_v2(
-           %PackReader{sha1: sha1, offset: offset, crc: crc} = reader,
-           index,
-           {:cont, acc},
-           fun
-         ) do
-      name =
-        sha1
-        |> :binary.part(index * 20, 20)
-        |> ObjectId.from_binary_iodata()
-
-      offset =
-        offset
-        |> :binary.part(index * 4, 4)
-        |> :binary.bin_to_list()
-        |> NB.decode_uint32()
-        |> elem(0)
-
-      # TO DO: Add support for 64-bit offsets when reading V2 pack files.
-      # https://github.com/elixir-git/xgit/issues/320
-
-      # coveralls-ignore-start
-      if offset > 0x80000000 do
-        raise "64-bit offsets not yet supported"
-      end
-
-      # coveralls-ignore-stop
-
-      crc =
-        crc
-        |> :binary.part(index * 4, 4)
-        |> :binary.bin_to_list()
-        |> NB.decode_uint32()
-        |> elem(0)
-
-      entry = %Entry{name: name, offset: offset, crc: crc}
-
+    defp reduce_v2(reader, index, {:cont, acc}, fun) do
+      entry = PackReader.pack_entry_at_index(reader, index)
       reduce_v2(reader, index + 1, fun.(entry, acc), fun)
     end
   end
