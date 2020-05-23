@@ -1,6 +1,8 @@
 defmodule Xgit.PackReaderTest do
   use ExUnit.Case, async: true
 
+  alias Xgit.ContentSource
+  alias Xgit.Object
   alias Xgit.PackReader
   alias Xgit.PackReader.Entry, as: PackReaderEntry
 
@@ -177,8 +179,29 @@ defmodule Xgit.PackReaderTest do
     end
 
     test "can read first object in pack", %{reader: reader} do
-      assert {:ok, :tbd} =
-               PackReader.get_object(reader, "82c6b885ff600be425b4ea96dee75dca255b69e7")
+      assert {:ok,
+              %Object{
+                content: content,
+                size: 245,
+                id: "82c6b885ff600be425b4ea96dee75dca255b69e7",
+                type: :commit
+              }} = PackReader.get_object(reader, "82c6b885ff600be425b4ea96dee75dca255b69e7")
+
+      rendered_content =
+        content
+        |> ContentSource.stream()
+        |> Enum.to_list()
+        |> IO.iodata_to_binary()
+
+      assert rendered_content ==
+               ~S'''
+               tree aabf2ffaec9b497f0950352b3e582d73035c2035
+               parent c59759f143fb1fe21c197981df75a7ee00290799
+               author Shawn O. Pearce <spearce@spearce.org> 1148676653 -0400
+               committer Shawn O. Pearce <spearce@spearce.org> 1148676653 -0400
+
+               Deleted Linus' header.
+               '''
     end
   end
 end

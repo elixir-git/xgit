@@ -9,6 +9,9 @@ defmodule Xgit.PackReader do
   the CRC sum for each object as described in the pack index.
   """
 
+  use Bitwise, only_operators: true
+
+  alias Xgit.FileContentSource
   alias Xgit.Object
   alias Xgit.ObjectId
   alias Xgit.Util.NB
@@ -373,12 +376,12 @@ defmodule Xgit.PackReader do
   end
 
   defp object_from_pack(
-         %__MODULE__{pack_path: pack_path} = _reader,
+         %__MODULE__{pack_path: pack_path} = reader,
          %__MODULE__.Entry{name: object_id, offset: offset} = _pack_entry
        ) do
     case File.open(pack_path, [:read, :binary]) do
       {:ok, pack_iodevice} ->
-        res = read_object_from_pack(pack_iodevice, offset, object_id)
+        res = read_object_from_pack(reader, pack_iodevice, offset, object_id)
         File.close(pack_iodevice)
         cover res
 
@@ -387,31 +390,92 @@ defmodule Xgit.PackReader do
     end
   end
 
-  defp read_object_from_pack(pack_iodevice, offset, object_id) do
+  defp read_object_from_pack(reader, pack_iodevice, offset, object_id) do
     with <<?P, ?A, ?C, ?K, 0, 0, 0, 2>> <- IO.binread(pack_iodevice, 8),
          {:ok, ^offset} <- :file.position(pack_iodevice, offset),
-         {type, size} <- object_type_and_size(pack_iodevice),
-         :to_do <- unpack_object(pack_iodevice) do
-      {:ok,
-       %Object{
-         content: "Xgit.ContentSource.t()",
-         id: object_id,
-         size: size,
-         type: type
-       }}
+         {type, size} <- object_type_and_size(pack_iodevice) do
+      unpack_object(reader, pack_iodevice, object_id, type, size)
     else
       _ -> {:error, :invalid_object}
     end
   end
 
-  defp object_type_and_size(_pack_iodevice) do
-    # obviously bogus
-    {:commit, 245}
+  defp object_type_and_size(pack_iodevice) do
+    with <<more?::1, type_code::3, size::4>> <- IO.binread(pack_iodevice, 1),
+         size when is_integer(size) <- read_more_size(pack_iodevice, more?, size, 4) do
+      {type_code_to_type(type_code), size}
+    else
+      _ -> :error
+    end
   end
 
-  defp unpack_object(_pack_iodevice) do
-    # Thinking the answer here is to unpack to a temp file.
-    :to_do
+  defp read_more_size(_pack_iodevice, 0, size, _), do: cover(size)
+
+  defp read_more_size(pack_iodevice, 1, size, bitshift) do
+    with <<more?::1, more_size::7>> <- IO.binread(pack_iodevice, 1) do
+      read_more_size(pack_iodevice, more?, size + (more_size <<< bitshift), bitshift + 7)
+    else
+      _ -> :error
+    end
+  end
+
+  defp type_code_to_type(1), do: cover(:commit)
+  defp type_code_to_type(2), do: cover(:tree)
+  defp type_code_to_type(3), do: cover(:blob)
+  defp type_code_to_type(4), do: cover(:tag)
+  defp type_code_to_type(6), do: cover(:ofs_delta)
+  defp type_code_to_type(7), do: cover(:ref_delta)
+  defp type_code_to_type(_), do: cover(:error)
+
+  defp unpack_object(_reader, _pack_iodevice, _object_id, :ofs_delta, _size) do
+    raise "unimplemented"
+  end
+
+  defp unpack_object(_reader, _pack_iodevice, _object_id, :ref_delta, _size) do
+    raise "unimplemented"
+  end
+
+  defp unpack_object(_reader, _pack_iodevice, _object_id, :error, _size) do
+    cover {:error, :invalid_object}
+  end
+
+  @read_chunk_size 22277
+
+  # ^^^ make this much larger ...
+
+  defp unpack_object(_reader, pack_iodevice, object_id, type, size) do
+    Temp.track!()
+    z = :zlib.open()
+
+    with :ok <- :zlib.inflateInit(z),
+         {:ok, path} <- Temp.path(),
+         {:ok, unpacked_iodevice} <- File.open(path, [:write, :binary]),
+         :ok <- inflate_object(z, pack_iodevice, unpacked_iodevice, {:continue, ""}),
+         :ok <- File.close(unpacked_iodevice) do
+      cover {:ok,
+             %Object{
+               content: FileContentSource.new(path),
+               id: object_id,
+               size: size,
+               type: type
+             }}
+    else
+      _ -> cover {:error, :invalid_object}
+    end
+  end
+
+  defp inflate_object(_z, _pack_iodevice, _unpacked_iodevice, {:finished, []}) do
+    cover :ok
+  end
+
+  defp inflate_object(z, pack_iodevice, unpacked_iodevice, {_verb, data}) do
+    with :ok <- IO.binwrite(unpacked_iodevice, data),
+         next_data when is_binary(next_data) <- IO.binread(pack_iodevice, @read_chunk_size) do
+      inflate_object(z, pack_iodevice, unpacked_iodevice, :zlib.safeInflate(z, next_data))
+    else
+      :eof -> :ok
+      _ -> :error
+    end
   end
 
   defimpl Enumerable do
