@@ -124,16 +124,16 @@ defmodule Xgit.PackReader do
          {:ok, packfile_checksum} <- read_blob(idx_iodevice, 20),
          {:ok, idxfile_checksum} <- read_blob(idx_iodevice, 20),
          :error <- read_blob(idx_iodevice, 1) do
-      {:ok,
-       %__MODULE__{
-         pack_path: pack_path,
-         idx_version: 1,
-         count: count,
-         fanout: fanout,
-         offset_sha: offset_sha,
-         packfile_checksum: packfile_checksum,
-         idxfile_checksum: idxfile_checksum
-       }}
+      cover {:ok,
+             %__MODULE__{
+               pack_path: pack_path,
+               idx_version: 1,
+               count: count,
+               fanout: fanout,
+               offset_sha: offset_sha,
+               packfile_checksum: packfile_checksum,
+               idxfile_checksum: idxfile_checksum
+             }}
     else
       _ -> cover {:error, :invalid_index}
     end
@@ -143,7 +143,7 @@ defmodule Xgit.PackReader do
     with entries <-
            Enum.concat([fanout0], Enum.map(1..255, fn _ -> read_fanout_entry(idx_iodevice) end)),
          size when is_integer(size) <- check_fanout_table(entries) do
-      {List.to_tuple(entries), size}
+      cover {List.to_tuple(entries), size}
     end
   end
 
@@ -157,19 +157,19 @@ defmodule Xgit.PackReader do
          {:ok, packfile_checksum} <- read_blob(idx_iodevice, 20),
          {:ok, idxfile_checksum} <- read_blob(idx_iodevice, 20),
          :error <- read_blob(idx_iodevice, 1) do
-      {:ok,
-       %__MODULE__{
-         pack_path: pack_path,
-         idx_version: 2,
-         count: count,
-         fanout: fanout,
-         sha1: sha1,
-         crc: crc,
-         offset: offset,
-         offset_64bit: offset_64bit,
-         packfile_checksum: packfile_checksum,
-         idxfile_checksum: idxfile_checksum
-       }}
+      cover {:ok,
+             %__MODULE__{
+               pack_path: pack_path,
+               idx_version: 2,
+               count: count,
+               fanout: fanout,
+               sha1: sha1,
+               crc: crc,
+               offset: offset,
+               offset_64bit: offset_64bit,
+               packfile_checksum: packfile_checksum,
+               idxfile_checksum: idxfile_checksum
+             }}
     else
       _ -> cover {:error, :invalid_index}
     end
@@ -178,7 +178,7 @@ defmodule Xgit.PackReader do
   defp read_fanout_table(idx_iodevice) do
     with entries <- Enum.map(0..255, fn _ -> read_fanout_entry(idx_iodevice) end),
          size when is_integer(size) <- check_fanout_table(entries) do
-      {List.to_tuple(entries), size}
+      cover {List.to_tuple(entries), size}
     end
   end
 
@@ -217,8 +217,8 @@ defmodule Xgit.PackReader do
   @spec has_object?(reader :: t, object_id :: ObjectId.t()) :: boolean
   def has_object?(reader, object_id) do
     case index_for_object_id(reader, object_id) do
-      nil -> false
-      _ -> true
+      nil -> cover false
+      _ -> cover true
     end
   end
 
@@ -231,7 +231,7 @@ defmodule Xgit.PackReader do
 
     starting_index =
       case fanout_index do
-        0 -> 0
+        0 -> cover 0
         x -> elem(fanout, x - 1)
       end
 
@@ -396,16 +396,16 @@ defmodule Xgit.PackReader do
          {type, size} <- object_type_and_size(pack_iodevice) do
       unpack_object(reader, pack_iodevice, object_id, type, size)
     else
-      _ -> {:error, :invalid_object}
+      _ -> cover {:error, :invalid_object}
     end
   end
 
   defp object_type_and_size(pack_iodevice) do
     with <<more?::1, type_code::3, size::4>> <- IO.binread(pack_iodevice, 1),
          size when is_integer(size) <- read_more_size(pack_iodevice, more?, size, 4) do
-      {type_code_to_type(type_code), size}
+      cover {type_code_to_type(type_code), size}
     else
-      _ -> :error
+      _ -> cover :error
     end
   end
 
@@ -439,9 +439,7 @@ defmodule Xgit.PackReader do
     cover {:error, :invalid_object}
   end
 
-  @read_chunk_size 22277
-
-  # ^^^ make this much larger ...
+  @read_chunk_size 64
 
   defp unpack_object(_reader, pack_iodevice, object_id, type, size) do
     Temp.track!()
@@ -473,8 +471,8 @@ defmodule Xgit.PackReader do
          next_data when is_binary(next_data) <- IO.binread(pack_iodevice, @read_chunk_size) do
       inflate_object(z, pack_iodevice, unpacked_iodevice, :zlib.safeInflate(z, next_data))
     else
-      :eof -> :ok
-      _ -> :error
+      :eof -> cover :ok
+      _ -> cover :error
     end
   end
 
