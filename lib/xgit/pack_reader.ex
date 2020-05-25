@@ -442,6 +442,24 @@ defmodule Xgit.PackReader do
   @read_chunk_size 4096
 
   defp unpack_object(_reader, pack_iodevice, object_id, type, size) do
+    wrap_unpack_object_to_temp_file(
+      pack_iodevice,
+      fn z, pack_iodevice, unpacked_iodevice, path ->
+        if inflate_object(z, pack_iodevice, unpacked_iodevice, {:start, ""}, size) == :ok do
+          %Object{
+            content: FileContentSource.new(path),
+            id: object_id,
+            size: size,
+            type: type
+          }
+        else
+          :error
+        end
+      end
+    )
+  end
+
+  defp wrap_unpack_object_to_temp_file(pack_iodevice, inflate_object_fn) do
     Temp.track!()
     z = :zlib.open()
 
@@ -449,16 +467,7 @@ defmodule Xgit.PackReader do
          {:ok, path} <- Temp.path(),
          {:ok, %Object{} = object} <-
            File.open(path, [:write, :binary], fn unpacked_iodevice ->
-             if inflate_object(z, pack_iodevice, unpacked_iodevice, {:start, ""}, size) == :ok do
-               %Object{
-                 content: FileContentSource.new(path),
-                 id: object_id,
-                 size: size,
-                 type: type
-               }
-             else
-               :error
-             end
+             inflate_object_fn.(z, pack_iodevice, unpacked_iodevice, path)
            end) do
       cover {:ok, object}
     else
