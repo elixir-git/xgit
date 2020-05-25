@@ -203,5 +203,26 @@ defmodule Xgit.PackReaderTest do
                Deleted Linus' header.
                '''
     end
+
+    test "can read first blob in pack", %{reader: reader} do
+      assert {:ok,
+              %Object{
+                content: content,
+                size: 18787,
+                id: "6ff87c4664981e4397625791c8ea3bbb5f2279a3",
+                type: :blob
+              }} = PackReader.get_object(reader, "6ff87c4664981e4397625791c8ea3bbb5f2279a3")
+
+      rendered_content =
+        content
+        |> ContentSource.stream()
+        |> Enum.to_list()
+        |> IO.iodata_to_binary()
+
+      assert byte_size(rendered_content) == 18787
+
+      assert String.starts_with?(rendered_content, "\n Note that the only")
+      assert String.ends_with?(rendered_content, "nstead of this License.\n")
+    end
   end
 end

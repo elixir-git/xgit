@@ -439,7 +439,7 @@ defmodule Xgit.PackReader do
     cover {:error, :invalid_object}
   end
 
-  @read_chunk_size 64
+  @read_chunk_size 4096
 
   defp unpack_object(_reader, pack_iodevice, object_id, type, size) do
     Temp.track!()
@@ -448,7 +448,7 @@ defmodule Xgit.PackReader do
     with :ok <- :zlib.inflateInit(z),
          {:ok, path} <- Temp.path(),
          {:ok, unpacked_iodevice} <- File.open(path, [:write, :binary]),
-         :ok <- inflate_object(z, pack_iodevice, unpacked_iodevice, {:continue, ""}),
+         :ok <- inflate_object(z, pack_iodevice, unpacked_iodevice, {:start, ""}, size),
          :ok <- File.close(unpacked_iodevice) do
       cover {:ok,
              %Object{
@@ -462,17 +462,37 @@ defmodule Xgit.PackReader do
     end
   end
 
-  defp inflate_object(_z, _pack_iodevice, _unpacked_iodevice, {:finished, []}) do
-    cover :ok
+  defp inflate_object(z, _pack_iodevice, _unpacked_iodevice, {:finished, []}, remaining_size)
+       when remaining_size <= 0 do
+    :ok = :zlib.close(z)
   end
 
-  defp inflate_object(z, pack_iodevice, unpacked_iodevice, {_verb, data}) do
+  defp inflate_object(z, pack_iodevice, unpacked_iodevice, {:continue, data}, remaining_size) do
+    with :ok <- IO.binwrite(unpacked_iodevice, data) do
+      inflate_object(
+        z,
+        pack_iodevice,
+        unpacked_iodevice,
+        :zlib.safeInflate(z, ""),
+        remaining_size - IO.iodata_length(data)
+      )
+    else
+      _ -> :error
+    end
+  end
+
+  defp inflate_object(z, pack_iodevice, unpacked_iodevice, {_verb, data}, remaining_size) do
     with :ok <- IO.binwrite(unpacked_iodevice, data),
          next_data when is_binary(next_data) <- IO.binread(pack_iodevice, @read_chunk_size) do
-      inflate_object(z, pack_iodevice, unpacked_iodevice, :zlib.safeInflate(z, next_data))
+      inflate_object(
+        z,
+        pack_iodevice,
+        unpacked_iodevice,
+        :zlib.safeInflate(z, next_data),
+        remaining_size - IO.iodata_length(data)
+      )
     else
-      :eof -> cover :ok
-      _ -> cover :error
+      _ -> :error
     end
   end
 
