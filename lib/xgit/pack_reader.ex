@@ -447,16 +447,20 @@ defmodule Xgit.PackReader do
 
     with :ok <- :zlib.inflateInit(z),
          {:ok, path} <- Temp.path(),
-         {:ok, unpacked_iodevice} <- File.open(path, [:write, :binary]),
-         :ok <- inflate_object(z, pack_iodevice, unpacked_iodevice, {:start, ""}, size),
-         :ok <- File.close(unpacked_iodevice) do
-      cover {:ok,
-             %Object{
-               content: FileContentSource.new(path),
-               id: object_id,
-               size: size,
-               type: type
-             }}
+         {:ok, %Object{} = object} <-
+           File.open(path, [:write, :binary], fn unpacked_iodevice ->
+             if inflate_object(z, pack_iodevice, unpacked_iodevice, {:start, ""}, size) == :ok do
+               %Object{
+                 content: FileContentSource.new(path),
+                 id: object_id,
+                 size: size,
+                 type: type
+               }
+             else
+               :error
+             end
+           end) do
+      cover {:ok, object}
     else
       _ -> cover {:error, :invalid_object}
     end
