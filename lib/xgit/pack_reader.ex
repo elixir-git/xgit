@@ -412,10 +412,12 @@ defmodule Xgit.PackReader do
   defp read_more_size(_pack_iodevice, 0, size, _), do: cover(size)
 
   defp read_more_size(pack_iodevice, 1, size, bitshift) do
-    with <<more?::1, more_size::7>> <- IO.binread(pack_iodevice, 1) do
-      read_more_size(pack_iodevice, more?, size + (more_size <<< bitshift), bitshift + 7)
-    else
-      _ -> :error
+    case IO.binread(pack_iodevice, 1) do
+      <<more?::1, more_size::7>> ->
+        read_more_size(pack_iodevice, more?, size + (more_size <<< bitshift), bitshift + 7)
+
+      _ ->
+        :error
     end
   end
 
@@ -489,7 +491,7 @@ defmodule Xgit.PackReader do
   end
 
   defp inflate_object(z, pack_iodevice, unpacked_iodevice, {:continue, data}, remaining_size) do
-    with :ok <- IO.binwrite(unpacked_iodevice, data) do
+    if IO.binwrite(unpacked_iodevice, data) == :ok do
       inflate_object(
         z,
         pack_iodevice,
@@ -498,7 +500,7 @@ defmodule Xgit.PackReader do
         remaining_size - IO.iodata_length(data)
       )
     else
-      _ -> :error
+      :error
     end
   end
 

@@ -208,7 +208,7 @@ defmodule Xgit.PackReaderTest do
       assert {:ok,
               %Object{
                 content: content,
-                size: 18787,
+                size: 18_787,
                 id: "6ff87c4664981e4397625791c8ea3bbb5f2279a3",
                 type: :blob
               }} = PackReader.get_object(reader, "6ff87c4664981e4397625791c8ea3bbb5f2279a3")
@@ -219,7 +219,7 @@ defmodule Xgit.PackReaderTest do
         |> Enum.to_list()
         |> IO.iodata_to_binary()
 
-      assert byte_size(rendered_content) == 18787
+      assert byte_size(rendered_content) == 18_787
 
       assert String.starts_with?(rendered_content, "\n Note that the only")
       assert String.ends_with?(rendered_content, "nstead of this License.\n")
@@ -229,7 +229,7 @@ defmodule Xgit.PackReaderTest do
       assert {:ok,
               %Object{
                 content: content,
-                size: 18009,
+                size: 18_009,
                 id: "5b6e7c66c276e7610d4a73c70ec1a1f7c1003259",
                 type: :blob
               }} = PackReader.get_object(reader, "5b6e7c66c276e7610d4a73c70ec1a1f7c1003259")
@@ -240,7 +240,7 @@ defmodule Xgit.PackReaderTest do
         |> Enum.to_list()
         |> IO.iodata_to_binary()
 
-      assert byte_size(rendered_content) == 18009
+      assert byte_size(rendered_content) == 18_009
 
       assert String.starts_with?(rendered_content, "		    GNU")
       assert String.ends_with?(rendered_content, "nstead of this License.\n")
