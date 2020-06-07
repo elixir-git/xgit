@@ -224,5 +224,26 @@ defmodule Xgit.PackReaderTest do
       assert String.starts_with?(rendered_content, "\n Note that the only")
       assert String.ends_with?(rendered_content, "nstead of this License.\n")
     end
+
+    test "can read a delta-fied object from pack", %{reader: reader} do
+      assert {:ok,
+              %Object{
+                content: content,
+                size: 18009,
+                id: "5b6e7c66c276e7610d4a73c70ec1a1f7c1003259",
+                type: :blob
+              }} = PackReader.get_object(reader, "5b6e7c66c276e7610d4a73c70ec1a1f7c1003259")
+
+      rendered_content =
+        content
+        |> ContentSource.stream()
+        |> Enum.to_list()
+        |> IO.iodata_to_binary()
+
+      assert byte_size(rendered_content) == 18009
+
+      assert String.starts_with?(rendered_content, "		    GNU")
+      assert String.ends_with?(rendered_content, "nstead of this License.\n")
+    end
   end
 end

@@ -428,11 +428,19 @@ defmodule Xgit.PackReader do
   defp type_code_to_type(_), do: cover(:error)
 
   defp unpack_object(_reader, _pack_iodevice, _object_id, :ofs_delta, _size) do
-    raise "unimplemented"
+    raise "ofs_delta unimplemented"
   end
 
-  defp unpack_object(_reader, _pack_iodevice, _object_id, :ref_delta, _size) do
-    raise "unimplemented"
+  defp unpack_object(reader, pack_iodevice, object_id, :ref_delta, size) do
+    base_object_id =
+      pack_iodevice
+      |> IO.binread(20)
+      |> ObjectId.from_binary_iodata()
+
+    case get_object(reader, base_object_id) do
+      {:ok, %Object{} = base_object} -> unpack_delta(base_object, pack_iodevice, object_id, size)
+      _ -> :error
+    end
   end
 
   defp unpack_object(_reader, _pack_iodevice, _object_id, :error, _size) do
@@ -506,6 +514,214 @@ defmodule Xgit.PackReader do
       )
     else
       _ -> :error
+    end
+  end
+
+  defp unpack_delta(
+         %Object{content: %FileContentSource{path: base_path}, type: type} = _base_object,
+         pack_iodevice,
+         object_id,
+         size
+       ) do
+    wrap_unpack_object_to_temp_file(
+      pack_iodevice,
+      fn z, pack_iodevice, unpacked_iodevice, path ->
+        # What most sites that document the git packfile format don't tell you
+        # is this crucial nugget: Before the copy and move instructions are two
+        # varint values that tell you the expected size of the base object data
+        # and the derived object buffer.
+
+        # Thanks to
+        # https://stefan.saasen.me/articles/git-clone-in-haskell-from-the-bottom-up/#delta-encoding
+        # for accurately documenting that.
+
+        with {:ok, base_iodevice} <- File.open(base_path, [:read, :binary]),
+             {data, remaining_size} <- get_more_delta_data(z, pack_iodevice, [], size),
+             {data, source_size} <- read_varint(data, 0, 0),
+             {:ok, %{size: ^source_size}} <- File.stat(base_path),
+             {data, target_size} <- read_varint(data, 0, 0),
+             :ok <-
+               inflate_delta(
+                 z,
+                 pack_iodevice,
+                 base_iodevice,
+                 unpacked_iodevice,
+                 {:start, data},
+                 remaining_size
+               ),
+             :ok <- File.close(base_iodevice),
+             {:ok, %{size: ^target_size}} <- File.stat(path) do
+          %Object{
+            content: FileContentSource.new(path),
+            id: object_id,
+            size: target_size,
+            type: type
+          }
+        else
+          _ -> :error
+        end
+      end
+    )
+  end
+
+  defp read_varint([byte | data], acc, bitshift) when byte < 0x80 do
+    cover {data, acc + (byte <<< bitshift)}
+  end
+
+  defp read_varint([byte | data], acc, bitshift) do
+    read_varint(data, acc + ((byte &&& 0x7F) <<< bitshift), bitshift + 7)
+  end
+
+  defp inflate_delta(
+         z,
+         pack_iodevice,
+         base_iodevice,
+         unpacked_iodevice,
+         verb_data,
+         remaining_size
+       )
+
+  defp inflate_delta(
+         z,
+         _pack_iodevice,
+         _base_iodevice,
+         _unpacked_iodevice,
+         {:finished, []},
+         remaining_size
+       )
+       when remaining_size <= 0 do
+    :ok = :zlib.close(z)
+  end
+
+  defp inflate_delta(
+         z,
+         pack_iodevice,
+         base_iodevice,
+         unpacked_iodevice,
+         {_verb, data},
+         remaining_size
+       ) do
+    inflate_delta_from_base(
+      z,
+      pack_iodevice,
+      base_iodevice,
+      unpacked_iodevice,
+      get_more_delta_data(z, pack_iodevice, data, remaining_size)
+    )
+  end
+
+  defp get_more_delta_data(z, pack_iodevice, existing_data, remaining_size)
+       when remaining_size > 0 do
+    with [] <- Enum.drop(existing_data, 20),
+         next_data when is_binary(next_data) <- IO.binread(pack_iodevice, @read_chunk_size) do
+      new_data = inflate_delta_data(z, [], :zlib.safeInflate(z, next_data))
+
+      new_and_existing_data =
+        [existing_data, new_data] |> IO.iodata_to_binary() |> :binary.bin_to_list()
+
+      new_data_size = IO.iodata_length(new_data)
+
+      cover {new_and_existing_data, remaining_size - new_data_size}
+    else
+      x when is_list(x) -> cover {existing_data, remaining_size}
+      :eof -> cover {existing_data, remaining_size}
+      _ -> cover :error
+    end
+  end
+
+  defp get_more_delta_data(_z, _pack_iodevice, existing_data, remaining_size)
+       when remaining_size <= 0 do
+    cover {existing_data, remaining_size}
+  end
+
+  defp inflate_delta_data(_z, new_data, {:finished, data}) do
+    cover [new_data, data]
+  end
+
+  defp inflate_delta_data(z, new_data, {:continue, data}) do
+    inflate_delta_data(z, [data, new_data], :zlib.safeInflate(z, ""))
+  end
+
+  defp inflate_delta_from_base(
+         z,
+         pack_iodevice,
+         base_iodevice,
+         unpacked_iodevice,
+         {[], 0}
+       ) do
+    inflate_delta(
+      z,
+      pack_iodevice,
+      base_iodevice,
+      unpacked_iodevice,
+      {:finished, []},
+      0
+    )
+  end
+
+  defp inflate_delta_from_base(
+         z,
+         pack_iodevice,
+         base_iodevice,
+         unpacked_iodevice,
+         {[byte | tail] = _data, remaining_size}
+       )
+       when byte >= 0x80 do
+    with {offset, tail} <- read_sparse_int32(tail, byte &&& 0x0F, 0, 0),
+         {size, tail} <- read_sparse_int32(tail, byte >>> 4 &&& 0x07, 0, 0),
+         :ok <- copy_from_base(base_iodevice, unpacked_iodevice, offset, size) do
+      inflate_delta(
+        z,
+        pack_iodevice,
+        base_iodevice,
+        unpacked_iodevice,
+        {:continue, tail},
+        remaining_size
+      )
+    else
+      x -> x
+    end
+  end
+
+  defp inflate_delta_from_base(
+         _z,
+         _pack_iodevice,
+         _base_iodevice,
+         _unpacked_iodevice,
+         {[_byte | _tail], _remaining_size}
+       ) do
+    raise "delta add new data unimplemented"
+  end
+
+  defp read_sparse_int32(data, bitmask, bitshift, acc)
+
+  defp read_sparse_int32(data, 0 = _bitmask, _bitshift, acc) do
+    cover {acc, data}
+  end
+
+  defp read_sparse_int32([byte | tail], bitmask, bitshift, acc) when (bitmask &&& 1) != 0 do
+    read_sparse_int32(tail, bitmask >>> 1, bitshift + 8, acc + (byte <<< bitshift))
+  end
+
+  defp read_sparse_int32(data, bitmask, bitshift, acc) do
+    read_sparse_int32(data, bitmask >>> 1, bitshift + 8, acc)
+  end
+
+  @copy_chunk_size 16_384
+
+  defp copy_from_base(_base_iodevice, _unpacked_iodevice, _offset, 0) do
+    cover :ok
+  end
+
+  defp copy_from_base(base_iodevice, unpacked_iodevice, offset, size) when size > 0 do
+    copy_size = min(size, @copy_chunk_size)
+
+    with {:ok, data} <- :file.pread(base_iodevice, offset, copy_size),
+         :ok <- IO.write(unpacked_iodevice, data) do
+      data_size = byte_size(data)
+      copy_from_base(base_iodevice, unpacked_iodevice, offset + data_size, size - data_size)
+    else
+      x -> x
     end
   end
 
