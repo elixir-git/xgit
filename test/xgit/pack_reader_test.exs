@@ -6,9 +6,15 @@ defmodule Xgit.PackReaderTest do
   alias Xgit.PackReader
   alias Xgit.PackReader.Entry, as: PackReaderEntry
 
+  @pack_16fa967b_path "test/fixtures/ofs-pack-16fa967b5d47f7a2f8cc133159a86fd6bd1da668.pack"
+  @pack_index_16fa967b_path "test/fixtures/ofs-pack-16fa967b5d47f7a2f8cc133159a86fd6bd1da668.idx"
+
   @pack_34be9032_path "test/fixtures/pack-34be9032ac282b11fa9babdc2b2a93ca996c9c2f.pack"
   @pack_index_v1_34be9032_path "test/fixtures/pack-34be9032ac282b11fa9babdc2b2a93ca996c9c2f.idx"
   @pack_index_v2_34be9032_path "test/fixtures/pack-34be9032ac282b11fa9babdc2b2a93ca996c9c2f.idxV2"
+
+  @pack_51f3fde0_path "test/fixtures/ofs-pack-51f3fde0e0527ca93e22916737a77dd04dde9f81.pack"
+  @pack_index_51f3fde0_path "test/fixtures/ofs-pack-51f3fde0e0527ca93e22916737a77dd04dde9f81.idx"
 
   describe "open/2 and index functions" do
     test "error: index file doesn't exist" do
@@ -225,7 +231,7 @@ defmodule Xgit.PackReaderTest do
       assert String.ends_with?(rendered_content, "nstead of this License.\n")
     end
 
-    test "can read a delta-fied object from pack", %{reader: reader} do
+    test "can read a ref_delta-fied object from pack", %{reader: reader} do
       assert {:ok,
               %Object{
                 content: content,
@@ -244,6 +250,54 @@ defmodule Xgit.PackReaderTest do
 
       assert String.starts_with?(rendered_content, "		    GNU")
       assert String.ends_with?(rendered_content, "nstead of this License.\n")
+    end
+
+    test "can read an ofs_delta-fied object from pack (<128 byte offset)" do
+      {:ok, %PackReader{} = reader} =
+        PackReader.open(@pack_51f3fde0_path, @pack_index_51f3fde0_path)
+
+      assert {:ok,
+              %Object{
+                content: content,
+                size: 200,
+                id: "6c3632d63d8fa0785565eb0d010f3564542156dc",
+                type: :blob
+              }} = PackReader.get_object(reader, "6c3632d63d8fa0785565eb0d010f3564542156dc")
+
+      rendered_content =
+        content
+        |> ContentSource.stream()
+        |> Enum.to_list()
+        |> IO.iodata_to_binary()
+
+      assert byte_size(rendered_content) == 200
+
+      assert String.starts_with?(rendered_content, "asjdkfl ajs kd\n")
+      assert String.ends_with?(rendered_content, "ajskddf as\n")
+    end
+
+    test "can read an ofs_delta-fied object from pack (>128 byte offset)" do
+      {:ok, %PackReader{} = reader} =
+        PackReader.open(@pack_16fa967b_path, @pack_index_16fa967b_path)
+
+      assert {:ok,
+              %Object{
+                content: content,
+                size: 455,
+                id: "82e3a41561a7288f185d13f5c6e943fce9045a51",
+                type: :blob
+              }} = PackReader.get_object(reader, "82e3a41561a7288f185d13f5c6e943fce9045a51")
+
+      rendered_content =
+        content
+        |> ContentSource.stream()
+        |> Enum.to_list()
+        |> IO.iodata_to_binary()
+
+      assert byte_size(rendered_content) == 455
+
+      assert String.starts_with?(rendered_content, "ajsdkfl ajsdfkl ajs\n")
+      assert String.ends_with?(rendered_content, "aer")
     end
   end
 end

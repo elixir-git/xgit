@@ -394,7 +394,7 @@ defmodule Xgit.PackReader do
     with <<?P, ?A, ?C, ?K, 0, 0, 0, 2>> <- IO.binread(pack_iodevice, 8),
          {:ok, ^offset} <- :file.position(pack_iodevice, offset),
          {type, size} <- object_type_and_size(pack_iodevice) do
-      unpack_object(reader, pack_iodevice, object_id, type, size)
+      unpack_object(reader, pack_iodevice, offset, object_id, type, size)
     else
       _ -> cover {:error, :invalid_object}
     end
@@ -429,11 +429,18 @@ defmodule Xgit.PackReader do
   defp type_code_to_type(7), do: cover(:ref_delta)
   defp type_code_to_type(_), do: cover(:error)
 
-  defp unpack_object(_reader, _pack_iodevice, _object_id, :ofs_delta, _size) do
-    raise "ofs_delta unimplemented"
+  defp unpack_object(reader, pack_iodevice, offset, object_id, :ofs_delta, size) do
+    relative_offset = read_ofs_varint(pack_iodevice, 0)
+
+    pack_entry = %__MODULE__.Entry{name: "from-offset", offset: offset - relative_offset}
+
+    case object_from_pack(reader, pack_entry) do
+      {:ok, %Object{} = base_object} -> unpack_delta(base_object, pack_iodevice, object_id, size)
+      _ -> :error
+    end
   end
 
-  defp unpack_object(reader, pack_iodevice, object_id, :ref_delta, size) do
+  defp unpack_object(reader, pack_iodevice, _offset, object_id, :ref_delta, size) do
     base_object_id =
       pack_iodevice
       |> IO.binread(20)
@@ -445,13 +452,13 @@ defmodule Xgit.PackReader do
     end
   end
 
-  defp unpack_object(_reader, _pack_iodevice, _object_id, :error, _size) do
+  defp unpack_object(_reader, _pack_iodevice, _offset, _object_id, :error, _size) do
     cover {:error, :invalid_object}
   end
 
   @read_chunk_size 4096
 
-  defp unpack_object(_reader, pack_iodevice, object_id, type, size) do
+  defp unpack_object(_reader, pack_iodevice, _offset, object_id, type, size) do
     wrap_unpack_object_to_temp_file(
       pack_iodevice,
       fn z, pack_iodevice, unpacked_iodevice, path ->
@@ -467,6 +474,23 @@ defmodule Xgit.PackReader do
         end
       end
     )
+  end
+
+  defp read_ofs_varint(pack_iodevice, acc) do
+    if acc >= 0x80000000 do
+      raise "Unable to read offset varint"
+    end
+
+    case IO.binread(pack_iodevice, 1) do
+      :eof ->
+        :error
+
+      <<byte>> when is_integer(byte) and byte < 0x80 ->
+        acc + byte
+
+      <<byte>> when is_integer(byte) and byte >= 0x80 ->
+        read_ofs_varint(pack_iodevice, (acc <<< 7) + byte)
+    end
   end
 
   defp wrap_unpack_object_to_temp_file(pack_iodevice, inflate_object_fn) do
