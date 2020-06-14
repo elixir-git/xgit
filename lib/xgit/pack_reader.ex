@@ -477,9 +477,12 @@ defmodule Xgit.PackReader do
   end
 
   defp read_ofs_varint(pack_iodevice, acc) do
+    # coveralls-ignore-start
     if acc >= 0x80000000 do
       raise "Unable to read offset varint"
     end
+
+    # coveralls-ignore-stop
 
     case IO.binread(pack_iodevice, 1) do
       :eof ->
