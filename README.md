@@ -1,3 +1,11 @@
+# PROJECT PAUSED
+
+My personal and professional interests have changed and, much as I appreciate the language and the community, I'm no longer writing code in Elixir.
+
+If you are interested in taking over this project, please [raise an issue](https://github.com/elixir-git/xgit/issues/new/choose) to let me know and I will work with you to transfer ownership of the project.
+
+---
+
 # <img width="120" src="./branding/xgit-logo.png" alt="Xgit"> Xgit
 
 Pure Elixir native implementation of git
